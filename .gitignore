@@ -1,0 +1,3 @@
+./UnitTests/bin/
+./UnitTests/bin/*
+*.save
