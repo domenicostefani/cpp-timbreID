@@ -1,5 +1,5 @@
-./UnitTests/bin/
-./UnitTests/bin/*
-./UnitTests/obj/
-./UnitTests/obj/*
+UnitTests/bin/
+UnitTests/bin/*
+UnitTests/obj/
+UnitTests/obj/*
 *.save
