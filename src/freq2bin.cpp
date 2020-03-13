@@ -38,11 +38,11 @@ void Freq2bin::setWinSampRate(long int windowSize, long int sampleRate)
 {
     if(windowSize <= 0)
     {
-        throw std::domain_error("Window size cannot be <= 0");
+        throw std::invalid_argument("Window size cannot be <= 0");
     }
     if(sampleRate <= 0)
     {
-        throw std::domain_error("Sample rate cannot be <= 0");
+        throw std::invalid_argument("Sample rate cannot be <= 0");
     }
 	Freq2bin::windowSize = windowSize;
 	Freq2bin::sampleRate = sampleRate;
