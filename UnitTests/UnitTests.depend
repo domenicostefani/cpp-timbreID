@@ -214,3 +214,8 @@
 	"freq2bin.hpp"
 	"tIDLib.hpp"
 
+1584350863 source:/home/domenico/Develop/cpp-timbreID/UnitTests/conversionFunctionsTests/test_freq2mel.cpp
+	"UnitTest++.h"
+	"freq2mel.hpp"
+	"tIDLib.hpp"
+

@@ -70,6 +70,8 @@
 		<Unit filename="conversionFunctionsTests/test_bin2freq.cpp" />
 		<Unit filename="conversionFunctionsTests/test_freq2bark.cpp" />
 		<Unit filename="conversionFunctionsTests/test_freq2bin.cpp" />
+		<Unit filename="conversionFunctionsTests/test_freq2mel.cpp" />
+		<Unit filename="conversionFunctionsTests/test_mel2freq.cpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
