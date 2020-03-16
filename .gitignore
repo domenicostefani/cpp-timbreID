@@ -3,3 +3,4 @@ UnitTests/bin/*
 UnitTests/obj/
 UnitTests/obj/*
 *.save
+*.layout
