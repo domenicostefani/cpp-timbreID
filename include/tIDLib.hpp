@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+
+constexpr unsigned int BLOCKSIZEDEFAULT = 64;
+constexpr unsigned short int OVERLAPDEFAULT = 1;
 
 constexpr unsigned long int WINDOWSIZEDEFAULT = 1024;
 constexpr unsigned long int  SAMPLERATEDEFAULT = 44100;
@@ -34,3 +38,10 @@ float tIDLib_bark2freq(float bark);
 float tIDLib_freq2mel(float freq);
 float tIDLib_mel2freq(float mel);
 /* ---------------- END conversion functions ---------------------- */
+
+namespace tIDLibrary
+{
+/* ---------------- dsp utility functions ---------------------- */
+unsigned int zeroCrossingRate(const std::vector<float>& buffer);
+
+}

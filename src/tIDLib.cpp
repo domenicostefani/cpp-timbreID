@@ -19,7 +19,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 
 #include <cmath>
-
+#include <JuceHeader.h>
+#include <vector>
 
 /* ---------------- conversion functions ---------------------- */
 float tIDLib_freq2bin(float freq, float n, float sr)
@@ -118,3 +119,45 @@ float tIDLib_mel2freq(float mel)
 	return(freq);
 }
 /* ---------------- END conversion functions ---------------------- */
+
+/* ---------------- utility functions ---------------------- */
+
+signed char tIDLib_signum(float input)
+{
+	signed char sign = 0;
+
+	if(input > 0)
+		sign = 1;
+	else if(input < 0)
+		sign = -1;
+	else
+		sign = 0;
+
+	return(sign);
+}
+/* ---------------- END utility functions ---------------------- */
+
+
+namespace tIDLibrary
+{
+
+/* ---------------- dsp utility functions ---------------------- */
+
+// this could also return the location of the zero crossing
+unsigned int zeroCrossingRate(const std::vector<float>& buffer)
+{
+    jassert(buffer.size() > 0);
+
+	unsigned int crossings = 0;
+
+	for(size_t sample = 1; sample < buffer.size(); ++sample)
+		crossings += abs(tIDLib_signum(buffer[sample]) - tIDLib_signum(buffer[sample-1]));
+
+	crossings *= 0.5f;
+
+	return crossings;
+}
+
+/* ---------------- END dsp utility functions ---------------------- */
+
+}
