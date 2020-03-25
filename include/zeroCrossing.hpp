@@ -26,8 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 #include <iostream>
 
-using namespace dsp;
-
 namespace tid   /* TimbreID namespace*/
 {
 
@@ -35,11 +33,6 @@ template <typename SampleType>
 class ZeroCrossing
 {
 public:
-    //==============================================================================
-    /** The NumericType is the underlying primitive type used by the SampleType (which
-        could be either a primitive or vector)
-    */
-    using NumericType = typename SampleTypeHelpers::ElementType<SampleType>::Type;
 
     //==============================================================================
     /** Creates a zeroCrossing module with default parameters. */
@@ -70,18 +63,6 @@ public:
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
         std::fill(analysisBuffer.begin(), analysisBuffer.end(), SampleType{0});
         this->lastStoreTime = juce::Time::currentTimeMillis();
-    }
-
-    /** Ensure that the state variables are rounded to zero if the state
-        variables are denormals. This is only needed if you are doing
-        sample by sample processing.
-    */
-    void snapToZero() noexcept
-    {
-        for(SampleType sample : signalBuffer)
-            util::snapToZero(sample);
-        for(SampleType sample : analysisBuffer)
-            util::snapToZero(sample);
     }
 
     //==============================================================================
@@ -137,7 +118,6 @@ private:
     {
         for (size_t i = 0 ; i < n; ++i)
             output[i] = input[i];
-        snapToZero();   // TODO: check if useful
     }
 
     void storeBlock (const SampleType* input, size_t n) noexcept
