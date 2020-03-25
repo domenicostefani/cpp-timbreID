@@ -1,9 +1,12 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+  Plugin Editor
 
-    It contains the basic framework code for a JUCE plugin editor.
+  DEMO PROJECT - TimbreID - zeroCrossing Module
+
+  Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
+  Date: 25th March 2020
 
   ==============================================================================
 */
@@ -34,13 +37,14 @@ private:
     // access the processor object that created it.
     DemoProcessor& processor;
 
-    TextButton button;
-    Label label;
+    TextButton computeButton;
+    Label dataLabel;;
+    Label resLabel;
 
-    std::string sampleRate_s = "";
-    std::string blockSize_s = "";
-    std::string crossings_s = "";
-    void monitorSetSampleRate(double sampleRate);
-    void monitorSetBlockSize(int blockSize);
-    void monitorSetCrossings(uint32 crossings);
+    double mSampleRate = 0;
+    int mBlockSize = 0;
+    uint32 mCrossings = 0;
+
+    void updateDataLabel();
+    void updateResLabel();
 };

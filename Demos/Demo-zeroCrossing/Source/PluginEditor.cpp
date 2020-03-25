@@ -1,9 +1,12 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+  Plugin Editor
 
-    It contains the basic framework code for a JUCE plugin editor.
+  DEMO PROJECT - TimbreID - zeroCrossing Module
+
+  Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
+  Date: 25th March 2020
 
   ==============================================================================
 */
@@ -18,19 +21,19 @@
 DemoEditor::DemoEditor (DemoProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (200, 200);
-
-    addAndMakeVisible(button);
-    button.setButtonText("Compute zero crossings");
-    button.addListener(this);
-
-    addAndMakeVisible(label);
-    label.setJustificationType(Justification::centred);
-    monitorSetBlockSize(0);
-    monitorSetSampleRate(0);
-    monitorSetCrossings(0);
+    setSize (450, 200);
+    // Show Button
+    addAndMakeVisible(computeButton);
+    computeButton.setButtonText("Compute zero crossings");
+    computeButton.addListener(this);
+    // Show Data Label
+    addAndMakeVisible(dataLabel);
+    dataLabel.setJustificationType(Justification::topLeft);
+    updateDataLabel();
+    // Show Results Label
+    addAndMakeVisible(resLabel);
+    resLabel.setJustificationType(Justification::topLeft);
+    updateResLabel();
 }
 
 DemoEditor::~DemoEditor()
@@ -40,16 +43,11 @@ DemoEditor::~DemoEditor()
 //==============================================================================
 void DemoEditor::paint (Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
-//    g.setColour (Colours::white);
-//    g.setFont (15.0f);
-//    g.drawFittedText ("Ciao", getLocalBounds(), Justification::centred, 1);
-
-    monitorSetSampleRate(processor.getSampleRate());
-    monitorSetBlockSize(processor.getBlockSize());
-
+    this->mSampleRate = processor.getSampleRate();
+    this->mBlockSize = processor.getBlockSize();
+    updateDataLabel();
 }
 
 void DemoEditor::resized()
@@ -60,33 +58,33 @@ void DemoEditor::resized()
     Rectangle<int> bottom = usable.removeFromBottom(usable.getHeight()*0.5);
     Rectangle<int> top = usable;
 
-    button.setBounds(bottom.reduced(10));
-    label.setBounds(top);
-
+    computeButton.setBounds(bottom.reduced(10));
+    dataLabel.setBounds(top.removeFromLeft(top.getWidth()*0.35));
+    resLabel.setBounds(top);
 }
 
-
 void DemoEditor::buttonClicked (Button * button){
-    if(button == &this->button)
+    if(button == &this->computeButton)
     {
         bgColor = Colours::aliceblue;
         uint32 crossings = processor.computeZeroCrossing();
         std::cout << "crossings: " << crossings << std::endl;
-        monitorSetCrossings(crossings);
+        this->mCrossings = crossings;
+        updateDataLabel();
+        updateResLabel();
     }
 }
 
-void DemoEditor::monitorSetSampleRate(double sampleRate){
-    sampleRate_s = std::to_string((int)sampleRate);
-    this->label.setText("Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nCrossings:  " +crossings_s,NotificationType::dontSendNotification);
+void DemoEditor::updateDataLabel(){
+    std::string sampleRate_s = std::to_string((int)this->mSampleRate);
+    std::string blockSize_s = std::to_string((int)this->mBlockSize);
+    std::string windowSize_s = std::to_string((int)this->processor.getWindowSize());
+    this->dataLabel.setText("Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nWindow size:  " +windowSize_s,NotificationType::dontSendNotification);
 }
 
-void DemoEditor::monitorSetBlockSize(int blockSize){
-    blockSize_s = std::to_string(blockSize);
-    this->label.setText("Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nCrossings:  " +crossings_s,NotificationType::dontSendNotification);
-}
-
-void DemoEditor::monitorSetCrossings(uint32 crossings){
-    crossings_s = std::to_string(crossings);
-    this->label.setText("Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nCrossings:  " +crossings_s,NotificationType::dontSendNotification);
+void DemoEditor::updateResLabel(){
+    std::string crossings_s = std::to_string((int)this->mCrossings);
+    double freq = mSampleRate*mCrossings/(this->processor.getWindowSize()*2);
+    std::string freq_s = std::to_string(freq);
+    this->resLabel.setText("# Crossings " +crossings_s+"\nEquiv. frequency: " + freq_s,NotificationType::dontSendNotification);
 }

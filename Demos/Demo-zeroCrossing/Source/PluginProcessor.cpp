@@ -1,9 +1,12 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+  Plugin Processor
 
-    It contains the basic framework code for a JUCE plugin processor.
+  DEMO PROJECT - TimbreID - zeroCrossing Module
+
+  Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
+  Date: 25th March 2020
 
   ==============================================================================
 */
@@ -29,16 +32,67 @@ DemoProcessor::DemoProcessor()
 {
 }
 
-DemoProcessor::~DemoProcessor()
+DemoProcessor::~DemoProcessor(){}
+
+void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    // PREPARE THE MODULE
+    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    // PREPARE THE MONO CHANNEL
+    mono.setSize (1, samplesPerBlock);
 }
+
+void DemoProcessor::releaseResources()
+{
+    // RESET MODULE
+    zeroCrossing.reset();
+}
+
+void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
+{
+    ScopedNoDenormals noDenormals;
+    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+
+    // COPY SAMPLES TO A MONO BUFFER
+    mono.copyFrom(0,0,buffer,0,0,buffer.getNumSamples());
+
+    // CREATE AUDIO BLOCK
+    dsp::AudioBlock<float> block (mono);
+
+    // PASS CONTEXT
+    zeroCrossing.store(dsp::ProcessContextReplacing<float>(block));
+}
+
+/**
+ * Utility method
+*/
+uint32 DemoProcessor::computeZeroCrossing(){
+    return zeroCrossing.countCrossings();
+}
+
+/**
+ * Utility method
+*/
+uint32 DemoProcessor::getWindowSize(){
+    return zeroCrossing.getWindowSize();
+}
+
+
+/*
+    JUCE stuff ahead, not relevant
+*/
+
+
+
+
+
+
 
 //==============================================================================
-const String DemoProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
-
+const String DemoProcessor::getName() const{return JucePlugin_Name;}
 bool DemoProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
@@ -56,7 +110,6 @@ bool DemoProcessor::producesMidi() const
     return false;
    #endif
 }
-
 bool DemoProcessor::isMidiEffect() const
 {
    #if JucePlugin_IsMidiEffect
@@ -65,49 +118,14 @@ bool DemoProcessor::isMidiEffect() const
     return false;
    #endif
 }
-
-double DemoProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
-}
-
-int DemoProcessor::getNumPrograms()
-{
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
-}
-
-int DemoProcessor::getCurrentProgram()
-{
-    return 0;
-}
-
-void DemoProcessor::setCurrentProgram (int index)
-{
-}
-
-const String DemoProcessor::getProgramName (int index)
-{
-    return {};
-}
-
-void DemoProcessor::changeProgramName (int index, const String& newName)
-{
-}
+double DemoProcessor::getTailLengthSeconds() const{return 0.0;}
+int DemoProcessor::getNumPrograms(){return 1;}
+int DemoProcessor::getCurrentProgram(){return 0;}
+void DemoProcessor::setCurrentProgram (int index){}
+const String DemoProcessor::getProgramName (int index){return {};}
+void DemoProcessor::changeProgramName (int index, const String& newName){}
 
 //==============================================================================
-void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
-{
-    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
-    mono.setSize (1, samplesPerBlock);
-}
-
-void DemoProcessor::releaseResources()
-{
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
-    zeroCrossing.reset();
-}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool DemoProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -133,45 +151,12 @@ bool DemoProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 }
 #endif
 
-void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
-{
-    ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-
-    mono.copyFrom(0,0,buffer,0,0,buffer.getNumSamples());
-
-    dsp::AudioBlock<float> block (mono);
-    zeroCrossing.store(dsp::ProcessContextReplacing<float>(block));
-}
 
 //==============================================================================
-bool DemoProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
-}
-
-AudioProcessorEditor* DemoProcessor::createEditor()
-{
-    return new DemoEditor (*this);
-}
-
-//==============================================================================
-void DemoProcessor::getStateInformation (MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-}
-
-void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-}
+bool DemoProcessor::hasEditor() const {return true;}
+AudioProcessorEditor* DemoProcessor::createEditor(){return new DemoEditor (*this);}
+void DemoProcessor::getStateInformation (MemoryBlock& destData){}
+void DemoProcessor::setStateInformation (const void* data, int sizeInBytes){}
 
 //==============================================================================
 // This creates new instances of the plugin..
@@ -180,6 +165,3 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new DemoProcessor();
 }
 
-uint32 DemoProcessor::computeZeroCrossing(){
-    return zeroCrossing.countCrossings();
-}

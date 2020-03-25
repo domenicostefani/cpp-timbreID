@@ -4,6 +4,7 @@
 	<Project>
 		<Option title="Demo-zeroCrossing" />
 		<Option pch_mode="2" />
+		<Option default_target="Standalone Plugin | Debug" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Shared Code | Debug">
@@ -7615,6 +7616,21 @@
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
+		<Unit filename="../../../../include/bark2freq.hpp" />
+		<Unit filename="../../../../include/bin2freq.hpp" />
+		<Unit filename="../../../../include/freq2bark.hpp" />
+		<Unit filename="../../../../include/freq2bin.hpp" />
+		<Unit filename="../../../../include/freq2mel.hpp" />
+		<Unit filename="../../../../include/mel2freq.hpp" />
+		<Unit filename="../../../../include/tIDLib.hpp" />
+		<Unit filename="../../../../include/zeroCrossing.hpp" />
+		<Unit filename="../../../../src/bark2freq.cpp" />
+		<Unit filename="../../../../src/bin2freq.cpp" />
+		<Unit filename="../../../../src/freq2bark.cpp" />
+		<Unit filename="../../../../src/freq2bin.cpp" />
+		<Unit filename="../../../../src/freq2mel.cpp" />
+		<Unit filename="../../../../src/mel2freq.cpp" />
+		<Unit filename="../../../../src/tIDLib.cpp" />
 		<Unit filename="../../JuceLibraryCode/AppConfig.h">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
