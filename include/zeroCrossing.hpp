@@ -111,7 +111,7 @@ public:
         uint32 crossings = 0;
 
         jassert(this->analysisBuffer.size() == this->analysisWindowSize);
-        crossings = tIDLibrary::zeroCrossingRate(analysisBuffer);
+        crossings = tIDLib::zeroCrossingRate(analysisBuffer);
 
         return crossings;
     }
@@ -177,10 +177,10 @@ private:
     }
 
     //==============================================================================
-    double sampleRate = SAMPLERATEDEFAULT;  // x_sr field in Original PD library
-    uint32 blockSize = BLOCKSIZEDEFAULT;    // x_n field in Original PD library
-    int16 overlap = OVERLAPDEFAULT;         // x_overlap field in Original PD library
-    uint64 analysisWindowSize = WINDOWSIZEDEFAULT;   // x_window in Original PD library
+    double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
+    uint32 blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library
+    int16 overlap = tIDLib::OVERLAPDEFAULT;         // x_overlap field in Original PD library
+    uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     std::vector<SampleType> signalBuffer;
     std::vector<SampleType> analysisBuffer;

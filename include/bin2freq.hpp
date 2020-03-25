@@ -1,5 +1,7 @@
 #pragma once
 
+namespace tid   /* TimbreID namespace*/
+{
 class Bin2freq
 {
 public:
@@ -11,3 +13,4 @@ private:
     static unsigned long int windowSize;
     static unsigned long int sampleRate;
 };
+} // namespace tid

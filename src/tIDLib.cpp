@@ -22,8 +22,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include <JuceHeader.h>
 #include <vector>
 
+namespace tIDLib
+{
+
 /* ---------------- conversion functions ---------------------- */
-float tIDLib_freq2bin(float freq, float n, float sr)
+float freq2bin(float freq, float n, float sr)
 {
 	float bin;
 
@@ -32,7 +35,7 @@ float tIDLib_freq2bin(float freq, float n, float sr)
 	return(bin);
 }
 
-float tIDLib_bin2freq(float bin, float n, float sr)
+float bin2freq(float bin, float n, float sr)
 {
 	float freq;
 
@@ -41,23 +44,23 @@ float tIDLib_bin2freq(float bin, float n, float sr)
 	return(freq);
 }
 
-float tIDLib_bark2freq(float bark)
+float bark2freq(float bark)
 {
 	float freq;
-	t_bark2freqFormula formula; // TODO: this should be an enum
+	tIDLib::t_bark2freqFormula formula; // TODO: this should be an enum
 
 	// formula 2 was used in timbreID 0.6
-	formula = bark2freqFormula0;
+	formula = tIDLib::bark2freqFormula0;
 
 	switch(formula)
 	{
-		case bark2freqFormula0:
+		case tIDLib::bark2freqFormula0:
 			freq = 600.0 * sinh(bark/6.0);
 			break;
-		case bark2freqFormula1:
+		case tIDLib::bark2freqFormula1:
 			freq = 53548.0/(bark*bark - 52.56*bark + 690.39);
 			break;
-		case bark2freqFormula2:
+		case tIDLib::bark2freqFormula2:
 			freq = 1960/(26.81/(bark+0.53) - 1);
 			freq = (freq<0)?0:freq;
 			break;
@@ -68,22 +71,22 @@ float tIDLib_bark2freq(float bark)
 	return(freq);
 }
 
-float tIDLib_freq2bark(float freq)
+float freq2bark(float freq)
 {
 	float barkFreq;
-	t_freq2barkFormula formula; // TODO: this should be an enum
+	tIDLib::t_freq2barkFormula formula; // TODO: this should be an enum
 
-	formula = freq2barkFormula0;
+	formula = tIDLib::freq2barkFormula0;
 
 	switch(formula)
 	{
-		case freq2barkFormula0:
+		case tIDLib::freq2barkFormula0:
 			barkFreq = 6.0*asinh(freq/600.0);
 			break;
-		case freq2barkFormula1:
+		case tIDLib::freq2barkFormula1:
 			barkFreq = 13*atan(0.00076*freq) + 3.5*atan(powf((freq/7500), 2));
 			break;
-		case freq2barkFormula2:
+		case tIDLib::freq2barkFormula2:
 			barkFreq = ((26.81*freq)/(1960+freq))-0.53;
 			if(barkFreq<2)
 				barkFreq += 0.15*(2-barkFreq);
@@ -100,7 +103,7 @@ float tIDLib_freq2bark(float freq)
 	return(barkFreq);
 }
 
-float tIDLib_freq2mel(float freq)
+float freq2mel(float freq)
 {
 	float mel;
 
@@ -109,7 +112,7 @@ float tIDLib_freq2mel(float freq)
 	return(mel);
 }
 
-float tIDLib_mel2freq(float mel)
+float mel2freq(float mel)
 {
 	float freq;
 
@@ -122,7 +125,7 @@ float tIDLib_mel2freq(float mel)
 
 /* ---------------- utility functions ---------------------- */
 
-signed char tIDLib_signum(float input)
+signed char signum(float input)
 {
 	signed char sign = 0;
 
@@ -137,10 +140,6 @@ signed char tIDLib_signum(float input)
 }
 /* ---------------- END utility functions ---------------------- */
 
-
-namespace tIDLibrary
-{
-
 /* ---------------- dsp utility functions ---------------------- */
 
 // this could also return the location of the zero crossing
@@ -151,7 +150,7 @@ unsigned int zeroCrossingRate(const std::vector<float>& buffer)
 	unsigned int crossings = 0;
 
 	for(size_t sample = 1; sample < buffer.size(); ++sample)
-		crossings += abs(tIDLib_signum(buffer[sample]) - tIDLib_signum(buffer[sample-1]));
+		crossings += abs(signum(buffer[sample]) - signum(buffer[sample-1]));
 
 	crossings *= 0.5f;
 

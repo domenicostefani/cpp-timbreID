@@ -24,14 +24,16 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <assert.h>
 
-unsigned long int Bin2freq::sampleRate = SAMPLERATEDEFAULT;
-unsigned long int Bin2freq::windowSize = WINDOWSIZEDEFAULT;
+namespace tid   /* TimbreID namespace*/
+{
+unsigned long int Bin2freq::sampleRate = tIDLib::SAMPLERATEDEFAULT;
+unsigned long int Bin2freq::windowSize = tIDLib::WINDOWSIZEDEFAULT;
 
 /* ------------------------ bin2freq -------------------------------- */
 float Bin2freq::calculate(float bin)
 {
 	if(bin>=0.0 && bin<(float)Bin2freq::windowSize)
-		return tIDLib_bin2freq(bin, (float)Bin2freq::windowSize, (float)Bin2freq::sampleRate);
+		return tIDLib::bin2freq(bin, (float)Bin2freq::windowSize, (float)Bin2freq::sampleRate);
 	else
         throw std::domain_error("bin2freq: bin number must be between 0 and " + std::to_string(Bin2freq::windowSize-1));
 }
@@ -59,3 +61,4 @@ unsigned long int Bin2freq::getSampleRate()
 {
     return Bin2freq::sampleRate;
 }
+} // namespace tid

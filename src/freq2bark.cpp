@@ -22,11 +22,14 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <stdexcept>
 
+namespace tid   /* TimbreID namespace*/
+{
 /* ------------------------ freq2bark -------------------------------- */
 float Freq2bark::calculate(float freq)
 {
-	if(freq>=0.0 && freq<=MAXBARKFREQ)
-		return tIDLib_freq2bark(freq);
+	if(freq >= 0.0 && freq <= tIDLib::MAXBARKFREQ)
+		return tIDLib::freq2bark(freq);
 	else
-        throw std::domain_error("Frequency must be between 0 and " + std::to_string(MAXBARKFREQ) + " Hz");
+        throw std::domain_error("Frequency must be between 0 and " + std::to_string(tIDLib::MAXBARKFREQ) + " Hz");
 }
+} // namespace tid

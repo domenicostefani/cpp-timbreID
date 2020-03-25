@@ -2,6 +2,9 @@
 
 #include <vector>
 
+namespace tIDLib
+{
+
 constexpr unsigned int BLOCKSIZEDEFAULT = 64;
 constexpr unsigned short int OVERLAPDEFAULT = 1;
 
@@ -11,8 +14,6 @@ constexpr float MAXBARKS = 26.0;
 constexpr float MAXBARKFREQ = 22855.4;
 constexpr float MAXMELFREQ = 22843.6;
 constexpr float MAXMELS = 3962.0;
-
-
 
 enum t_bark2freqFormula
 {
@@ -28,19 +29,16 @@ enum t_freq2barkFormula
 	freq2barkFormula2
 };
 
-
-
 /* ---------------- conversion functions ---------------------- */
-float tIDLib_freq2bin(float freq, float n, float sr);
-float tIDLib_bin2freq(float bin, float n, float sr);
-float tIDLib_freq2bark(float freq);
-float tIDLib_bark2freq(float bark);
-float tIDLib_freq2mel(float freq);
-float tIDLib_mel2freq(float mel);
+float freq2bin(float freq, float n, float sr);
+float bin2freq(float bin, float n, float sr);
+float freq2bark(float freq);
+float bark2freq(float bark);
+float freq2mel(float freq);
+float mel2freq(float mel);
 /* ---------------- END conversion functions ---------------------- */
 
-namespace tIDLibrary
-{
+
 /* ---------------- dsp utility functions ---------------------- */
 unsigned int zeroCrossingRate(const std::vector<float>& buffer);
 

@@ -22,14 +22,16 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <stdexcept>
 
-unsigned long int Freq2bin::sampleRate = SAMPLERATEDEFAULT;
-unsigned long int Freq2bin::windowSize = WINDOWSIZEDEFAULT;
+namespace tid   /* TimbreID namespace*/
+{
+unsigned long int Freq2bin::sampleRate = tIDLib::SAMPLERATEDEFAULT;
+unsigned long int Freq2bin::windowSize = tIDLib::WINDOWSIZEDEFAULT;
 
 /* ------------------------ freq2bin -------------------------------- */
 float Freq2bin::calculate(float freq)
 {
 	if(freq>=0.0 && freq<Freq2bin::sampleRate)
-		return tIDLib_freq2bin(freq, Freq2bin::windowSize, Freq2bin::sampleRate);
+		return tIDLib::freq2bin(freq, Freq2bin::windowSize, Freq2bin::sampleRate);
 	else
         throw std::domain_error("freq2bin: frequency must be between 0 and " + std::to_string(Freq2bin::sampleRate));
 }
@@ -57,4 +59,4 @@ unsigned long int Freq2bin::getSampleRate()
 {
     return Freq2bin::sampleRate;
 }
-
+} // namespace tid
