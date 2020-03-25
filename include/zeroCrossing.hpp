@@ -97,6 +97,14 @@ public:
         return crossings;
     }
 
+    void setWindowSize(uint32 windowSize){
+        this->analysisWindowSize = windowSize;
+    }
+
+    uint32 getWindowSize() const {
+        return this->analysisWindowSize;
+    }
+
 private:
     /* Utilities --------*/
 
