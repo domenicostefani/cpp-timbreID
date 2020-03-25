@@ -38,13 +38,11 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // PREPARE THE MODULE
     zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
-    // PREPARE THE MONO CHANNEL
-    mono.setSize (1, samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()
 {
-    // RESET MODULE
+    // RESET THE MODULE
     zeroCrossing.reset();
 }
 
@@ -56,20 +54,15 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // COPY SAMPLES TO A MONO BUFFER
-    mono.copyFrom(0,0,buffer,0,0,buffer.getNumSamples());
-
-    // CREATE AUDIO BLOCK
-    dsp::AudioBlock<float> block (mono);
-
-    // PASS CONTEXT
-    zeroCrossing.store(dsp::ProcessContextReplacing<float>(block));
+    // STORE BUFFER
+    zeroCrossing.store(buffer,0);
 }
 
 /**
  * Utility method
 */
 uint32 DemoProcessor::computeZeroCrossing(){
+    // COMPUTE THE NUMBER OF CROSSING IN THE ANALYSIS BUFFER
     return zeroCrossing.countCrossings();
 }
 

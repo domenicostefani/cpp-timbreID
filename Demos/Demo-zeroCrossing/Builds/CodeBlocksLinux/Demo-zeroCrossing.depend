@@ -8887,7 +8887,7 @@
 
 1585124196 /home/domenico/Develop/cpp-timbreID//include/mel2freq.hpp
 
-1585134640 /home/domenico/Develop/cpp-timbreID//include/zeroCrossing.hpp
+1585158005 /home/domenico/Develop/cpp-timbreID//include/zeroCrossing.hpp
 	"tIDLib.hpp"
 	<vector>
 	<iostream>
@@ -9502,7 +9502,7 @@
 	"AppConfig.h"
 	<juce_audio_basics/juce_audio_basics.cpp>
 
-1585127699 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/JuceLibraryCode/AppConfig.h
+1585158061 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/JuceLibraryCode/AppConfig.h
 
 1583769670 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/JuceLibraryCode/include_juce_audio_devices.cpp
 	"AppConfig.h"
@@ -9625,16 +9625,16 @@
 	"AppConfig.h"
 	<juce_opengl/juce_opengl.cpp>
 
-1585135845 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginEditor.cpp
+1585158498 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginEditor.cpp
 	"PluginProcessor.h"
 	"PluginEditor.h"
 	<iostream>
 
-1585134488 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginProcessor.h
+1585157426 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginProcessor.h
 	<JuceHeader.h>
 	"juce_timbreID.h"
 
-1585127699 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/JuceLibraryCode/JuceHeader.h
+1585158061 /home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/JuceLibraryCode/JuceHeader.h
 	"AppConfig.h"
 	<juce_audio_basics/juce_audio_basics.h>
 	<juce_audio_devices/juce_audio_devices.h>
@@ -9645,7 +9645,6 @@
 	<juce_core/juce_core.h>
 	<juce_cryptography/juce_cryptography.h>
 	<juce_data_structures/juce_data_structures.h>
-	<juce_dsp/juce_dsp.h>
 	<juce_events/juce_events.h>
 	<juce_graphics/juce_graphics.h>
 	<juce_gui_basics/juce_gui_basics.h>
@@ -9656,7 +9655,7 @@
 	<JuceHeader.h>
 	"PluginProcessor.h"
 
-1585134470 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginProcessor.cpp
+1585157520 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-zeroCrossing/Source/PluginProcessor.cpp
 	"PluginProcessor.h"
 	"PluginEditor.h"
 	<iostream>

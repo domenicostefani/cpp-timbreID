@@ -62,7 +62,6 @@ public:
     uint32 computeZeroCrossing();
     uint32 getWindowSize();
 private:
-    AudioSampleBuffer mono;
     tid::ZeroCrossing<float> zeroCrossing;
 
     //==============================================================================

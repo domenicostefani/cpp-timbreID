@@ -21,7 +21,7 @@
 DemoEditor::DemoEditor (DemoProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
-    setSize (450, 200);
+    setSize (300, 200);
     // Show Button
     addAndMakeVisible(computeButton);
     computeButton.setButtonText("Compute zero crossings");
@@ -56,10 +56,10 @@ void DemoEditor::resized()
     Rectangle<int> usable = area.reduced(10);
 
     Rectangle<int> bottom = usable.removeFromBottom(usable.getHeight()*0.5);
-    Rectangle<int> top = usable;
+    Rectangle<int> top = usable.removeFromBottom(usable.getHeight()*0.8);
 
     computeButton.setBounds(bottom.reduced(10));
-    dataLabel.setBounds(top.removeFromLeft(top.getWidth()*0.35));
+    dataLabel.setBounds(top.removeFromLeft(top.getWidth()*0.5));
     resLabel.setBounds(top);
 }
 
