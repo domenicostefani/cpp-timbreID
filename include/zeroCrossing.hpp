@@ -65,15 +65,15 @@ public:
         this->lastStoreTime = juce::Time::currentTimeMillis();
     }
 
-    //==============================================================================
-    template <typename ProcessContext>
-    void store (const ProcessContext& context) noexcept
+    template <typename OtherSampleType>
+    void store (AudioBuffer<OtherSampleType>& buffer, short channel) noexcept
     {
-        static_assert (std::is_same<typename ProcessContext::SampleType, SampleType>::value,
+        static_assert (std::is_same<OtherSampleType, SampleType>::value,
                        "The sample-type of the zeroCrossing module must match the sample-type supplied to this store callback");
-
-        storeInternal<ProcessContext> (context);
+        jassert(channel < buffer.getNumChannels()); // TODO: turn into exception throwing (assert works only in debug)
+        storeBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
+    //==============================================================================
 
     uint32 countCrossings(){
         uint32 currentTime = getTimeSince(this->lastStoreTime);
@@ -121,15 +121,10 @@ private:
         analysisBuffer.resize(analysisWindowSize,SampleType{0});
     }
 
-    // TODO: may remove
-    void bypassBlock (const SampleType* input, SampleType* output, size_t n) noexcept
-    {
-        for (size_t i = 0 ; i < n; ++i)
-            output[i] = input[i];
-    }
-
     void storeBlock (const SampleType* input, size_t n) noexcept
     {
+        jassert(n ==  this->blockSize);
+
         // shift signal buffer contents N positions back
     	for(uint64 i=0; i<analysisWindowSize; ++i)
     		signalBuffer[i] = signalBuffer[i+n];
@@ -139,29 +134,6 @@ private:
     		signalBuffer[analysisWindowSize+i] = input[i];
 
         this->lastStoreTime = juce::Time::currentTimeMillis();
-    }
-
-    template <typename ProcessContext>
-    void storeInternal (const ProcessContext& context) noexcept
-    {
-        auto&& inputBlock  = context.getInputBlock();
-        auto&& outputBlock = context.getOutputBlock();
-
-        // This class can only process mono signals. Use the ProcessorDuplicator class
-        // to apply this filter on a multi-channel audio stream.
-        jassert (inputBlock.getNumChannels()  == 1);
-        jassert (outputBlock.getNumChannels() == 1);
-
-        auto n = inputBlock.getNumSamples();
-        jassert(n ==  this->blockSize);
-        auto* src = inputBlock .getChannelPointer (0);
-        auto* dst = outputBlock.getChannelPointer (0);
-
-        // Copy the current input to the output since the block does not modify it
-        bypassBlock(src,dst,n);
-
-        // Store the current block in the signal buffer
-        storeBlock(src,n);
     }
 
     //==============================================================================
