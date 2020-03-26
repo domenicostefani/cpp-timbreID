@@ -24,7 +24,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "tIDLib.hpp"
 #include <vector>
-#include <iostream>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -61,7 +60,7 @@ public:
     void reset() noexcept
     {
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
-        std::fill(analysisBuffer.begin(), analysisBuffer.end(), SampleType{0});
+        std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
         this->lastStoreTime = juce::Time::currentTimeMillis();
     }
 
@@ -72,16 +71,17 @@ public:
                        "The sample-type of the zeroCrossing module must match the sample-type supplied to this store callback");
 
         short numChannels = buffer.getNumChannels();
+
         jassert(channel < numChannels);
-        jassert(channel > 0);
+        jassert(channel >= 0);
 
         if(channel < 0 || channel >= numChannels)
-            throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
+            throw std::logic_error("Channel index has to be between 0 and " + std::to_string(numChannels-1));
         storeBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
     //==============================================================================
 
-    uint32 countCrossings
+    uint32 countCrossings()
     {
         uint32 currentTime = getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
@@ -93,8 +93,9 @@ public:
         if(bangSample >= this->blockSize)
             bangSample = this->blockSize - 1;
 
+    	// construct analysis window using bangSample as the end of the window
         for(uint64 i = 0, j = bangSample; i < this->analysisWindowSize; ++i, ++j)
-            this->analysisBuffer[i] = this->signalBuffer[j];
+            this->analysisBuffer[i] = (float)this->signalBuffer[j];
 
         uint32 crossings = 0;
 
@@ -148,12 +149,11 @@ private:
 
     //==============================================================================
     double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
-    uint32 blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library
-    int16 overlap = tIDLib::OVERLAPDEFAULT;         // x_overlap field in Original PD library
+    uint32 blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
     uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     std::vector<SampleType> signalBuffer;
-    std::vector<SampleType> analysisBuffer;
+    std::vector<float> analysisBuffer;
 
     uint32 lastStoreTime = juce::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
 
