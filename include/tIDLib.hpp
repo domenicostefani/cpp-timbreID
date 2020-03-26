@@ -9,6 +9,7 @@ constexpr unsigned int BLOCKSIZEDEFAULT = 64;
 constexpr unsigned short int OVERLAPDEFAULT = 1;
 
 constexpr unsigned long int WINDOWSIZEDEFAULT = 1024;
+constexpr unsigned long int MINWINDOWSIZE = 4;
 constexpr unsigned long int  SAMPLERATEDEFAULT = 44100;
 constexpr float MAXBARKS = 26.0;
 constexpr float MAXBARKFREQ = 22855.4;

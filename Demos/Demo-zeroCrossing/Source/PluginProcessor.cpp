@@ -57,7 +57,6 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     // STORE BUFFER
     zeroCrossing.store(buffer,0);
 }
-
 /**
  * Utility method
 */

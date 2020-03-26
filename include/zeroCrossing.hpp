@@ -107,8 +107,13 @@ public:
 
     void setWindowSize(uint32 windowSize)
     {
+        if(windowSize < tIDLib::MINWINDOWSIZE)
+    	{
+    		throw std::invalid_argument("window size must be "+std::to_string(tIDLib::MINWINDOWSIZE)+" or greater");
+    	}
         this->analysisWindowSize = windowSize;
         resizeBuffers();
+        reset();
     }
 
     uint32 getWindowSize() const
