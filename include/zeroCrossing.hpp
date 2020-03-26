@@ -70,12 +70,19 @@ public:
     {
         static_assert (std::is_same<OtherSampleType, SampleType>::value,
                        "The sample-type of the zeroCrossing module must match the sample-type supplied to this store callback");
-        jassert(channel < buffer.getNumChannels()); // TODO: turn into exception throwing (assert works only in debug)
+
+        short numChannels = buffer.getNumChannels();
+        jassert(channel < numChannels);
+        jassert(channel > 0);
+
+        if(channel < 0 || channel >= numChannels)
+            throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
         storeBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
     //==============================================================================
 
-    uint32 countCrossings(){
+    uint32 countCrossings
+    {
         uint32 currentTime = getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
@@ -84,7 +91,7 @@ public:
 
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
         if(bangSample >= this->blockSize)
-            bangSample = this->blockSize - 1;   // TODO: check corner case
+            bangSample = this->blockSize - 1;
 
         for(uint64 i = 0, j = bangSample; i < this->analysisWindowSize; ++i, ++j)
             this->analysisBuffer[i] = this->signalBuffer[j];
@@ -97,11 +104,14 @@ public:
         return crossings;
     }
 
-    void setWindowSize(uint32 windowSize){
+    void setWindowSize(uint32 windowSize)
+    {
         this->analysisWindowSize = windowSize;
+        resizeBuffers();
     }
 
-    uint32 getWindowSize() const {
+    uint32 getWindowSize() const
+    {
         return this->analysisWindowSize;
     }
 
