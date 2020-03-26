@@ -64,7 +64,7 @@ public:
     void reset() noexcept
     {
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
-        std::fill(analysisBuffer.begin(), analysisBuffer.end(), SampleType{0});
+        std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
         this->lastStoreTime = juce::Time::currentTimeMillis();
     }
 
@@ -142,7 +142,7 @@ private:
     void resizeBuffers()
     {
         signalBuffer.resize(analysisWindowSize + blockSize,SampleType{0});
-        analysisBuffer.resize(analysisWindowSize,SampleType{0});
+        analysisBuffer.resize(analysisWindowSize,0.0f);
     }
 
     void storeBlock (const SampleType* input, size_t n) noexcept
@@ -166,7 +166,7 @@ private:
     uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     std::vector<SampleType> signalBuffer;
-    std::vector<SampleType> analysisBuffer;
+    std::vector<float> analysisBuffer;
 
     uint32 lastStoreTime = juce::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
 

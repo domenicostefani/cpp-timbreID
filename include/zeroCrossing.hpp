@@ -133,8 +133,8 @@ private:
 
     void resizeBuffers()
     {
-        signalBuffer.resize(analysisWindowSize + blockSize,SampleType{0});
-        analysisBuffer.resize(analysisWindowSize,SampleType{0});
+        signalBuffer.resize(analysisWindowSize + blockSize, SampleType{0});
+        analysisBuffer.resize(analysisWindowSize, 0.0f);
     }
 
     void storeBlock (const SampleType* input, size_t n) noexcept
