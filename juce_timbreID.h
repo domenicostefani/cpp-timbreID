@@ -20,3 +20,4 @@ TimbreID original library was developed by William Brent
 #include "include/mel2freq.hpp"
 
 #include "include/zeroCrossing.hpp"
+#include "include/peakSample.hpp"
