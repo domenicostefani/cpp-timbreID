@@ -45,12 +45,12 @@ public:
 
     //==============================================================================
     /** Initialization of the module */
-    void prepare (double sampleRate, uint32 argblockSize) noexcept
+    void prepare (double sampleRate, uint32 blockSize) noexcept
     {
-        if((sampleRate != this->sampleRate) || (argblockSize != this->blockSize))
+        if((sampleRate != this->sampleRate) || (blockSize != this->blockSize))
         {
             this->sampleRate = sampleRate;
-            this->blockSize = argblockSize;
+            this->blockSize = blockSize;
             resizeBuffers();
         }
         reset();
