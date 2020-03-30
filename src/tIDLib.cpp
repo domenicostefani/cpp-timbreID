@@ -18,9 +18,11 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #include "tIDLib.hpp"
 
-#include <cmath>
 #include <JuceHeader.h>
+#include <cmath>
 #include <vector>
+#include <cfloat>   // FLT_MAX
+#include <climits>  // ULONG_MAX
 
 namespace tIDLib
 {
@@ -141,6 +143,55 @@ signed char signum(float input)
 /* ---------------- END utility functions ---------------------- */
 
 /* ---------------- dsp utility functions ---------------------- */
+
+void peakSample(std::vector<float> &input, unsigned long int *peakIdx, float *peakVal)
+{
+	*peakVal = -FLT_MAX;
+	*peakIdx = ULONG_MAX;
+
+	for(unsigned long int i = 1; i < input.size(); ++i)
+	{
+		if(fabs(input[i]) > *peakVal)
+		{
+			*peakIdx = i;
+			*peakVal = fabs(input[i]);
+		}
+	}
+}
+
+//TODO: check why sometimes the returned index is greater than the max (Original pd module seems to do that too)
+unsigned long int findAttackStartSamp(std::vector<float> &input, float sampDeltaThresh, unsigned short int numSampsThresh)
+{
+	unsigned long int startSamp = ULONG_MAX;
+
+	unsigned long int i = input.size();
+	while(i--)
+	{
+		if(fabs(input[i]) <= sampDeltaThresh)
+		{
+			unsigned short int sampCount = 1;
+			unsigned long int j = i;
+
+			while(j--)
+			{
+				if(fabs(input[j]) <= sampDeltaThresh)
+				{
+					sampCount++;
+
+					if(sampCount >= numSampsThresh)
+					{
+						startSamp = j;
+						return(startSamp);
+					}
+				}
+				else
+					break;
+			}
+		}
+	}
+
+	return(startSamp);
+}
 
 // this could also return the location of the zero crossing
 unsigned int zeroCrossingRate(const std::vector<float>& buffer)

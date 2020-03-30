@@ -39,8 +39,34 @@ float freq2mel(float freq);
 float mel2freq(float mel);
 /* ---------------- END conversion functions ---------------------- */
 
+/* ---------------- utility functions ---------------------- */
+/* ---------------- END utility functions ---------------------- */
+
+
+/* ---------------- filterbank functions ---------------------- */
+/* ---------------- END filterbank functions ---------------------- */
+
+
+/* ---------------- stat computation functions ---------------------- */
+/* ---------------- END stat computation functions ---------------------- */
+
+
+/* ---------------- windowing buffer functions ---------------------- */
+/* ---------------- END windowing buffer functions ---------------------- */
+
 
 /* ---------------- dsp utility functions ---------------------- */
+
+// t_float tIDLib_ampDB(t_sampIdx n, t_sample *input);
+void peakSample(std::vector<float> &input, unsigned long int *peakIdx, float *peakVal);
+unsigned long int findAttackStartSamp(std::vector<float> &input, float sampDeltaThresh, unsigned short int numSampsThresh);
 unsigned int zeroCrossingRate(const std::vector<float>& buffer);
+// void tIDLib_getPitchBinRanges(t_binIdx *binRanges, t_float thisPitch, t_float loFreq, t_uChar octaveLimit, t_float pitchTolerance, t_sampIdx n, t_float sr);
+// void tIDLib_power(t_binIdx n, void *fftw_out, t_float *powBuf);
+// void tIDLib_mag(t_binIdx n, t_float *input);
+// void tIDLib_normal(t_binIdx n, t_float *input);
+// void tIDLib_normalPeak(t_binIdx n, t_float *input);
+// void tIDLib_log(t_binIdx n, t_float *input);
+/* ---------------- END dsp utility functions ---------------------- */
 
 }
