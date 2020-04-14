@@ -229,7 +229,7 @@ void createFilterbank(const std::vector<float> &filterFreqs,
     for(t_filterIdx i=0; i<newNumFilters; ++i)
     {
         // initialize indices
-        for(char j = 0; j < 2; ++j)
+        for(unsigned char j = 0; j < 2; ++j)
             filterbank[i].indices[j] = 0;
 
         // initialize filterbank sizes
