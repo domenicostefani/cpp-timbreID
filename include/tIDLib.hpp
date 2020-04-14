@@ -1,13 +1,22 @@
 #pragma once
 
 #include <vector>
+#include "fftw3.h"
+
+typedef unsigned long int t_binIdx; // 0 to 18,446,744,073,709,551,615
+typedef unsigned short int t_filterIdx;
+
+#define TIDVERSION "0.8.2C"
+
+// choose either FFTW_MEASURE or FFTW_ESTIMATE here.
+#define FFTWPLANNERFLAG FFTW_ESTIMATE
 
 namespace tIDLib
 {
-
 constexpr unsigned int BLOCKSIZEDEFAULT = 64;
-constexpr unsigned short int OVERLAPDEFAULT = 1;
-
+constexpr float MINBARKSPACING = 0.1;
+constexpr float MAXBARKSPACING = 6.0;
+constexpr float BARKSPACINGDEFAULT = 0.5;
 constexpr unsigned long int WINDOWSIZEDEFAULT = 1024;
 constexpr unsigned long int MINWINDOWSIZE = 4;
 constexpr unsigned long int  SAMPLERATEDEFAULT = 44100;
@@ -15,6 +24,7 @@ constexpr float MAXBARKS = 26.0;
 constexpr float MAXBARKFREQ = 22855.4;
 constexpr float MAXMELFREQ = 22843.6;
 constexpr float MAXMELS = 3962.0;
+constexpr int NUMWEIGHTPOINTS = 29;
 
 enum t_bark2freqFormula
 {
@@ -30,6 +40,23 @@ enum t_freq2barkFormula
 	freq2barkFormula2
 };
 
+enum WindowFunctionType
+{
+    rectangular = 0,
+    blackman,
+    cosine,
+    hamming,
+    hann
+};
+
+typedef struct filter
+{
+	std::vector<float> filter;
+	t_binIdx size;
+	t_binIdx indices[2];
+	float filterFreqs[2];
+} t_filter;
+
 /* ---------------- conversion functions ---------------------- */
 float freq2bin(float freq, float n, float sr);
 float bin2freq(float bin, float n, float sr);
@@ -40,10 +67,19 @@ float mel2freq(float mel);
 /* ---------------- END conversion functions ---------------------- */
 
 /* ---------------- utility functions ---------------------- */
+void linspace(std::vector<float> &ramp, float start, float finish);
+signed char signum(float input);
 /* ---------------- END utility functions ---------------------- */
 
 
 /* ---------------- filterbank functions ---------------------- */
+t_binIdx nearestBinIndex(float target, const float *binFreqs, t_binIdx n);
+t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
+// t_filterIdx tIDLib_getMelBoundFreqs(float **filterFreqs, t_filterIdx oldSizeFilterFreqs, float spacing, float sr);
+void createFilterbank(const std::vector<float> &filterFreqs, std::vector<t_filter> &filterbank, t_filterIdx newNumFilters, float window, float sr);
+void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const std::vector<t_filter> &filterbank, bool normalize);
+void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const std::vector<t_filter> &filterbank, t_filterIdx numFilters);
+// void tIDLib_cosineTransform(float *output, t_sample *input, t_filterIdx numFilters);
 /* ---------------- END filterbank functions ---------------------- */
 
 
@@ -52,21 +88,25 @@ float mel2freq(float mel);
 
 
 /* ---------------- windowing buffer functions ---------------------- */
+void initBlackmanWindow(std::vector<float> &window);
+void initCosineWindow(std::vector<float> &window);
+void initHammingWindow(std::vector<float> &window);
+void initHannWindow(std::vector<float> &window);
 /* ---------------- END windowing buffer functions ---------------------- */
 
 
 /* ---------------- dsp utility functions ---------------------- */
 
-// t_float tIDLib_ampDB(t_sampIdx n, t_sample *input);
+// float tIDLib_ampDB(t_sampIdx n, t_sample *input);
 void peakSample(std::vector<float> &input, unsigned long int *peakIdx, float *peakVal);
 unsigned long int findAttackStartSamp(std::vector<float> &input, float sampDeltaThresh, unsigned short int numSampsThresh);
 unsigned int zeroCrossingRate(const std::vector<float>& buffer);
-// void tIDLib_getPitchBinRanges(t_binIdx *binRanges, t_float thisPitch, t_float loFreq, t_uChar octaveLimit, t_float pitchTolerance, t_sampIdx n, t_float sr);
-// void tIDLib_power(t_binIdx n, void *fftw_out, t_float *powBuf);
-// void tIDLib_mag(t_binIdx n, t_float *input);
-// void tIDLib_normal(t_binIdx n, t_float *input);
-// void tIDLib_normalPeak(t_binIdx n, t_float *input);
-// void tIDLib_log(t_binIdx n, t_float *input);
+// void tIDLib_getPitchBinRanges(t_binIdx *binRanges, float thisPitch, float loFreq, t_uChar octaveLimit, float pitchTolerance, t_sampIdx n, float sr);
+void power(t_binIdx n, void *fftw_out, float *powBuf);
+void mag(t_binIdx n, float *input);
+// void tIDLib_normal(t_binIdx n, float *input);
+// void tIDLib_normalPeak(t_binIdx n, float *input);
+// void tIDLib_log(t_binIdx n, float *input);
 /* ---------------- END dsp utility functions ---------------------- */
 
 }
