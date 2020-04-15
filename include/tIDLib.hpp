@@ -57,6 +57,34 @@ typedef struct filter
 	float filterFreqs[2];
 } t_filter;
 
+/**
+ *  State of the triangular filters (enabled or disabled)
+*/
+enum FilterState
+{
+    filterEnabled = 0,    // Using triangular filterbank.
+    filterDisabled        // Averaging energy in spectrum bands.
+};
+
+/**
+ * Type of operation performed between the energies of each filter
+ * (Sum or sample mean)
+*/
+enum FilterOperation
+{
+    sumFilterEnergy = 0,
+    averageFilterEnergy
+};
+
+/**
+ * Spectrum type used (power spectrum or magnitude spectrum)
+*/
+enum SpectrumType
+{
+    powerSpectrum = 0,      //Power should be the default
+    magnitudeSpectrum
+};
+
 /* ---------------- conversion functions ---------------------- */
 float freq2bin(float freq, float n, float sr);
 float bin2freq(float bin, float n, float sr);

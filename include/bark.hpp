@@ -1,6 +1,14 @@
 /*
 
-bark~
+bark - Bridge-header between Juce and the TimbreID bark~ module
+- Originally part of timbreID (Pd library module) by William Brent
+- Ported for JUCE usage by Domenico Stefani, 14th April 2020
+  (domenico.stefani96@gmail.com)
+
+Porting from bark~.c:
+ -> https://github.com/wbrent/timbreID/blob/master/src/bark~.c/
+
+**** Original LICENCE disclaimer ahead ****
 
 Copyright 2010 William Brent
 
@@ -8,9 +16,9 @@ bark~ is free software: you can redistribute it and/or modify it under the terms
 
 bark~ is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
 #pragma once
 
 #include "tIDLib.hpp"
@@ -220,7 +228,6 @@ public:
         this->loThresh = (this->loThresh < 0) ? -1 : this->loThresh;
     }
 
-
     std::pair<float,float> getThresh() const
     {
         return std::make_pair(this->loThresh,this->hiThresh );
@@ -244,15 +251,6 @@ public:
     }
 
     /**
-     *  State of the triangular filters (enabled or disabled)
-    */
-    enum FilterState
-    {
-        filterEnabled = 0,    // Using triangular filterbank.
-        filterDisabled        // Averaging energy in spectrum bands.
-    };
-
-    /**
      * Set the state of the filter
      * Set whether the triangular Bark spaced filters are used (filterEnabled)
      * OR energy is averaged in the in the unfiltered bins(filterDisabled).
@@ -261,20 +259,10 @@ public:
      * (From wbrent tIDLib bark~.pd help example)
      * @param state filter state to set
     */
-    void setFiltering(FilterState state)
+    void setFiltering(tIDLib::FilterState state)
     {
         this->filterState = state;
     }
-
-    /**
-     * Type of operation performed between the energies of each filter
-     * (Sum or sample mean)
-    */
-    enum FilterOperation
-    {
-        sumFilterEnergy = 0,
-        averageFilterEnergy
-    };
 
     /**
      * Set the operation to perform on the energy in each filter
@@ -284,7 +272,7 @@ public:
      * (From wbrent tIDLib bark~.pd help example)
      * @param operationType type of operation selected
     */
-    void setFilterOperation(FilterOperation operationType)
+    void setFilterOperation(tIDLib::FilterOperation operationType)
     {
        this->filterOperation = operationType;
     }
@@ -466,20 +454,11 @@ public:
     }
 
     /**
-     * Spectrum type used (power spectrum or magnitude spectrum)
-    */
-    enum SpectrumType
-    {
-        powerSpectrum = 0,      //Power should be the default
-        magnitudeSpectrum
-    };
-
-    /**
      * Set the spectrum type used
      * Set whether the power spectrum or the magnitude spectrum is used
      * @param spec spectrum type
     */
-    void setSpectrumType(SpectrumType spec)
+    void setSpectrumType(tIDLib::SpectrumType spec)
     {
         this->spectrumTypeUsed = spec;
         createLoudnessWeighting();
@@ -588,7 +567,7 @@ private:
     unsigned long int hop = tIDLib::WINDOWSIZEDEFAULT*0.25;
 
     bool normalize = false;
-    SpectrumType spectrumTypeUsed = SpectrumType::powerSpectrum;
+    tIDLib::SpectrumType spectrumTypeUsed = tIDLib::SpectrumType::powerSpectrum;
     bool useWeights = false;
     tIDLib::WindowFunctionType windowFunction = tIDLib::WindowFunctionType::blackman;
 
@@ -597,8 +576,8 @@ private:
     t_filterIdx sizeFilterFreqs;
     std::vector<float> filterFreqs;
     std::vector<tIDLib::t_filter> filterbank;
-    FilterState filterState = FilterState::filterEnabled;
-    FilterOperation filterOperation = FilterOperation::sumFilterEnergy;        //triangular filter operation type (sum or avg)
+    tIDLib::FilterState filterState = tIDLib::FilterState::filterEnabled;
+    tIDLib::FilterOperation filterOperation = tIDLib::FilterOperation::sumFilterEnergy;        //triangular filter operation type (sum or avg)
     std::vector<float> loudWeights;
 
     unsigned int measureTicks = UINT_MAX;
@@ -639,11 +618,6 @@ private:
     std::unique_ptr<FileLogger> measureLogger;
 
     /* Utility functions -----------------------------------------------------*/
-
-    uint32 getTimeSince(uint32 lastTime) const
-    {
-        return (juce::Time::currentTimeMillis() - lastTime);
-    }
 
     void createLoudnessWeighting()
     {
@@ -690,10 +664,10 @@ private:
 
             switch(this->spectrumTypeUsed)
             {
-                case powerSpectrum:
+                case tIDLib::SpectrumType::powerSpectrum:
                     this->loudWeights[i] = powf(10.0, dBint*0.1);
                     break;
-                case magnitudeSpectrum:
+                case tIDLib::SpectrumType::magnitudeSpectrum:
                     this->loudWeights[i] = powf(10.0, dBint*0.05);
                     break;
                 default:
@@ -827,7 +801,7 @@ private:
             if(this->windowFunction != tIDLib::WindowFunctionType::rectangular)
             {
                 for(unsigned long int i=0; i<window; ++i)
-                    this->fftwIn[i] = this->signalBuffer[i] * (*windowFuncPtr)[i];
+                    this->fftwIn[i] = this->signalBuffer[i] * windowFuncPtr->at(i);
             }
             else
             {
@@ -840,15 +814,15 @@ private:
             // put the result of power calc back in fftwIn
             tIDLib::power(windowHalf+1, this->fftwOut, this->fftwIn);
 
-            if(this->spectrumTypeUsed == magnitudeSpectrum)
+            if(this->spectrumTypeUsed == tIDLib::SpectrumType::magnitudeSpectrum)
                 tIDLib::mag(windowHalf+1, this->fftwIn);
 
             switch(this->filterState)
             {
-                case FilterState::filterDisabled:
+                case tIDLib::FilterState::filterDisabled:
                     tIDLib::specFilterBands(windowHalf+1, this->numFilters, this->fftwIn, this->filterbank, this->normalize);
                     break;
-                case FilterState::filterEnabled:
+                case tIDLib::FilterState::filterEnabled:
                     tIDLib::filterbankMultiply(this->fftwIn, this->normalize, this->filterOperation, this->filterbank, this->numFilters);
                     break;
                 default:
