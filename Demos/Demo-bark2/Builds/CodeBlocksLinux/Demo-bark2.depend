@@ -8833,17 +8833,19 @@
 	"PluginEditor.h"
 	<iostream>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//juce_timbreID.h
+1586961446 /home/domenico/Develop/cpp-timbreID//juce_timbreID.h
 	<juce_core/juce_core.h>
+	"include/tidTime.hpp"
+	"include/tIDLib.hpp"
 	"include/bark2freq.hpp"
 	"include/freq2bark.hpp"
 	"include/freq2mel.hpp"
-	"include/tIDLib.hpp"
 	"include/bin2freq.hpp"
 	"include/freq2bin.hpp"
 	"include/mel2freq.hpp"
 	"include/attackTime.hpp"
 	"include/bark.hpp"
+	"include/barkSpecBrightness.hpp"
 	"include/peakSample.hpp"
 	"include/zeroCrossing.hpp"
 
@@ -8853,7 +8855,7 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID//include/freq2mel.hpp
 
-1586935412 /home/domenico/Develop/cpp-timbreID//include/tIDLib.hpp
+1586959661 /home/domenico/Develop/cpp-timbreID//include/tIDLib.hpp
 	<vector>
 	"fftw3.h"
 
@@ -8863,23 +8865,23 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID//include/mel2freq.hpp
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/attackTime.hpp
+1586961946 /home/domenico/Develop/cpp-timbreID//include/attackTime.hpp
 	"tIDLib.hpp"
 	<vector>
 	<climits>
 
-1586935539 /home/domenico/Develop/cpp-timbreID//include/bark.hpp
+1586938465 /home/domenico/Develop/cpp-timbreID//include/bark.hpp
 	"tIDLib.hpp"
 	"fftw3.h"
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/peakSample.hpp
+1586961946 /home/domenico/Develop/cpp-timbreID//include/peakSample.hpp
 	"tIDLib.hpp"
 	<vector>
 	<cfloat>
 	<climits>
 	<stdexcept>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/zeroCrossing.hpp
+1586961946 /home/domenico/Develop/cpp-timbreID//include/zeroCrossing.hpp
 	"tIDLib.hpp"
 	<vector>
 
@@ -8931,7 +8933,7 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID/include/bark2freq.hpp
 
-1586935412 /home/domenico/Develop/cpp-timbreID/include/tIDLib.hpp
+1586959661 /home/domenico/Develop/cpp-timbreID/include/tIDLib.hpp
 	<vector>
 	"fftw3.h"
 
@@ -8976,7 +8978,7 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID/include/mel2freq.hpp
 
-1586872022 source:/home/domenico/Develop/cpp-timbreID/src/tIDLib.cpp
+1586959330 source:/home/domenico/Develop/cpp-timbreID/src/tIDLib.cpp
 	"tIDLib.hpp"
 	<JuceHeader.h>
 	<cmath>
@@ -9505,4 +9507,14 @@
 
 1586844987 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-bark2/Source/setParamBox.cpp
 	"setParamBox.h"
+
+1586962387 /home/domenico/Develop/cpp-timbreID//include/barkSpecBrightness.hpp
+	"tIDLib.hpp"
+	"fftw3.h"
+
+1586961888 /home/domenico/Develop/cpp-timbreID//include/tidTime.hpp
+
+1586961516 source:/home/domenico/Develop/cpp-timbreID/src/tidTime.cpp
+
+1586961364 /home/domenico/Develop/cpp-timbreID/include/tidTime.hpp
 

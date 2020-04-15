@@ -85,7 +85,7 @@ public:
 
     void compute(unsigned long int* rPeakSampIdx, unsigned long int* rAttackStartIdx, float *rAttackTime)
     {
-        uint32 currentTime = getTimeSince(this->lastStoreTime);
+        uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
 
@@ -206,14 +206,6 @@ public:
     }
 
 private:
-    /* Utilities --------*/
-
-    uint32 getTimeSince(uint32 lastTime) const
-    {
-        return (juce::Time::currentTimeMillis() - lastTime);
-    }
-
-    /* END utilities ----*/
 
     void resizeAnalysisBuffer()
     {

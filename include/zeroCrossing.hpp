@@ -83,7 +83,7 @@ public:
 
     uint32 countCrossings()
     {
-        uint32 currentTime = getTimeSince(this->lastStoreTime);
+        uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
 
@@ -122,14 +122,6 @@ public:
     }
 
 private:
-    /* Utilities --------*/
-
-    uint32 getTimeSince(uint32 lastTime)
-    {
-        return (juce::Time::currentTimeMillis() - lastTime);
-    }
-
-    /* END utilities ----*/
 
     void resizeBuffers()
     {
