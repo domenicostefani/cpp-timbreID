@@ -63,7 +63,7 @@ public:
      * Bark constructor
      * Creates a Bark module specifying additional parameters
      * @param analysisWindowSize size of the analysis window
-     * @param hop filter spacing in Barks
+     * @param hop number of samples are analysed at every period
     */
     Bark(unsigned long int analysisWindowSize, unsigned long int hop)
     {
@@ -173,12 +173,13 @@ public:
 
     /**
      * Stores an audio block into the buffer for onset detection
-     * It stores the audio block provided into a buffer where onsed detection is
+     * It stores the audio block provided into a buffer where onset detection is
      * performed every hop samples.
      *
      * @tparam OtherSampleType type of the sample values in the audio buffer
      * @param buffer audio buffer
      * @param channel index of the channel to use (only mono analysis)
+     * @return growth analysis data
     */
     template <typename OtherSampleType>
     GrowthData store (AudioBuffer<OtherSampleType>& buffer, short channel)
@@ -720,7 +721,7 @@ private:
         this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, this->fftwIn, this->fftwOut, FFTWPLANNERFLAG);
 
         // we're supposed to initialize the input array after we create the plan
-         for(unsigned long int i=0; i<this->analysisWindowSize; ++i)
+        for(unsigned long int i=0; i<this->analysisWindowSize; ++i)
             this->fftwIn[i] = 0.0;
 
         sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);

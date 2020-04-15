@@ -102,6 +102,7 @@ signed char signum(float input);
 
 /* ---------------- filterbank functions ---------------------- */
 t_binIdx nearestBinIndex(float target, const float *binFreqs, t_binIdx n);
+t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_binIdx n);
 t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
 // t_filterIdx tIDLib_getMelBoundFreqs(float **filterFreqs, t_filterIdx oldSizeFilterFreqs, float spacing, float sr);
 void createFilterbank(const std::vector<float> &filterFreqs, std::vector<t_filter> &filterbank, t_filterIdx newNumFilters, float window, float sr);
