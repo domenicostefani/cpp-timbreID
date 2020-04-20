@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="tUJyVo" name="Demo-barkSpecBrightness" projectType="audioplug"
+              jucerVersion="5.4.7" headerPath="../../../../include&#10;../../../../src&#10;../../../../">
+  <MAINGROUP id="xxmOWh" name="Demo-barkSpecBrightness">
+    <GROUP id="{B5406503-3765-7C9B-F3B9-0E4752B76F0F}" name="Source">
+      <FILE id="rHdgEv" name="setParamBox.cpp" compile="1" resource="0" file="Source/setParamBox.cpp"/>
+      <FILE id="oUzrma" name="setParamBox.h" compile="0" resource="0" file="Source/setParamBox.h"/>
+      <GROUP id="{5D03F03E-5305-A832-1CF8-E4D26E9CAA4C}" name="cpp-timbreID">
+        <GROUP id="{4B4A6357-6EB4-1D12-521C-EFC5084EA028}" name="include">
+          <FILE id="qCHIhd" name="attackTime.hpp" compile="0" resource="0" file="../../include/attackTime.hpp"/>
+          <FILE id="yePFUE" name="bark.hpp" compile="0" resource="0" file="../../include/bark.hpp"/>
+          <FILE id="j6TnkK" name="bark2freq.hpp" compile="0" resource="0" file="../../include/bark2freq.hpp"/>
+          <FILE id="d3L8yy" name="barkSpecBrightness.hpp" compile="0" resource="0"
+                file="../../include/barkSpecBrightness.hpp"/>
+          <FILE id="zkYZAg" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
+          <FILE id="ckq7ad" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
+          <FILE id="KobASW" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
+          <FILE id="s5tB9D" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>
+          <FILE id="dIkKu9" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
+          <FILE id="CeUJMj" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
+          <FILE id="I9UEFa" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
+          <FILE id="sgkMXv" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
+          <FILE id="YPEcdE" name="zeroCrossing.hpp" compile="0" resource="0"
+                file="../../include/zeroCrossing.hpp"/>
+        </GROUP>
+        <GROUP id="{F6811F51-3561-4675-C01C-A2A2C58C272F}" name="src">
+          <FILE id="QIQiez" name="bark2freq.cpp" compile="1" resource="0" file="../../src/bark2freq.cpp"/>
+          <FILE id="YlBdmy" name="bin2freq.cpp" compile="1" resource="0" file="../../src/bin2freq.cpp"/>
+          <FILE id="SKnPhp" name="freq2bark.cpp" compile="1" resource="0" file="../../src/freq2bark.cpp"/>
+          <FILE id="cO4Ef6" name="freq2bin.cpp" compile="1" resource="0" file="../../src/freq2bin.cpp"/>
+          <FILE id="vNVK00" name="freq2mel.cpp" compile="1" resource="0" file="../../src/freq2mel.cpp"/>
+          <FILE id="Eo9Qbl" name="mel2freq.cpp" compile="1" resource="0" file="../../src/mel2freq.cpp"/>
+          <FILE id="UFnYjA" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
+        </GROUP>
+        <FILE id="LQBuMp" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
+      </GROUP>
+      <FILE id="OOFJj3" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="lViEXT" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="Fb0NI8" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="kb1xc1" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <EXPORTFORMATS>
+    <CODEBLOCKS_LINUX targetFolder="Builds/CodeBlocksLinux" externalLibraries="/usr/local/lib/libfftw3f.a">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug"/>
+        <CONFIGURATION isDebug="0" name="Release"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </CODEBLOCKS_LINUX>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <LIVE_SETTINGS>
+    <LINUX/>
+  </LIVE_SETTINGS>
+  <JUCEOPTIONS JUCE_VST3_CAN_REPLACE_VST2="0" JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
+</JUCERPROJECT>
