@@ -516,7 +516,6 @@ private:
             this->signalBuffer[i] = 0.0;
 
         this->blackman.resize(this->analysisWindowSize);
-        this->blackman.resize(4096);
         this->cosine.resize(this->analysisWindowSize);
         this->hamming.resize(this->analysisWindowSize);
         this->hann.resize(this->analysisWindowSize);
