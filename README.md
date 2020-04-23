@@ -1,0 +1,94 @@
+Instructions for the programmer, should be removed before release, disregard this file if found
+
++------------------------------------------------------------------------------+
+|                      CODING INSTRUCTIONS AND TODO LISTS                      |
++------------------------------------------------------------------------------+
+
+PROGRESS MADE SO FAR:
++----------------------+-------------------------+-------+------------+--------+
+|        MODULE        |  Most relevant measures | Coded | Demo Coded | Tested |
++----------------------+-------------------------+-------+------------+--------+
+| attackTime~.c ------------------------------------ X ------- X
+| bark~.c ------------------------------------------ X ------- X
+| barkSpecBrightness~.c ---------------------------- X ------- X
+| barkSpec~.c ----------------------- X ------------ X ------- X
+| barkSpecCentroid~.c
+| barkSpecFlatness~.c
+| barkSpecFlux~.c
+| barkSpecIrregularity~.c
+| barkSpecKurtosis~.c
+| barkSpecRolloff~.c
+| barkSpecSkewness~.c
+| barkSpecSlope~.c
+| barkSpecSpread~.c
+| bfcc~.c --------------------------- X ------------ X ------- X
+| cepstrum~.c ----------------------- X ------------ X                          <<< TODO: code the demo
+| cepstrumPitch~.c
+| chroma~.c
+| dct~.c
+| magSpec~.c
+| maxSample~.c
+| maxSampleDelta~.c
+| melSpec~.c
+| mfcc~.c --------------------------- X ------------ X                          <<< TODO: code the demo
+| minSample~.c
+| minSampleDelta~.c
+| peakSample~.c  ----------------------------------- X ------- X
+| phaseSpec~.c
+| sampleBuffer~.c
+| specBrightness~.c
+| specCentroid~.c
+| specFlatness~.c
+| specFlux~.c
+| specHarmonicity~.c
+| specIrregularity~.c
+| specKurtosis~.c
+| specRolloff~.c
+| specSkewness~.c
+| specSlope~.c
+| specSpread~.c
+| tempo~.c
+| tID_fft~.c
+| waveDirChange~.c
+| waveSlope~.c
+| zeroCrossing~.c ---------------------------------- X ------- X
++----------------------+-------------------------+-------+------------+--------+
+
+
+INSTRUCTIONS:
+
++------------------------------------------------------------------------------+
+| INSTRUCTIONS FOR MODULE PORTING (TODO LIST):                                 |
++------------------------------------------------------------------------------+
+ - Replace HARD tabs with SOFT tabs
+ - Copy licence disclaimer
+ - Correct DATE and module NAME in licence disclaimer
+ - Create constuctors
+ - Copy move constuctor + destructor
+ - Copy Prepare & Reset methods
+ - Copy substitutions for filterAvg, specBand, powerSpectrum ***
+ - Comment every method in Doxygen style
+ - Add tIDLib namespace in front of constants
+ - look for unsolved TODOs
+
++------------------------------------------------------------------------------+
+| INSTRUCTIONS FOR REPLACEMENT OF OLD BOOL FLAGS                               |
++------------------------------------------------------------------------------+
+    filterAvg       -->         is replaced by       -->        filterOperation
+        (false) --> (tIDLib::FilterOperation::sumFilterEnergy)
+        (true)  --> (tIDLib::FilterOperation::averageFilterEnergy)
+
+    specBandAvg     -->         is replaced by       -->        filterState
+        (false) --> (tIDLib::FilterState::filterEnabled)
+        (true)  --> (tIDLib::FilterState::filterDisabled)
+
+    powerSpectrum   -->         is replaced by       -->        spectrumTypeUsed
+        (false) --> (tIDLib::SpectrumType::magnitudeSpectrum)
+        (true)  --> (tIDLib::SpectrumType::powerSpectrum)
+
+
++------------------------------------------------------------------------------+
+| TODO: (Technical Debt)                                                       |
++------------------------------------------------------------------------------+
+ - Some modules have the perform() function and some other storeAudioBlock,
+   choose one name
