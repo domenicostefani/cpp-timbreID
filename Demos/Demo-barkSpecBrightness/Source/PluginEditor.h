@@ -3,7 +3,7 @@
 
   Plugin Editor
 
-  DEMO PROJECT - TimbreID - bark Module
+  DEMO PROJECT - TimbreID - barkSpecBrightness Module
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
   Date: 15th April 2020

@@ -6,7 +6,7 @@
   DEMO PROJECT - TimbreID - barkSpec Module
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
-  Date: 25th March 2020
+  Date: 23rd April 2020
 
   ==============================================================================
 */
