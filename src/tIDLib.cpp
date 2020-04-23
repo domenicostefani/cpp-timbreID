@@ -258,9 +258,9 @@ void createFilterbank(const std::vector<float> &filterFreqs,
             peakIdx = nearestBinIndex(filterFreqs[ffi], binFreqs, windowHalfPlus1);
             finishIdx = nearestBinIndex(filterFreqs[ffi+1], binFreqs, windowHalfPlus1);
 
-            jassert(startIdx<finishIdx);
-            jassert(peakIdx<finishIdx);
-            jassert(startIdx<peakIdx);
+            jassert(startIdx<=finishIdx);   //TODO Remove the equal if it's bad
+            jassert(peakIdx<=finishIdx);
+            jassert(startIdx<=peakIdx);
 
             // resize this filter
             t_binIdx filterWidth = finishIdx-startIdx + 1;
