@@ -210,7 +210,7 @@ public:
         uint32 bangSample = roundf((currentTime/1000.0)*this->sampleRate);
 
         if(bangSample >= this->blockSize)
-            bangSample = this->blockSize-1;
+            bangSample = this->blockSize - 1;
 
         // construct analysis window using bangSample as the end of the window
         for(unsigned long int i=0, j=bangSample; i<this->analysisWindowSize; ++i, ++j)
@@ -383,7 +383,6 @@ public:
         tIDLib::initHammingWindow(this->hamming);
         tIDLib::initHannWindow(this->hann);
 
-        // numFilters doesn't change with a change to analysisWindowSize, so oldNumFilters and newNumFilters arguments are the same
         tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
     }
 
@@ -491,7 +490,6 @@ public:
     }
 
 private:
-    /* ------------------------ barkSpecBrightness~ -------------------------------- */
 
     /**
      * Initialize the parameters of the module.
