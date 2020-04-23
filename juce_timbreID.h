@@ -23,6 +23,7 @@ TimbreID original library was developed by William Brent
 
 #include "include/attackTime.hpp"
 #include "include/bark.hpp"
+#include "include/barkSpec.hpp"
 #include "include/barkSpecBrightness.hpp"
 #include "include/peakSample.hpp"
 #include "include/zeroCrossing.hpp"
