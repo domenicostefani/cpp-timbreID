@@ -12,12 +12,19 @@ typedef unsigned short int t_filterIdx;
 // choose either FFTW_MEASURE or FFTW_ESTIMATE here.
 #define FFTWPLANNERFLAG FFTW_ESTIMATE
 
+#ifndef M_PI
+#define M_PI 3.1415926535897932384626433832795
+#endif
+
 namespace tIDLib
 {
 constexpr unsigned int BLOCKSIZEDEFAULT = 64;
 constexpr float MINBARKSPACING = 0.1;
 constexpr float MAXBARKSPACING = 6.0;
 constexpr float BARKSPACINGDEFAULT = 0.5;
+constexpr float MINMELSPACING = 5.0;
+constexpr float MAXMELSPACING = 1000.0;
+constexpr float MELSPACINGDEFAULT = 100.0;
 constexpr unsigned long int WINDOWSIZEDEFAULT = 1024;
 constexpr unsigned long int MINWINDOWSIZE = 4;
 constexpr unsigned long int  SAMPLERATEDEFAULT = 44100;
@@ -115,7 +122,7 @@ signed char signum(float input);
 t_binIdx nearestBinIndex(float target, const float *binFreqs, t_binIdx n);
 t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_binIdx n);
 t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
-// t_filterIdx tIDLib_getMelBoundFreqs(float **filterFreqs, t_filterIdx oldSizeFilterFreqs, float spacing, float sr);
+t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
 void createFilterbank(const std::vector<float> &filterFreqs, std::vector<t_filter> &filterbank, t_filterIdx newNumFilters, float window, float sr);
 void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const std::vector<t_filter> &filterbank, bool normalize);
 void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const std::vector<t_filter> &filterbank, t_filterIdx numFilters);

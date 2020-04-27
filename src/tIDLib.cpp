@@ -212,6 +212,37 @@ t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, fl
 }
 
 
+t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr)
+{
+	if(spacing < 5 || spacing > 1000)
+	   throw std::invalid_argument("Mel spacing must be between 5 and 1000 mels");
+
+	float sumMel = 0.0;
+	t_filterIdx sizeFilterFreqs = 0;
+
+	while( (mel2freq(sumMel)<=(sr*0.5)) && (sumMel<=MAXMELS) )
+	{
+		sizeFilterFreqs++;
+		sumMel += spacing;
+	}
+
+    filterFreqs.resize(sizeFilterFreqs);
+
+	// First filter boundary should be at 0Hz
+	filterFreqs[0] = 0.0;
+
+	// reset the running Bark sum to the first increment past 0 mels
+	sumMel = spacing;
+
+	// fill up filterFreqs with the Hz values of all mel range boundaries
+	for(t_filterIdx i=1; i<sizeFilterFreqs; ++i)
+	{
+		filterFreqs[i] = mel2freq(sumMel);
+		sumMel += spacing;
+	}
+
+	return(sizeFilterFreqs);
+}
 
 void createFilterbank(const std::vector<float> &filterFreqs,
                     std::vector<t_filter> &filterbank, t_filterIdx newNumFilters,
