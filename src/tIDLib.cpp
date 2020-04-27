@@ -495,6 +495,26 @@ void mag(t_binIdx n, float *input)
     }
 }
 
+void veclog(t_binIdx n, float *input)  // compute logarithm of array elements
+{
+	while (n--)
+    {
+		// if to protect against log(0)
+    	if(*input==0.0)
+    		*input = 0.0;
+    	else
+	        *input = log(*input);
+
+        input++;
+    };
+}
+
+void veclog(t_binIdx n, std::vector<float> &input)
+{
+    float *inputPtr = &(input[0]);
+    veclog(n,inputPtr);
+}
+
 /* ---------------- END dsp utility functions ---------------------- */
 
 

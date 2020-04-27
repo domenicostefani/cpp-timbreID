@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "fftw3.h"
+#include <cmath>
 
 typedef unsigned long int t_binIdx; // 0 to 18,446,744,073,709,551,615
 typedef unsigned short int t_filterIdx;
@@ -81,8 +82,18 @@ enum FilterOperation
 */
 enum SpectrumType
 {
-    powerSpectrum = 0,      //Power should be the default
+    powerSpectrum = 0,
     magnitudeSpectrum
+};
+
+
+/**
+ * Cepstrum type used (power cepstrum or magnitude cepstrum)
+*/
+enum CepstrumType
+{
+    powerCepstrum = 0,
+    magnitudeCepstrum
 };
 
 /* ---------------- conversion functions ---------------------- */
@@ -135,7 +146,8 @@ void power(t_binIdx n, void *fftw_out, float *powBuf);
 void mag(t_binIdx n, float *input);
 // void tIDLib_normal(t_binIdx n, float *input);
 // void tIDLib_normalPeak(t_binIdx n, float *input);
-// void tIDLib_log(t_binIdx n, float *input);
+void veclog(t_binIdx n, float *input);
+void veclog(t_binIdx n, std::vector<float> &input);
 /* ---------------- END dsp utility functions ---------------------- */
 
 }

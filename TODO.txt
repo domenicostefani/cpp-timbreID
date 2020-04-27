@@ -22,7 +22,7 @@ PROGRESS MADE SO FAR:
 | barkSpecSlope~.c
 | barkSpecSpread~.c
 | bfcc~.c --------------------------- X ------------ X ------- X
-| cepstrum~.c ----------------------- X ------------ X                          <<< TODO: code the demo
+| cepstrum~.c ----------------------- X ------------ X ------- X
 | cepstrumPitch~.c
 | chroma~.c
 | dct~.c
