@@ -121,26 +121,36 @@ public:
     */
     void createFilterbank(float melSpacing)
     {
-        if(this->melSpacing < tIDLib::MINMELSPACING || this->melSpacing > tIDLib::MAXMELSPACING)
+        if(melSpacing < tIDLib::MINMELSPACING || melSpacing > tIDLib::MAXMELSPACING)
             throw std::invalid_argument("Mel spacing must be between "+std::to_string(tIDLib::MINMELSPACING)+" and "+std::to_string(tIDLib::MAXMELSPACING)+" mels");
-        this->melSpacing = melSpacing;
 
-        this->sizeFilterFreqs = tIDLib::getMelBoundFreqs(this->filterFreqs, this->melSpacing, this->sampleRate);
-        jassert(sizeFilterFreqs == this->filterFreqs.size());
+        // temporary copies created to ensure strong exc safety when tIDLib::createFilterbank throws
+        float temp_melSpacing = melSpacing;
+        t_filterIdx temp_numFilters = 0;
+        t_filterIdx temp_sizeFilterFreqs;
+        std::vector<float> temp_filterFreqs;
+
+        temp_sizeFilterFreqs = tIDLib::getMelBoundFreqs(temp_filterFreqs, temp_melSpacing, this->sampleRate);
+        jassert(temp_sizeFilterFreqs == temp_filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
-        this->numFilters = this->sizeFilterFreqs-2;
-
-        tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
+        temp_numFilters = temp_sizeFilterFreqs-2;
+        // critical call, it can throw std::logic_error
+        tIDLib::createFilterbank(temp_filterFreqs, this->filterbank, temp_numFilters, this->analysisWindowSize, this->sampleRate);
+        // copy back temporary objects if tIDLib::createFilterbank did not throw
+        this->melSpacing = temp_melSpacing;
+        this->numFilters = temp_numFilters;
+        this->sizeFilterFreqs = temp_sizeFilterFreqs;
+        std::swap(this->filterFreqs,temp_filterFreqs);
+        jassert(this->sizeFilterFreqs == this->filterFreqs.size()); //TODO:move
 
         this->mfccVector.resize(this->numFilters);
-
         // destroy old DCT plan, which depended on this->numFilters
         fftwf_destroy_plan(this->fftwDctPlan);
 
         // create a new DCT plan
-        float* fftwIn = &(fftwInputVector[0]);
-        float* mfcc = &(mfccVector[0]);
+        float* fftwIn = &(this->fftwInputVector[0]);
+        float* mfcc = &(this->mfccVector[0]);
         this->fftwDctPlan = fftwf_plan_r2r_1d(this->numFilters, fftwIn, mfcc, FFTW_REDFT10, FFTWPLANNERFLAG);
 
         // resize listOut memory
@@ -309,6 +319,9 @@ public:
     {
         if (windowSize < tIDLib::MINWINDOWSIZE)
             throw std::invalid_argument("Window size must be "+std::to_string(tIDLib::MINWINDOWSIZE)+" or greater");
+
+        tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, windowSize, this->sampleRate);
+
         this->analysisWindowSize = windowSize;
 
         this->signalBuffer.resize(this->analysisWindowSize + this->blockSize);
@@ -352,8 +365,6 @@ public:
         tIDLib::initCosineWindow(this->cosine);
         tIDLib::initHammingWindow(this->hamming);
         tIDLib::initHannWindow(this->hann);
-
-        tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
     }
 
     /**

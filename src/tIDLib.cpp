@@ -251,6 +251,9 @@ void createFilterbank(const std::vector<float> &filterFreqs,
     t_binIdx windowHalf = window*0.5;
     t_binIdx windowHalfPlus1 = windowHalf+1;
 
+    if(newNumFilters >= windowHalfPlus1)
+        throw std::logic_error("Current filterbank is invalid. For window size N, filterbank size must be less than N/2+1. Change filter spacing or window size accordingly.");
+
     // create local memory
     std::vector<float> binFreqs(windowHalfPlus1);
 
@@ -271,92 +274,84 @@ void createFilterbank(const std::vector<float> &filterFreqs,
     for(t_binIdx bfi = 0; bfi < windowHalfPlus1; ++bfi)
         binFreqs[bfi] = bin2freq(bfi, window, sr);
 
+    // finally, build the filterbank
+    for(t_filterIdx ffi = 1; ffi <= newNumFilters; ++ffi)
+    {
+        t_binIdx startIdx, peakIdx, finishIdx;
 
-    if(newNumFilters >= windowHalfPlus1)
-    {
-        throw std::logic_error("Current filterbank is invalid. For window size N, filterbank size must be less than N/2+1. Change filter spacing or window size accordingly.");
-    }
-    else
-    {
-        // finally, build the filterbank
-        for(t_filterIdx ffi = 1; ffi <= newNumFilters; ++ffi)
+        startIdx = peakIdx = finishIdx = 0;
+
+        startIdx = nearestBinIndex(filterFreqs[ffi-1], binFreqs, windowHalfPlus1);
+        peakIdx = nearestBinIndex(filterFreqs[ffi], binFreqs, windowHalfPlus1);
+        finishIdx = nearestBinIndex(filterFreqs[ffi+1], binFreqs, windowHalfPlus1);
+
+        jassert(startIdx<=finishIdx);
+        jassert(peakIdx<=finishIdx);
+        jassert(startIdx<=peakIdx);
+
+        // resize this filter
+        t_binIdx filterWidth = finishIdx-startIdx + 1;
+        filterWidth = (filterWidth<1)?1:filterWidth;
+
+        filterbank[ffi-1].size = filterWidth; // store the sizes for freeing memory later
+        filterbank[ffi-1].filter.resize(filterWidth);
+
+        // initialize this filter
+        for(t_binIdx j = 0; j < filterWidth; ++j)
+            filterbank[ffi-1].filter[j] = 0.0;
+
+        // some special cases for very narrow filter widths
+        switch(filterWidth)
         {
-            t_binIdx startIdx, peakIdx, finishIdx;
+            case 1:
+                filterbank[ffi-1].filter[0] = 1.0;
+                break;
+            // original wbrent comment:
+            // no great way to do a triangle with a filter width of 2, so might as well average
+            case 2:
+                filterbank[ffi-1].filter[0] = 0.5;
+                filterbank[ffi-1].filter[1] = 0.5;
+                break;
 
-            startIdx = peakIdx = finishIdx = 0;
+            // with 3 and greater, we can use our ramps
+            default:
+                t_binIdx upN = peakIdx-startIdx+1;
+                std::vector<float> upRamp(upN);
+                linspace(upRamp, 0.0, 1.0);
 
-            startIdx = nearestBinIndex(filterFreqs[ffi-1], binFreqs, windowHalfPlus1);
-            peakIdx = nearestBinIndex(filterFreqs[ffi], binFreqs, windowHalfPlus1);
-            finishIdx = nearestBinIndex(filterFreqs[ffi+1], binFreqs, windowHalfPlus1);
+                t_binIdx downN = finishIdx-peakIdx+1;
+                std::vector<float> downRamp(downN);
+                linspace(downRamp, 1.0, 0.0);
 
-            jassert(startIdx<=finishIdx);
-            jassert(peakIdx<=finishIdx);
-            jassert(startIdx<=peakIdx);
+                t_binIdx fj;
+                // copy into filterbank[i-1].filter
+                for(fj = 0; fj < upN; ++fj)
+                    filterbank[ffi-1].filter[fj] = upRamp[fj];
 
-            // resize this filter
-            t_binIdx filterWidth = finishIdx-startIdx + 1;
-            filterWidth = (filterWidth<1)?1:filterWidth;
+                // start at k=1 because k=0 will be the peak (i.e., 1.0)
+                for(t_binIdx k = 1; k < downN; ++fj, ++k)
+                    filterbank[ffi-1].filter[fj] = downRamp[k];
 
-            filterbank[ffi-1].size = filterWidth; // store the sizes for freeing memory later
-            filterbank[ffi-1].filter.resize(filterWidth);
+                // clip the triangle within 0 and 1, just in case
+                for(t_binIdx fj = 0; fj < filterWidth; ++fj)
+                {
+                    if(filterbank[ffi-1].filter[fj] < 0.0)
+                        filterbank[ffi-1].filter[fj] = 0.0;
 
-            // initialize this filter
-            for(t_binIdx j = 0; j < filterWidth; ++j)
-                filterbank[ffi-1].filter[j] = 0.0;
+                    if(filterbank[ffi-1].filter[fj] > 1.0)
+                        filterbank[ffi-1].filter[fj] = 1.0;
+                }
 
-            // some special cases for very narrow filter widths
-            switch(filterWidth)
-            {
-                case 1:
-                    filterbank[ffi-1].filter[0] = 1.0;
-                    break;
-                // original wbrent comment:
-                // no great way to do a triangle with a filter width of 2, so might as well average
-                case 2:
-                    filterbank[ffi-1].filter[0] = 0.5;
-                    filterbank[ffi-1].filter[1] = 0.5;
-                    break;
+                // free up memory (Does this actually )
+                std::vector<float>().swap(upRamp); // Swaps with empty vec
+                std::vector<float>().swap(downRamp); // Swaps with empty vec
+                break;
+        };
 
-                // with 3 and greater, we can use our ramps
-                default:
-                    t_binIdx upN = peakIdx-startIdx+1;
-                    std::vector<float> upRamp(upN);
-                    linspace(upRamp, 0.0, 1.0);
-
-                    t_binIdx downN = finishIdx-peakIdx+1;
-                    std::vector<float> downRamp(downN);
-                    linspace(downRamp, 1.0, 0.0);
-
-                    t_binIdx fj;
-                    // copy into filterbank[i-1].filter
-                    for(fj = 0; fj < upN; ++fj)
-                        filterbank[ffi-1].filter[fj] = upRamp[fj];
-
-                    // start at k=1 because k=0 will be the peak (i.e., 1.0)
-                    for(t_binIdx k = 1; k < downN; ++fj, ++k)
-                        filterbank[ffi-1].filter[fj] = downRamp[k];
-
-                    // clip the triangle within 0 and 1, just in case
-                    for(t_binIdx fj = 0; fj < filterWidth; ++fj)
-                    {
-                        if(filterbank[ffi-1].filter[fj] < 0.0)
-                            filterbank[ffi-1].filter[fj] = 0.0;
-
-                        if(filterbank[ffi-1].filter[fj] > 1.0)
-                            filterbank[ffi-1].filter[fj] = 1.0;
-                    }
-
-                    // free up memory (Does this actually )
-                    std::vector<float>().swap(upRamp); // Swaps with empty vec
-                    std::vector<float>().swap(downRamp); // Swaps with empty vec
-                    break;
-            };
-
-            filterbank[ffi-1].indices[0] = startIdx;
-            filterbank[ffi-1].indices[1] = finishIdx;
-            filterbank[ffi-1].filterFreqs[0] = binFreqs[startIdx];
-            filterbank[ffi-1].filterFreqs[1] = binFreqs[finishIdx];
-        }
+        filterbank[ffi-1].indices[0] = startIdx;
+        filterbank[ffi-1].indices[1] = finishIdx;
+        filterbank[ffi-1].filterFreqs[0] = binFreqs[startIdx];
+        filterbank[ffi-1].filterFreqs[1] = binFreqs[finishIdx];
     }
 
     // free local memory
@@ -365,7 +360,8 @@ void createFilterbank(const std::vector<float> &filterFreqs,
 
 void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const std::vector<t_filter> &filterbank, bool normalize)
 {
-    float smoothedSpec[numFilters], totalEnergy;
+    float totalEnergy;
+    std::vector<float> smoothedSpec(numFilters);
 
     totalEnergy = 0;
 
