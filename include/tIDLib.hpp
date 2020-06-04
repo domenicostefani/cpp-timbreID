@@ -3,9 +3,12 @@
 #include <vector>
 #include "fftw3.h"
 #include <cmath>
+#include <string>
 
 typedef unsigned long int t_binIdx; // 0 to 18,446,744,073,709,551,615
 typedef unsigned short int t_filterIdx;
+typedef unsigned int t_attributeIdx; // gets us over 4 billion attributes. should be plenty indices to instances in database. members of a cluster. non-negative only
+typedef unsigned int t_instanceIdx;
 
 #define TIDVERSION "0.8.2C"
 
@@ -33,6 +36,7 @@ constexpr float MAXBARKFREQ = 22855.4;
 constexpr float MAXMELFREQ = 22843.6;
 constexpr float MAXMELS = 3962.0;
 constexpr int NUMWEIGHTPOINTS = 29;
+constexpr int MAXTIDTEXTSTRING = 100000;
 
 enum t_bark2freqFormula
 {
@@ -103,6 +107,47 @@ enum CepstrumType
     magnitudeCepstrum
 };
 
+
+typedef struct knnInfo
+{
+    float dist;
+	float safeDist;
+    t_instanceIdx idx;
+    t_instanceIdx cluster;
+} t_knnInfo;
+
+typedef struct instance
+{
+    std::vector<float> data;
+    t_attributeIdx length;
+    t_instanceIdx clusterMembership;
+    t_knnInfo knnInfo;
+} t_instance;
+
+typedef struct cluster
+{
+    std::vector<t_instanceIdx> members;
+    t_instanceIdx numMembers;
+    unsigned int votes;
+} t_cluster;
+
+typedef struct normData
+{
+    float max;
+    float min;
+	float normScalar;
+} t_normData;
+
+typedef struct attributeData
+{
+	float inputData;
+	t_normData normData;
+	float weight;
+	t_attributeIdx order;
+	std::string name;
+} t_attributeData;
+
+
 /* ---------------- conversion functions ---------------------- */
 float freq2bin(float freq, float n, float sr);
 float bin2freq(float bin, float n, float sr);
@@ -115,6 +160,10 @@ float mel2freq(float mel);
 /* ---------------- utility functions ---------------------- */
 void linspace(std::vector<float> &ramp, float start, float finish);
 signed char signum(float input);
+float euclidDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights, bool sqroot);
+float taxiDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights);
+float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2);
+void sortKnnInfo(unsigned short int k, t_instanceIdx numInstances, t_instanceIdx prevMatch, std::vector<t_instance> instances);
 /* ---------------- END utility functions ---------------------- */
 
 
@@ -156,5 +205,8 @@ void mag(t_binIdx n, float *input);
 void veclog(t_binIdx n, float *input);
 void veclog(t_binIdx n, std::vector<float> &input);
 /* ---------------- END dsp utility functions ---------------------- */
+
+void logError(std::string logtext);
+void logInfo(std::string logtext);
 
 }

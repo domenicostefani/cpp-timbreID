@@ -30,3 +30,5 @@ TimbreID original library was developed by William Brent
 #include "include/mfcc.hpp"
 #include "include/peakSample.hpp"
 #include "include/zeroCrossing.hpp"
+
+#include "include/knn.hpp"

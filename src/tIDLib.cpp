@@ -148,6 +148,137 @@ signed char signum(float input)
 
     return(sign);
 }
+
+float euclidDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights, bool sqroot)
+{
+    float dist = 0.0;
+
+    for(t_attributeIdx i = 0; i < n; ++i)
+    {
+        float diff = v1[i] - v2[i];
+        dist += diff*diff*weights[i];
+    }
+
+    if(sqroot)
+        dist = sqrt(dist);
+
+    return(dist);
+}
+
+float taxiDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights)
+{
+    float dist = 0.0;
+    for(t_attributeIdx i = 0; i < n; i++)
+        dist += fabs(v1[i] - v2[i]) * weights[i];
+    return(dist);
+}
+
+float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2)
+{
+    float sum1 = 0.0, sum2 = 0.0;
+    for(t_attributeIdx i = 0; i < n; ++i)
+    {
+        sum1 += v1[i];
+        sum2 += v2[i];
+    }
+
+    float mean1 = sum1/n;
+    float mean2 = sum2/n;
+    std::vector<float> v1centered(n);
+    std::vector<float> v2centered(n);
+
+    for(t_attributeIdx i = 0; i < n; ++i)
+    {
+        v1centered[i] = v1[i] - mean1;
+        v2centered[i] = v2[i] - mean2;
+    }
+
+    float std1 = 0.0, std2 = 0.0;
+    for(t_attributeIdx i = 0; i < n; i++)
+    {
+        std1 += v1centered[i]*v1centered[i];
+        std2 += v2centered[i]*v2centered[i];
+    }
+
+    std1 = sqrt(std1/n);
+    std2 = sqrt(std2/n);
+
+    float corr = 0.0;
+    for(t_attributeIdx i = 0; i < n; i++)
+        corr += v1centered[i] * v2centered[i];
+
+    corr /= n;
+    corr = corr / (std1 * std2);
+    return(corr);
+}
+
+void tIDLib_knnInfoBubbleSort(unsigned short int n, std::vector<t_instance>& instances)
+{
+    for(unsigned short int i = 0; i < n; i++)
+    {
+        bool flag = false;
+        for(unsigned short int j = 0; j < (n-1); j++)
+        {
+            if(instances[j].knnInfo.safeDist > instances[j+1].knnInfo.safeDist)
+            {
+                t_knnInfo tmp;
+
+                flag = true;
+
+                tmp = instances[j+1].knnInfo;
+                instances[j+1].knnInfo = instances[j].knnInfo;
+                instances[j].knnInfo = tmp;
+            }
+        }
+
+        if(!flag)
+            break;
+    }
+}
+
+void sortKnnInfo(unsigned short int k, t_instanceIdx numInstances, t_instanceIdx prevMatch, std::vector<t_instance>& instances)
+{
+    std::vector<t_instanceIdx> topMatches(k);
+
+    for(unsigned short int i = 0; i < k; ++i)
+    {
+        float maxBest = FLT_MAX;
+        t_instanceIdx topIdx = 0;
+
+        for(t_instanceIdx j = 0; j < numInstances; ++j)
+        {
+            if(instances[j].knnInfo.dist < maxBest)
+            {
+                if(instances[j].knnInfo.idx != prevMatch) // doesn't include previous match - this is good
+                {
+                    maxBest = instances[j].knnInfo.dist;
+                    topIdx = j;
+                };
+            }
+        }
+
+        instances[topIdx].knnInfo.dist = FLT_MAX;
+
+        topMatches[i] = instances[topIdx].knnInfo.idx;
+    }
+
+    for(unsigned short int i = 0; i < k; ++i)
+    {
+        t_knnInfo tmp;
+
+        tmp = instances[i].knnInfo;
+        instances[i].knnInfo = instances[topMatches[i]].knnInfo;
+        instances[topMatches[i]].knnInfo = tmp;
+    }
+
+    // sort the top K matches, because they have the lowest distances in the whole list, but they're not sorted
+    tIDLib_knnInfoBubbleSort(k, instances);
+
+    // now, the list passed to the function will have the first k elements in order,
+    // and these elements have the lowest distances in the whole list.
+}
+
+
 /* ---------------- END utility functions ---------------------- */
 
 /* ---------------- filterbank functions ---------------------- */
@@ -214,34 +345,34 @@ t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, fl
 
 t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr)
 {
-	if(spacing < 5 || spacing > 1000)
-	   throw std::invalid_argument("Mel spacing must be between 5 and 1000 mels");
+    if(spacing < 5 || spacing > 1000)
+       throw std::invalid_argument("Mel spacing must be between 5 and 1000 mels");
 
-	float sumMel = 0.0;
-	t_filterIdx sizeFilterFreqs = 0;
+    float sumMel = 0.0;
+    t_filterIdx sizeFilterFreqs = 0;
 
-	while( (mel2freq(sumMel)<=(sr*0.5)) && (sumMel<=MAXMELS) )
-	{
-		sizeFilterFreqs++;
-		sumMel += spacing;
-	}
+    while( (mel2freq(sumMel)<=(sr*0.5)) && (sumMel<=MAXMELS) )
+    {
+        sizeFilterFreqs++;
+        sumMel += spacing;
+    }
 
     filterFreqs.resize(sizeFilterFreqs);
 
-	// First filter boundary should be at 0Hz
-	filterFreqs[0] = 0.0;
+    // First filter boundary should be at 0Hz
+    filterFreqs[0] = 0.0;
 
-	// reset the running Bark sum to the first increment past 0 mels
-	sumMel = spacing;
+    // reset the running Bark sum to the first increment past 0 mels
+    sumMel = spacing;
 
-	// fill up filterFreqs with the Hz values of all mel range boundaries
-	for(t_filterIdx i=1; i<sizeFilterFreqs; ++i)
-	{
-		filterFreqs[i] = mel2freq(sumMel);
-		sumMel += spacing;
-	}
+    // fill up filterFreqs with the Hz values of all mel range boundaries
+    for(t_filterIdx i=1; i<sizeFilterFreqs; ++i)
+    {
+        filterFreqs[i] = mel2freq(sumMel);
+        sumMel += spacing;
+    }
 
-	return(sizeFilterFreqs);
+    return(sizeFilterFreqs);
 }
 
 void createFilterbank(const std::vector<float> &filterFreqs,
@@ -524,13 +655,13 @@ void mag(t_binIdx n, float *input)
 
 void veclog(t_binIdx n, float *input)  // compute logarithm of array elements
 {
-	while (n--)
+    while (n--)
     {
-		// if to protect against log(0)
-    	if(*input==0.0)
-    		*input = 0.0;
-    	else
-	        *input = log(*input);
+        // if to protect against log(0)
+        if(*input==0.0)
+            *input = 0.0;
+        else
+            *input = log(*input);
 
         input++;
     };
@@ -576,5 +707,17 @@ void initHannWindow(std::vector<float> &window)
         window[i]  = 0.5 * (1 - cos(2*M_PI*i/n));
 }
 /* ---------------- END windowing buffer functions ---------------------- */
+
+void logError(std::string logtext)
+{
+    //TODO: make it log to file correctly
+    std::cout << logtext << std::endl;
+}
+void logInfo(std::string logtext)
+{
+    //TODO: make it log to file correctly
+    std::cout << logtext << std::endl;
+}
+
 
 }
