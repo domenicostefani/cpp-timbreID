@@ -24,9 +24,12 @@ You should have received a copy of the GNU General Public License along with thi
 #pragma once
 
 #include "tIDLib.hpp"
+#include <tuple>
 
 namespace tid   /* TimbreID namespace*/
 {
+
+using t_prediction = std::tuple<t_instanceIdx,float,float>;
 
 enum class DistanceMetric
 {
@@ -39,7 +42,11 @@ class KNNclassifier
 {
 public:
 
-    KNNclassifier(){ this->initModule(); }
+    KNNclassifier()
+    {
+        this->initModule();
+        Log::setLogPath("/tmp/");
+    }
 
     /* -------- classification methods -------- */
 
@@ -48,7 +55,7 @@ public:
      * ! NOTE: Calling this is equivalent to sending data to the first inlet of
      *         Puredata external
     */
-    void trainModel(const std::vector<float>& input)
+    t_instanceIdx trainModel(const std::vector<float>& input)
     {
         if (this->normalize)
             throw std::logic_error("Cannot add more training instances when database is normalized. deactivate normalization first.");
@@ -88,15 +95,14 @@ public:
         for (t_instanceIdx i = 0; i < this->instances[instanceIdx].length; ++i)
             this->instances[instanceIdx].data[i] = (float)input[i];
 
-        //TODO: handle outlet
-        // outlefloat(this->id_outlet, instanceIdx);
+        return instanceIdx;
     }
 
     /**
      * Classify a single sample (one feature vector)
      * Equivalent to sending data to the second inlet
     */
-    void classifySample(const std::vector<float>& input)
+    std::vector<t_prediction> classifySample(const std::vector<float>& input)
     {
         float dist, bestDist, secondBestDist, confidence;
         t_instanceIdx winningID, topVoteInstances;
@@ -110,8 +116,8 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                tIDLib::logError("Input feature list longer than current max feature length of database. input ignored.");
-                return;
+                Log::logError("knn","Input feature list longer than current max feature length of database. input ignored.");
+                return {};
             }
 
             // init votes to 0
@@ -140,7 +146,7 @@ public:
 
                 // abort _id() altogether if distance measurement fails. return value of FLT_MAX indicates failure
                 if (dist == FLT_MAX)
-                    return;
+                    return {std::make_tuple(-1,-1.0f,-1.0f)};
 
                 this->instances[i].knnInfo.dist = this->instances[i].knnInfo.safeDist = dist; // store the distance
             }
@@ -166,7 +172,6 @@ public:
                 this->clusters[thisCluster].votes++;
             }
 
-            // TODO: potential issue is that i'm using t_uInt for t_cluster.votes and topVote, so can no longer have -1 as the initialized value. should be that initializing to 0 is actually ok, even in the case of a tie for 0. originally this was topVote = -1;
             topVote = 0;
             for (t_instanceIdx i = 0; i < this->numClusters; ++i)
             {
@@ -206,26 +211,12 @@ public:
                 }
             }
 
-        /*
-        // unless I'm missing something, this is faulty logic with the current setup. If all K items belong to the same cluster, then secondBestDist will still be FLT_MAX, which will make confidence below near to 1.0. That's good. Assigning it the actual second best distance from a sibling cluster member will produce a number near 0 for confidence, which is wrong.
-
-            // if no second best assignment is made (because all K items belong to same cluster), make 2nd best the 2nd in list
-            if (secondBestDist==FLT_MAX)
-                secondBestDist = this->instances[1].knnInfo.safeDist;
-
-        // if above note on faulty logic is correct, then this is not needed. confidence can just be calculated without a condition
-            if (secondBestDist<=0)
-                confidence = -FLT_MAX;
-            else
-                confidence = 1.0-(bestDist/secondBestDist);
-        */
-
             confidence = 1.0 - (bestDist / secondBestDist);
 
-            //TODO: deal with outlet
-            // outlefloat(this->confidence_outlet, confidence);
-            // outlefloat(this->nearestDist_outlet, bestDist);
-            // outlefloat(this->id_outlet, winningID);
+            t_prediction partres = std::make_tuple(winningID,confidence,bestDist);
+
+            std::vector<t_prediction> res;
+            res.push_back(partres);
 
             if (this->outputKnnMatches)
             {
@@ -234,18 +225,22 @@ public:
                     // suppress reporting of the vote-winning id, because it was already reported above
                     if (this->instances[i].knnInfo.cluster != winningID)
                     {
-                        //TODO: deal with outlet
-                        // outlefloat(this->nearestDist_outlet, this->instances[i].knnInfo.safeDist);
-                        // outlefloat(this->id_outlet, this->instances[i].knnInfo.cluster);
+                        t_prediction partres = std::make_tuple(this->instances[i].knnInfo.cluster,-1,this->instances[i].knnInfo.safeDist);
+                        res.push_back(partres);
                     }
                 }
             }
+
+            return res;
         }
         else
-            tIDLib::logError("No training instances have been loaded. cannot perform ID.");
+        {
+            Log::logError("knn","No training instances have been loaded. cannot perform ID.");
+            return {};
+        }
     }
 
-    void worstMatch(const std::vector<float>& input)
+    t_prediction worstMatch(const std::vector<float>& input)
     {
         float dist, worstDist;
         t_instanceIdx i, losingID;
@@ -253,8 +248,8 @@ public:
         {
             if (input.size() > this->maxFeatureLength)
             {
-                tIDLib::logError("Input feature list too long. input ignored.");
-                return;
+                Log::logError("knn","Input feature list too long. input ignored.");
+                return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
             for (i = 0; i < input.size(); ++i)
@@ -269,7 +264,7 @@ public:
 
                 // abort _worstMatch() altogether if distance measurement fails
                 if (dist == FLT_MAX)
-                    return;
+                    return std::make_tuple(-1,-1.0f,-1.0f);
 
                 if (dist > worstDist)
                 {
@@ -280,13 +275,14 @@ public:
 
             losingID = this->instances[losingID].clusterMembership;
 
-            //TODO: deal with outlets
-            // outlefloat(this->confidence_outlet, 0);
-            // outlefloat(this->nearestDist_outlet, worstDist);
-            // outlefloat(this->id_outlet, losingID);
+            t_prediction res = std::make_tuple(losingID,0,worstDist);
+            return res;
         }
         else
-            tIDLib::logError("No training instances have been loaded. cannot perform worst match.");
+        {
+            Log::logError("knn","No training instances have been loaded. cannot perform worst match.");
+            return std::make_tuple(-1,-1,-1);
+        }
     }
 
     /* -------- END classification methods -------- */
@@ -294,10 +290,13 @@ public:
     /* -------- concatenative synthesis methods -------- */
 
     /**
-     * TODO:comment
+     * Concatenative synthesis method
+     * See the concatenative.pd example in the original timbreID github
+     * repository examples package for a fleshed-out example of how various
+     * parameters can be useful.
      * Equivalent to sending data to the third inlet
     */
-    void concatId(const std::vector<float>& input)
+    t_prediction concatId(const std::vector<float>& input)
     {
         if (this->numInstances)
         {
@@ -317,8 +316,8 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                tIDLib::logError("Input feature list too long. input ignored.");
-                return;
+                Log::logError("knn","Input feature list too long. input ignored.");
+                return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
             for (i = 0; i < listLength; ++i)
@@ -349,7 +348,6 @@ public:
                 else
                     searchStart = this->searchCenter - halfNeighborhood;
 
-                // TODO: is this (t_instanceIdx) typecast a good idea here? Just to get rid of warning?
                 if (searchStart<0)
                     searchStart = 0; // no wrapping
                 else if ((t_instanceIdx)searchStart >= this->numInstances)
@@ -362,7 +360,7 @@ public:
 
                 // abort _concat_id() altogether if distance measurement fails
                 if (dist==FLT_MAX)
-                    return;
+                    return std::make_tuple(-1,-1.0f,-1.0f);
 
                 this->instances[i].knnInfo.dist = this->instances[i].knnInfo.safeDist = dist; // store the distance
 
@@ -400,7 +398,7 @@ public:
 
                     // abort _concat_id() altogether if distance measurement fails
                     if (dist == FLT_MAX)
-                        return;
+                        return std::make_tuple(-1,-1.0f,-1.0f);
 
                     if (dist < bestDist)
                     {
@@ -425,16 +423,24 @@ public:
             else
                 this->prevMatch = UINT_MAX;
 
-            //TODO: deal with outlets
-            // outlefloat(this->nearestDist_outlet, bestDist);
-            // outlefloat(this->id_outlet, winningID);
+            return std::make_tuple(bestDist,-1,winningID);
         }
         else
-            tIDLib::logError("No training instances have been loaded. cannot perform ID.");
+        {
+            Log::logError("knn","No training instances have been loaded. cannot perform ID.");
+            return std::make_tuple(-1,-1,-1);
+        }
     }
 
     /**
-     * TODO:comment
+     * Turn on/off database search wrapping when using concatenative synthesis
+     * (default: ON).
+     * If the search_center and neighborhood settings cause the search range to
+     * extend below instance 0 or past the last instance in the database,
+     * this module will make the search range wrap around to the beginning or
+     * end of the database accordingly.
+     * With this feature turned off, timbreID will clip the search range and not
+     * wrap around.
     */
     void concatSearchWrap(bool flag)
     {
@@ -442,7 +448,10 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Restrict the search to a neighborhood of instances around a specific
+     * center (see search_center below). With a center of 30 and neighborhood
+     * of 7, timbreID will search instances 27-33. If the neighborhood is even
+     * the range above search_center will be one greater than that below.
     */
     void concatNeighborhood(t_instanceIdx n)
     {
@@ -452,7 +461,8 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Set a probability between 0-1 that search center will be randomly
+     * reassigned on each identification request.
     */
     void concatJumpProb(float jp)
     {
@@ -462,7 +472,8 @@ public:
     }
 
     /**
-     * TODO:comment
+     * With reorient on, the search_center will be constantly updated as the
+     * most recent match.
     */
     void concatReorient(bool r)
     {
@@ -470,7 +481,7 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Specify the center instance for searching within a neighborhood.
     */
     void concatSearchCenter(t_instanceIdx sc)
     {
@@ -483,7 +494,12 @@ public:
     }
 
     /**
-     * TODO:comment
+     * The "max_matches" setting can have an impact on how continuous the
+     * concatenated audio output sounds. eg. If max_matches==5, timbreID will
+     * find the top 5 matches, and check to see how they compare with the grain
+     * from the previous match. If one of these 5 is a better match to the
+     * previous grain than the current input grain, it will be reported as the
+     * best match.
     */
     void concatMaxMatches(t_instanceIdx mm)
     {
@@ -492,7 +508,8 @@ public:
     }
 
     /**
-     * TODO:comment
+     * With the "stutter_protect" option on, timbreID does not allow the same
+     * match to be output twice in a row.
     */
     void concatStutterProtect(bool sp)
     {
@@ -512,43 +529,57 @@ public:
         if (k < 1.0)
         {
             std::string errtxt = "K must be greater than one.";
-            tIDLib::logError(errtxt);
+            Log::logError("knn",errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         if (k > this->numInstances)
         {
             std::string errtxt = "K must be less than the total number of instances.";
-            tIDLib::logError(errtxt);
+            Log::logError("knn",errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         this->kValue = k;
-        tIDLib::logInfo("Searching "+std::to_string(this->kValue)+" neighbors for KNN.");
+        Log::logInfo("knn", "Searching "+std::to_string(this->kValue)+" neighbors for KNN.");
     }
 
     /**
-     * TODO:comment
+     * Output the distances and instance (or cluster) IDs of the K nearest
+     * neighbors in addition to the winning match.
+     * In the case of clustered data, this will only output the neighbors
+     * that are not members of the winning cluster.
     */
     void setOutputKnnMatches(bool out)
     {
         this->outputKnnMatches = out;
 
         if (this->outputKnnMatches)
-            tIDLib::logInfo("Reporting all KNN matches.");
+            Log::logInfo("knn", "Reporting all KNN matches.");
         else
-            tIDLib::logInfo("Reporting best match only.");
+            Log::logInfo("knn", "Reporting best match only.");
     }
 
     /**
-     * TODO:comment
+     * Normalize all feature attributes to the 0-1 range.
+     * If the range of some attributes is much larger than others, they will
+     * have more of an influence on the distance calculation, which may skew
+     * things in an undesireable way.
+     * Normalization evens the playing field. BUT - it also means that noisy
+     * attributes with a small magnitude (like the highest MFCCs) might have
+     * undue influence.
+     * In the case of mixing spectral centroid and zero crossing rate into a
+     * single feature, however, normalization is almost certainly the way to go.
+     * Note: if you have thousands rather than hundreds of instances,
+     * this calculation will take several seconds. This is something to be
+     * performed before any real time classification is going on.
     */
-    void setNormalize(float n)
+    void normalizeAttributes(bool normalize)
     {
         // create local memory
         std::vector<float> attributeColumn(this->numInstances);
 
-        if (n <= 0)
+        if (!normalize)
         {
             // initialize normData
             for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
@@ -559,7 +590,7 @@ public:
             }
 
             this->normalize = false;
-            tIDLib::logInfo("Eature attribute normalization OFF.");
+            Log::logInfo("knn", "Eature attribute normalization OFF.");
         }
         else
         {
@@ -572,10 +603,9 @@ public:
                     {
                         if (j > this->instances[i].length-1)
                         {
-                            // TODO: is this a good way to escape?
-                            tIDLib::logError("Attribute "+std::to_string(j)+" out of range for database instance "+std::to_string(i)+". aborting normalization");
+                            Log::logError("knn","Attribute "+std::to_string(j)+" out of range for database instance "+std::to_string(i)+". aborting normalization");
                             this->normalize = false;
-                            tIDLib::logInfo("Feature attribute normalization OFF.");
+                            Log::logInfo("knn", "Feature attribute normalization OFF.");
                             return;
                         }
                         else
@@ -598,16 +628,31 @@ public:
 
                 }
 
-                this->normalize=true;
-                tIDLib::logInfo("Feature attribute normalization ON.");
+                this->normalize = true;
+                Log::logInfo("knn", "Feature attribute normalization ON.");
             }
             else
-                tIDLib::logError("No training instances have been loaded. cannot calculate normalization terms.");
+                Log::logError("knn","No training instances have been loaded. cannot calculate normalization terms.");
         }
     }
 
     /**
-     * TODO:comment
+     * Cluster manually a single instances subset
+     * This is an alternative to auto-clustering which might be useful when
+     * having to cluster things in the middle of a performance and needing to be
+     * able to do it entirely within this module.
+     * Call this method for each cluster you want to create.
+     * Argument indexing is always starting from 0.
+     * Notice that you can't cluster non-neighboring instances at present.
+     * Also note that this module does not check to see if you actually end up
+     * defining X clusters if you've called a few times this method indicating
+     * that there will be X clusters.
+     * Crashes are entirely possible if you don't keep track of this properly.
+     *
+     * @param numClusters  total number of clusters
+     * @param clusterIdx   this cluster index
+     * @param low          lower instance index
+     * @param hi           upper instance index
     */
     void manualCluster(t_instanceIdx numClusters, t_instanceIdx clusterIdx, t_instanceIdx low, t_instanceIdx hi)
     {
@@ -624,19 +669,19 @@ public:
 
         if (low > this->numInstances-1 || hi > this->numInstances-1)
         {
-            tIDLib::logError("Instances out of range. clustering failed.");
+            Log::logError("knn","Instances out of range. clustering failed.");
             return;
         }
 
         if (clusterIdx >= numClusters)
         {
-            tIDLib::logError("Cluster index "+std::to_string(clusterIdx)+" out of range for given number of clusters "+std::to_string(numClusters)+". clustering failed.");
+            Log::logError("knn","Cluster index "+std::to_string(clusterIdx)+" out of range for given number of clusters "+std::to_string(numClusters)+". clustering failed.");
             return;
         }
 
         if (this->numInstances < numClusters)
         {
-            tIDLib::logError("Not enough instances to cluster. clustering failed.");
+            Log::logError("knn","Not enough instances to cluster. clustering failed.");
             throw std::logic_error("Not enough instances to cluster. clustering failed.");
         }
         else
@@ -670,21 +715,24 @@ public:
                 this->clusters[i].members[1] = UINT_MAX;
             }
 
-            tIDLib::logInfo("Cluster "+std::to_string(clusterIdx)+" contains instances "+std::to_string(low)+" through "+std::to_string(hi)+".");
+            Log::logInfo("knn", "Cluster "+std::to_string(clusterIdx)+" contains instances "+std::to_string(low)+" through "+std::to_string(hi)+".");
         }
     }
 
     /**
-     * TODO:comment
+     * Perform hierarchical clustering to find a given number of clusters
+     *
+     * @param numClusters number of clusters to find
     */
-    std::vector<float> computeCluster(t_instanceIdx numClusters)
+    std::vector<float> autoCluster(t_instanceIdx numClusters)
     {
+        std::vector<float> listOut;
         if (this->numInstances < numClusters)
-            tIDLib::logError("Not enough instances to cluster.");
+            Log::logError("knn","Not enough instances to cluster.");
         else if (this->numClusters != this->numInstances)
-            tIDLib::logError("Instances already clustered. uncluster first.");
+            Log::logError("knn","Instances already clustered. uncluster first.");
         else if (numClusters==0)
-            tIDLib::logError("Cannot create 0 clusters.");
+            Log::logError("knn","Cannot create 0 clusters.");
         else
         {
             t_instanceIdx i, j, k, numInstances, numInstancesM1, numPairs, numClusterMembers1, numClusterMembers2, numClusterMembersSum, clusterCount;
@@ -693,7 +741,6 @@ public:
             std::vector<tIDLib::t_instance> clusterData;
             std::vector<float> pairDists;
             float minDist, numClusterMembers1_recip;
-            std::vector<float> listOut;
 
             this->numClusters = numClusters;
             numInstances = this->numInstances;
@@ -871,13 +918,15 @@ public:
                 }
             }
 
-            tIDLib::logInfo("Instances clustered.");
-            return listOut;
+            Log::logInfo("knn", "Instances clustered.");
         }
+        return listOut;
     }
 
     /**
-     * TODO:comment
+     * Uncluster data
+     * When having already clustered data, go back to reporting raw instance
+     * indexes.
     */
     void uncluster()
     {
@@ -901,17 +950,16 @@ public:
             this->clusters[i].votes = 0;
         }
 
-        tIDLib::logInfo("Instances unclustered.");
+        Log::logInfo("knn", "Instances unclustered.");
     }
 
     /**
-     *
-     * TODO:comment
-     * Order attributes by variance, so that only the most relevant attributes can
-     * be used to calculate the distance measure. For instance, after ordering a
-     * 47-component BFCC vector by variance, you may only want to compare the first
-     * 10 attributes, since those will be the ones with the most variance. Specify
-     * this range using the timbreID_attributeRange method.
+     * Order attributes by variance, so that only the most relevant attributes
+     * can be used to calculate the distance measure.
+     * For instance, after ordering a 47-component BFCC vector by variance, you
+     * may only want to compare the first 10 attributes, since those will be the
+     * ones with the most variance.Specify this range using the
+     * setAttributeRange method.
      * Like "normalize", this is not an operation to try during real time
      * performance.
     */
@@ -983,30 +1031,37 @@ public:
                 attributeVar[this->attributeData[i].order] = -FLT_MAX;
             }
 
-            tIDLib::logInfo("Attributes ordered by variance.");
+            Log::logInfo("knn", "Attributes ordered by variance.");
         }
         else
         {
-            tIDLib::logError("No instances for variance computation.");
+            Log::logError("knn","No instances for variance computation.");
             throw std::logic_error("No instances for variance computation.");
         }
     }
 
     /**
-     * TODO:comment
+     * Set type of ordering (absolute or relative)
+     * There are two options for timbre order requests: relative and absolute.
+     * With absolute ordering, instances are reported in order of increasing
+     * distance from the reference instance given. With relative ordering, the
+     * reference instance changes at every step. First, the nearest instance to
+     * the given reference instance is found, then the nearest instance to that
+     * instance is found, and so on. This creates smoother timbre transitions
+     * throughout the entire instance ordering, and is the default setting
     */
     void setRelativeOrdering(bool rel)
     {
         this->relativeOrdering = rel;
 
         if (this->relativeOrdering)
-            tIDLib::logInfo("Relative ordering ON.");
+            Log::logInfo("knn", "Relative ordering ON.");
         else
-            tIDLib::logInfo("Relative ordering OFF.");
+            Log::logInfo("knn", "Relative ordering OFF.");
     }
 
     /**
-     * TODO:comment
+     * Set the preferred distance metric
     */
     void setDistMetric(DistanceMetric d)
     {
@@ -1015,13 +1070,13 @@ public:
         switch(this->distMetric)
         {
             case DistanceMetric::euclidean:
-                tIDLib::logInfo("Distance metric: EUCLIDEAN.");
+                Log::logInfo("knn", "Distance metric: EUCLIDEAN.");
                 break;
             case DistanceMetric::taxi:
-                tIDLib::logInfo("Distance metric: MANHATTAN (taxicab distance).");
+                Log::logInfo("knn", "Distance metric: MANHATTAN (taxicab distance).");
                 break;
             case DistanceMetric::correlation:
-                tIDLib::logInfo("Distance metric: PEARSON CORRELATION COEFF.");
+                Log::logInfo("knn", "Distance metric: PEARSON CORRELATION COEFF.");
                 break;
             default:
                 break;
@@ -1029,7 +1084,11 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Specify a list of weights.
+     * Suppose having a feature vector composed of spectral centroid and
+     * spectral flux, and wanting the latter feature to have half as much impact
+     * as the former during distance calculation.
+     * In this case the method must be called like: setWeights({1.0, 0.5})
     */
     void setWeights(std::vector<float> weights)
     {
@@ -1038,7 +1097,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            tIDLib::logError("Weights list longer than current feature length. ignoring excess weights");
+            Log::logError("knn","Weights list longer than current feature length. ignoring excess weights");
             listLength = this->maxFeatureLength;
         }
 
@@ -1063,19 +1122,19 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            tIDLib::logError("Attribute list longer than current max feature length. ignoring excess attributes");
+            Log::logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
         for (i=0; i<listLength; ++i)
             this->attributeData[i].name = names[i];
 
-        tIDLib::logInfo("Attribute names received.");
+        Log::logInfo("knn", "Attribute names received.");
     }
 
     /**
-     *
-     * Manually order the attributes. In conjunction with attribute_range, this is
+     * Manually order the attributes.
+     * In conjunction with attribute_range, this is
      * useful for exporting specific subsets of attributes, or doing distance
      * calculation based on subsets of attributes
     */
@@ -1087,7 +1146,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            tIDLib::logError("Attribute list longer than current max feature length. ignoring excess attributes");
+            Log::logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
@@ -1101,7 +1160,7 @@ public:
                 for (j=0; j<this->maxFeatureLength; ++j)
                     this->attributeData[j].order = j;
 
-                tIDLib::logError("Attribute "+std::to_string(this->attributeData[i].order)+" out of range. attribute order initialized.");
+                Log::logError("knn","Attribute "+std::to_string(this->attributeData[i].order)+" out of range. attribute order initialized.");
             }
         }
 
@@ -1109,11 +1168,10 @@ public:
         for (; i<this->maxFeatureLength; ++i)
             this->attributeData[i].order = 0;
 
-        tIDLib::logInfo("Attributes re-ordered.");
+        Log::logInfo("knn", "Attributes re-ordered.");
     }
 
     /**
-     *
      * Specify a restricted range of attributes to use in the distance calculation.
      */
     void setAttributeRange(t_attributeIdx lo, t_attributeIdx hi)
@@ -1132,7 +1190,7 @@ public:
             this->attributeLo = tmp;
         }
 
-        tIDLib::logInfo("Attribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi)+".");
+        Log::logInfo("knn", "Attribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi)+".");
     }
 
     /**
@@ -1145,7 +1203,7 @@ public:
         for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
             this->attributeData[i].order = i;
 
-        tIDLib::logInfo("Attribute order initialized.");
+        Log::logInfo("knn", "Attribute order initialized.");
     }
 
     /**
@@ -1183,7 +1241,7 @@ public:
         this->minFeatureLength = INT_MAX;
         this->normalize = false;
 
-        tIDLib::logInfo("All instances cleared.");
+        Log::logInfo("knn", "All instances cleared.");
     }
 
     /**
@@ -1206,7 +1264,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to create " + filename);
+            Log::logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1221,7 +1279,7 @@ public:
         for (t_instanceIdx i = 0; i < this->numInstances; ++i)
             fwrite(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        tIDLib::logInfo("Wrote "+std::to_string(this->numInstances)+" non-normalized instances to "+filename+".");
+        Log::logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" non-normalized instances to "+filename+".");
 
         fclose(filePtr);
     }
@@ -1241,7 +1299,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to open " + filename);
+            Log::logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1252,7 +1310,7 @@ public:
         this->clearAll();
 
         // first item in the header is the number of instances
-        fread(&this->numInstances, sizeof(t_instanceIdx), 1, filePtr); //TODO check if this is working (the cast to pointer of the first vector element)
+        fread(&this->numInstances, sizeof(t_instanceIdx), 1, filePtr);
 
         // resize instances & clusterMembers to numInstances
         this->instances.resize(this->numInstances);
@@ -1297,7 +1355,7 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        tIDLib::logInfo("Read "+std::to_string(this->numInstances)+" instances from "+filename+".");
+        Log::logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from "+filename+".");
         fclose(filePtr);
     }
 
@@ -1315,7 +1373,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to create " + filename);
+            Log::logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1351,7 +1409,7 @@ public:
             fprintf(filePtr, "\n");
         }
 
-        tIDLib::logInfo("Wrote "+std::to_string(this->numInstances)+" instances to " + filename + ".");
+        Log::logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" instances to " + filename + ".");
         fclose(filePtr);
     }
 
@@ -1368,7 +1426,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to open " + filename);
+            Log::logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1451,7 +1509,7 @@ public:
                 fscanf(filePtr, "%f", &this->instances[i].data[j]);
         }
 
-        tIDLib::logInfo("Read "+std::to_string(this->numInstances)+" instances from " + filename + ".");
+        Log::logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from " + filename + ".");
         fclose(filePtr);
     }
 
@@ -1473,7 +1531,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to create " + filename);
+            Log::logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1492,7 +1550,7 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fwrite(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        tIDLib::logInfo("Wrote "+std::to_string(this->numClusters)+" clusters to " + filename + ".");
+        Log::logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to " + filename + ".");
         fclose(filePtr);
     }
 
@@ -1514,7 +1572,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to open " + filename);
+            Log::logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1523,7 +1581,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            tIDLib::logError(filename + " contains more clusters than current number of database instances. read failed.");
+            Log::logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1546,7 +1604,7 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        tIDLib::logInfo("Read "+std::to_string(this->numClusters)+" clusters from "+filename+".");
+        Log::logInfo("knn", "Read "+std::to_string(this->numClusters)+" clusters from "+filename+".");
         fclose(filePtr);
     }
 
@@ -1571,7 +1629,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to create " + filename);
+            Log::logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1581,13 +1639,13 @@ public:
                 fprintf(filePtr, "%i ", this->clusters[i].members[j]);
 
             // no space for the final instance given on the line for cluster i
-            fprintf(filePtr, "%i", this->clusters[i].members[this->clusters[i].numMembers-1]); //TODO: check again if correct
+            fprintf(filePtr, "%i", this->clusters[i].members[this->clusters[i].numMembers-1]);
 
             // newline to end the list of instances for cluster i
             fprintf(filePtr, "\n");
         }
 
-        tIDLib::logInfo("Wrote "+std::to_string(this->numClusters)+" clusters to "+filename+".");
+        Log::logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to "+filename+".");
         fclose(filePtr);
     }
 
@@ -1604,7 +1662,7 @@ public:
 
         if (!filePtr)
         {
-            tIDLib::logError("Failed to open " + filename);
+            Log::logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1615,7 +1673,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            tIDLib::logError(filename + " contains more clusters than current number of database instances. read failed.");
+            Log::logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1688,7 +1746,7 @@ public:
             }
         }
 
-        tIDLib::logInfo(filename + ": read "+std::to_string(this->numClusters)+" clusters from " + filename);
+        Log::logInfo("knn", filename + ": read "+std::to_string(this->numClusters)+" clusters from " + filename);
         fclose(filePtr);
     }
 
@@ -1736,14 +1794,16 @@ public:
         res += "\nmax matches: "+std::to_string(this->maxMatches);
         res += "\njump probability: "+std::to_string(this->jumpProb);
         res += "\nstutter protect: "+std::to_string(this->stutterProtect);
-        //TODO: Mabe log post errors and warnings to a file and print here the file path
+        res += "\n";
+        res += "Info log path: " + Log::getInfoLogPath();
+        res += "Error log path: " + Log::getErrorLogPath();
         return res;
     }
 
     /** Information functions (Fourth outlet data in Puredata Version) -------*/
 
     /**
-     * TODO:comment
+     * Returns the number of instances in the dataset
     */
     t_instanceIdx getNumInstances() const
     {
@@ -1751,9 +1811,9 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Returns the feature vector for the specified instance
     */
-    std::vector<float> getFeatureList(t_instanceIdx idx) const
+    std::vector<float> getFeatureVec(t_instanceIdx idx) const
     {
         idx = (idx < 0) ? 0 : idx;
 
@@ -1762,7 +1822,7 @@ public:
 
         if (idx > this->numInstances-1)
         {
-            tIDLib::logError("Instance "+std::to_string(idx)+" does not exist.");
+            Log::logError("knn","Instance "+std::to_string(idx)+" does not exist.");
             throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
         }
         else
@@ -1782,13 +1842,13 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Returns the cluster to which the specified instance belongs.
     */
     t_instanceIdx getClusterMembership(t_instanceIdx idx) const
     {
         if (idx >= this->numInstances)
         {
-            tIDLib::logError("Instance "+std::to_string(idx)+" does not exist.");
+            Log::logError("knn","Instance "+std::to_string(idx)+" does not exist.");
             throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
         }
         else
@@ -1798,9 +1858,11 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Returns the list of the datset instances ordered by cluster
+     * (Notice the difference of singular vs. plural - clustersList vs.
+     * clusterList)
     */
-    std::vector<float>  getClustersList() const
+    std::vector<float> getClustersList() const
     {
         // create local memory
         std::vector<float> listOut(this->numInstances);
@@ -1812,7 +1874,9 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Returns the member list of only one specific cluster.
+     * (Notice the difference of singular vs. plural - clustersList vs.
+     * clusterList)
     */
     std::vector<float> clusterList(t_instanceIdx idx) const
     {
@@ -1820,7 +1884,7 @@ public:
 
         if (idx >= this->numClusters)
         {
-            tIDLib::logError("Cluster "+std::to_string(idx)+" does not exist.");
+            Log::logError("knn","Cluster "+std::to_string(idx)+" does not exist.");
         }
         else
         {
@@ -1837,9 +1901,9 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Try an order starting from a particular instrument/cluster
     */
-    std::vector<float> getOrder(t_instanceIdx reference) const
+    std::vector<float> setOrder(t_instanceIdx reference) const
     {
         t_instanceIdx ref;
 
@@ -1902,7 +1966,8 @@ public:
     }
 
     /**
-     * TODO:comment
+     * Spit out a list of the min values for all attributes in the feature
+     * database.
     */
     std::vector<float> getMinValues() const
     {
@@ -1917,13 +1982,14 @@ public:
         }
         else
         {
-            tIDLib::logError("Feature database not normalized. minimum values not calculated yet.");
+            Log::logError("knn","Feature database not normalized. minimum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. minimum values not calculated yet.");
         }
     }
 
     /**
-     * TODO:comment
+     * Spit out a list of the max values for all attributes in the feature
+     * database.
     */
     std::vector<float> getMaxValues() const
     {
@@ -1939,13 +2005,13 @@ public:
         }
         else
         {
-            tIDLib::logError("Feature database not normalized. maximum values not calculated yet.");
+            Log::logError("knn","Feature database not normalized. maximum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. maximum values not calculated yet.");
         }
     }
 
     /**
-     * TODO:comment
+     * Query the minimum instance length in the database
     */
     t_attributeIdx getMinFeatureLength() const
     {
@@ -1955,13 +2021,13 @@ public:
         }
         else
         {
-            tIDLib::logError("No training instances have been loaded.");
+            Log::logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
 
     /**
-     * TODO:comment
+     * Query the maximum instance length in the database
     */
     t_attributeIdx getMaxFeatureLength() const
     {
@@ -1969,13 +2035,16 @@ public:
             return (this->maxFeatureLength);
         else
         {
-            tIDLib::logError("No training instances have been loaded.");
+            Log::logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
 
     /**
-     * TODO:comment
+     * Generate a similarity matrix.
+     * Arguments are starting and ending instance indices, and a normalization
+     * flag. The data is sent out as N lists with N elements in each (where N is
+     * the number of instances in the requested range).
     */
     std::vector<std::vector<float>> getSimilarityMatrix(t_instanceIdx startInstance, t_instanceIdx finishInstance, bool normalize) const
     {
@@ -1998,7 +2067,7 @@ public:
 
             if (finishInstance - startInstance == 0)
             {
-                tIDLib::logError("Bad instance range for similarity matrix");
+                Log::logError("knn","Bad instance range for similarity matrix");
                 std::vector<std::vector<float>> res;
                 return res;
             }
@@ -2059,19 +2128,20 @@ public:
             }
             else
             {
-                tIDLib::logError("Bad range of instances");
+                Log::logError("knn","Bad range of instances");
                 throw std::logic_error("Bad range of instances");
             }
         }
         else
         {
-            tIDLib::logError("No training instances have been loaded.");
+            Log::logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
 
     /**
-     * TODO:comment
+     * Returns a tuple containing the name, the weight and the order of the
+     * specified attribute
     */
     std::tuple<std::string,float,t_attributeIdx> getAttributeInfo(t_attributeIdx idx) const
     {
@@ -2080,7 +2150,7 @@ public:
         if (idx >= this->maxFeatureLength)
         {
             std::string errstr = "Attribute "+std::to_string(idx)+" does not exist";
-            tIDLib::logError(errstr);
+            Log::logError("knn",errstr);
             throw std::logic_error(errstr);
         }
         else
@@ -2100,7 +2170,7 @@ private:
         this->minFeatureLength = INT_MAX;
         this->numClusters = 0;
         this->numInstances = 0;
-        this->distMetric = tid::DistanceMetric::euclidean;
+        this->distMetric = DistanceMetric::euclidean;
         this->kValue = 1;
         this->outputKnnMatches = false;
         this->normalize = false;
@@ -2160,8 +2230,7 @@ private:
 
             if (thisAttribute > this->instances[instanceID].length)
             {
-                //TODO: handle with exception or leave return only
-                tIDLib::logError("Attribute "+std::to_string(thisAttribute)+" out of range for database instance "+std::to_string(instanceID));
+                Log::logError("knn","Attribute "+std::to_string(thisAttribute)+" out of range for database instance "+std::to_string(instanceID));
                 return(FLT_MAX);
             }
 
@@ -2224,9 +2293,7 @@ private:
         std::vector<float> vec2Buffer(vecLen);
         std::vector<float> vecWeights(vecLen);
 
-        float min = 0.0,
-              max = 0.0,
-              normScalar = 1.0,
+        float normScalar = 1.0,
               dist = 0.0;
 
         // extract the right attributes and apply normalization if it's active
@@ -2237,8 +2304,7 @@ private:
 
             if (thisAttribute > (instance1.length - 1) || thisAttribute > (instance2.length - 1))
             {
-                //TODO: handle this with exeption or only return?
-                tIDLib::logError("Attribute "+std::to_string(thisAttribute)+" does not exist for both feature vectors. cannot compute distance.");
+                Log::logError("knn","Attribute "+std::to_string(thisAttribute)+" does not exist for both feature vectors. cannot compute distance.");
                 return(FLT_MAX);
             }
 
@@ -2247,12 +2313,10 @@ private:
             if (this->normalize)
             {
                 // don't need to test if instance1 has attribute values below/above current min/max values in normData, because this function isn't used on input vectors from the wild. It's only used to compare database instances to other database instances, so the normalization terms are valid.
-                min = this->attributeData[thisAttribute].normData.min;
-                max = this->attributeData[thisAttribute].normData.max;
                 normScalar = this->attributeData[thisAttribute].normData.normScalar;
 
-                vec1Buffer[j] = (instance1.data[thisAttribute] - min) * normScalar;
-                vec2Buffer[j] = (instance2.data[thisAttribute] - min) * normScalar;
+                vec1Buffer[j] = (instance1.data[thisAttribute] - this->attributeData[thisAttribute].normData.min) * normScalar;
+                vec2Buffer[j] = (instance2.data[thisAttribute] - this->attributeData[thisAttribute].normData.min) * normScalar;
             }
             else
             {
@@ -2312,7 +2376,7 @@ private:
             res += "\nattribute weights initialized";
             res += "\nattribute order initialized";
             res += ("\nattribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi));
-            tIDLib::logInfo(res);
+            Log::logInfo("knn", res);
         }
 
     }
@@ -2371,13 +2435,13 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
     filenameSymbol = atom_getsymbol(argv);
     filename = filenameSymbol->s_name;
 
-    canvas_makefilename(this->canvasTODO_mayberemove, filename, filenameBuf, MAXPDSTRING);
+    canvas_makefilename(this->canvas mayberemove, filename, filenameBuf, MAXPDSTRING);
 
     filePtr = fopen(filenameBuf, "w");
 
     if (!filePtr)
     {
-        tIDLib::logError("Failed to create %s", filenameBuf);
+        Log::logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
@@ -2447,7 +2511,7 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
         fprintf(filePtr, "\n");
     }
 
-    tIDLib::logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2460,19 +2524,19 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
     float *featurePtr;
     char filenameBuf[MAXPDSTRING];
 
-    canvas_makefilename(this->canvasTODO_mayberemove, file_symbol->s_name, filenameBuf, MAXPDSTRING);
+    canvas_makefilename(this->canvas maybe remove, file_symbol->s_name, filenameBuf, MAXPDSTRING);
 
     filePtr = fopen(filenameBuf, "w");
 
     if (!filePtr)
     {
-        tIDLib::logError("Failed to create %s", filenameBuf);
+        Log::logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        tIDLib::logError("Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        Log::logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2502,7 +2566,7 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
         fprintf(filePtr, "\n");
     }
 
-    tIDLib::logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2515,19 +2579,19 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
     float *featurePtr;
     char filenameBuf[MAXPDSTRING];
 
-    canvas_makefilename(this->canvasTODO_mayberemove, file_symbol->s_name, filenameBuf, MAXPDSTRING);
+    canvas_makefilename(this->canvas maybe remove, file_symbol->s_name, filenameBuf, MAXPDSTRING);
 
     filePtr = fopen(filenameBuf, "w");
 
     if (!filePtr)
     {
-        tIDLib::logError("Failed to create %s", filenameBuf);
+        Log::logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        tIDLib::logError("Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        Log::logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2556,7 +2620,7 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
         }
     }
 
-    tIDLib::logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2568,13 +2632,13 @@ void timbreID_FANN(t_symbol *s, float normRange)
     t_instanceIdx i, j;
     char filenameBuf[MAXPDSTRING];
 
-    canvas_makefilename(this->canvasTODO_mayberemove, s->s_name, filenameBuf, MAXPDSTRING);
+    canvas_makefilename(this->canvas maybe remove, s->s_name, filenameBuf, MAXPDSTRING);
 
     filePtr = fopen(filenameBuf, "w");
 
     if (!filePtr)
     {
-        tIDLib::logError("Failed to create %s", filenameBuf);
+        Log::logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
@@ -2603,7 +2667,6 @@ void timbreID_FANN(t_symbol *s, float normRange)
         // carriage return between input data line and label line
         fprintf(filePtr, "\n");
 
-        // TODO: fill with all zeros, except a 1.0 in the slot of the cluster idx
         for (j=0; j<this->numClusters; ++j)
         {
             if (j==this->instances[i].clusterMembership)
@@ -2616,7 +2679,7 @@ void timbreID_FANN(t_symbol *s, float normRange)
         fprintf(filePtr, "\n");
     }
 
-    tIDLib::logInfo("Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
+    Log::logInfo("knn", "Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }

@@ -708,16 +708,4 @@ void initHannWindow(std::vector<float> &window)
 }
 /* ---------------- END windowing buffer functions ---------------------- */
 
-void logError(std::string logtext)
-{
-    //TODO: make it log to file correctly
-    std::cout << logtext << std::endl;
-}
-void logInfo(std::string logtext)
-{
-    //TODO: make it log to file correctly
-    std::cout << logtext << std::endl;
-}
-
-
 }

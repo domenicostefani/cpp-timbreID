@@ -163,7 +163,7 @@ signed char signum(float input);
 float euclidDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights, bool sqroot);
 float taxiDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights);
 float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2);
-void sortKnnInfo(unsigned short int k, t_instanceIdx numInstances, t_instanceIdx prevMatch, std::vector<t_instance> instances);
+void sortKnnInfo(unsigned short int k, t_instanceIdx numInstances, t_instanceIdx prevMatch, std::vector<t_instance>& instances);
 /* ---------------- END utility functions ---------------------- */
 
 
@@ -205,8 +205,5 @@ void mag(t_binIdx n, float *input);
 void veclog(t_binIdx n, float *input);
 void veclog(t_binIdx n, std::vector<float> &input);
 /* ---------------- END dsp utility functions ---------------------- */
-
-void logError(std::string logtext);
-void logInfo(std::string logtext);
 
 }
