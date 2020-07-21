@@ -716,7 +716,6 @@ private:
 
         // set up the FFTW output buffer
         this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize*0.5 + 1);
-        fftwf_alloc_complex(this->analysisWindowSize);
         // DFT plan
         this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, this->fftwIn, this->fftwOut, FFTWPLANNERFLAG);
 
