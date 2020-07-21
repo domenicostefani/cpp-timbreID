@@ -26,6 +26,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 #include <tuple>
 
+#define KNN_LOG_FILENAME "timbreid-knn"
+
 namespace tid   /* TimbreID namespace*/
 {
 
@@ -42,10 +44,9 @@ class KNNclassifier
 {
 public:
 
-    KNNclassifier()
+    KNNclassifier() : logger(KNN_LOG_FILENAME)
     {
         this->initModule();
-        Log::setLogPath("/tmp/");
     }
 
     /* -------- classification methods -------- */
@@ -116,7 +117,7 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                Log::logError("knn","Input feature list longer than current max feature length of database. input ignored.");
+                this->logger.logError("knn","Input feature list longer than current max feature length of database. input ignored.");
                 return {};
             }
 
@@ -235,7 +236,7 @@ public:
         }
         else
         {
-            Log::logError("knn","No training instances have been loaded. cannot perform ID.");
+            this->logger.logError("knn","No training instances have been loaded. cannot perform ID.");
             return {};
         }
     }
@@ -248,7 +249,7 @@ public:
         {
             if (input.size() > this->maxFeatureLength)
             {
-                Log::logError("knn","Input feature list too long. input ignored.");
+                this->logger.logError("knn","Input feature list too long. input ignored.");
                 return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
@@ -280,7 +281,7 @@ public:
         }
         else
         {
-            Log::logError("knn","No training instances have been loaded. cannot perform worst match.");
+            this->logger.logError("knn","No training instances have been loaded. cannot perform worst match.");
             return std::make_tuple(-1,-1,-1);
         }
     }
@@ -316,7 +317,7 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                Log::logError("knn","Input feature list too long. input ignored.");
+                this->logger.logError("knn","Input feature list too long. input ignored.");
                 return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
@@ -427,7 +428,7 @@ public:
         }
         else
         {
-            Log::logError("knn","No training instances have been loaded. cannot perform ID.");
+            this->logger.logError("knn","No training instances have been loaded. cannot perform ID.");
             return std::make_tuple(-1,-1,-1);
         }
     }
@@ -529,19 +530,19 @@ public:
         if (k < 1.0)
         {
             std::string errtxt = "K must be greater than one.";
-            Log::logError("knn",errtxt);
+            this->logger.logError("knn",errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         if (k > this->numInstances)
         {
             std::string errtxt = "K must be less than the total number of instances.";
-            Log::logError("knn",errtxt);
+            this->logger.logError("knn",errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         this->kValue = k;
-        Log::logInfo("knn", "Searching "+std::to_string(this->kValue)+" neighbors for KNN.");
+        this->logger.logInfo("knn", "Searching "+std::to_string(this->kValue)+" neighbors for KNN.");
     }
 
     /**
@@ -555,9 +556,9 @@ public:
         this->outputKnnMatches = out;
 
         if (this->outputKnnMatches)
-            Log::logInfo("knn", "Reporting all KNN matches.");
+            this->logger.logInfo("knn", "Reporting all KNN matches.");
         else
-            Log::logInfo("knn", "Reporting best match only.");
+            this->logger.logInfo("knn", "Reporting best match only.");
     }
 
     /**
@@ -590,7 +591,7 @@ public:
             }
 
             this->normalize = false;
-            Log::logInfo("knn", "Eature attribute normalization OFF.");
+            this->logger.logInfo("knn", "Eature attribute normalization OFF.");
         }
         else
         {
@@ -603,9 +604,9 @@ public:
                     {
                         if (j > this->instances[i].length-1)
                         {
-                            Log::logError("knn","Attribute "+std::to_string(j)+" out of range for database instance "+std::to_string(i)+". aborting normalization");
+                            this->logger.logError("knn","Attribute "+std::to_string(j)+" out of range for database instance "+std::to_string(i)+". aborting normalization");
                             this->normalize = false;
-                            Log::logInfo("knn", "Feature attribute normalization OFF.");
+                            this->logger.logInfo("knn", "Feature attribute normalization OFF.");
                             return;
                         }
                         else
@@ -629,10 +630,10 @@ public:
                 }
 
                 this->normalize = true;
-                Log::logInfo("knn", "Feature attribute normalization ON.");
+                this->logger.logInfo("knn", "Feature attribute normalization ON.");
             }
             else
-                Log::logError("knn","No training instances have been loaded. cannot calculate normalization terms.");
+                this->logger.logError("knn","No training instances have been loaded. cannot calculate normalization terms.");
         }
     }
 
@@ -669,19 +670,19 @@ public:
 
         if (low > this->numInstances-1 || hi > this->numInstances-1)
         {
-            Log::logError("knn","Instances out of range. clustering failed.");
+            this->logger.logError("knn","Instances out of range. clustering failed.");
             return;
         }
 
         if (clusterIdx >= numClusters)
         {
-            Log::logError("knn","Cluster index "+std::to_string(clusterIdx)+" out of range for given number of clusters "+std::to_string(numClusters)+". clustering failed.");
+            this->logger.logError("knn","Cluster index "+std::to_string(clusterIdx)+" out of range for given number of clusters "+std::to_string(numClusters)+". clustering failed.");
             return;
         }
 
         if (this->numInstances < numClusters)
         {
-            Log::logError("knn","Not enough instances to cluster. clustering failed.");
+            this->logger.logError("knn","Not enough instances to cluster. clustering failed.");
             throw std::logic_error("Not enough instances to cluster. clustering failed.");
         }
         else
@@ -715,7 +716,7 @@ public:
                 this->clusters[i].members[1] = UINT_MAX;
             }
 
-            Log::logInfo("knn", "Cluster "+std::to_string(clusterIdx)+" contains instances "+std::to_string(low)+" through "+std::to_string(hi)+".");
+            this->logger.logInfo("knn", "Cluster "+std::to_string(clusterIdx)+" contains instances "+std::to_string(low)+" through "+std::to_string(hi)+".");
         }
     }
 
@@ -728,11 +729,11 @@ public:
     {
         std::vector<float> listOut;
         if (this->numInstances < numClusters)
-            Log::logError("knn","Not enough instances to cluster.");
+            this->logger.logError("knn","Not enough instances to cluster.");
         else if (this->numClusters != this->numInstances)
-            Log::logError("knn","Instances already clustered. uncluster first.");
+            this->logger.logError("knn","Instances already clustered. uncluster first.");
         else if (numClusters==0)
-            Log::logError("knn","Cannot create 0 clusters.");
+            this->logger.logError("knn","Cannot create 0 clusters.");
         else
         {
             t_instanceIdx i, j, k, numInstances, numInstancesM1, numPairs, numClusterMembers1, numClusterMembers2, numClusterMembersSum, clusterCount;
@@ -918,7 +919,7 @@ public:
                 }
             }
 
-            Log::logInfo("knn", "Instances clustered.");
+            this->logger.logInfo("knn", "Instances clustered.");
         }
         return listOut;
     }
@@ -950,7 +951,7 @@ public:
             this->clusters[i].votes = 0;
         }
 
-        Log::logInfo("knn", "Instances unclustered.");
+        this->logger.logInfo("knn", "Instances unclustered.");
     }
 
     /**
@@ -1031,11 +1032,11 @@ public:
                 attributeVar[this->attributeData[i].order] = -FLT_MAX;
             }
 
-            Log::logInfo("knn", "Attributes ordered by variance.");
+            this->logger.logInfo("knn", "Attributes ordered by variance.");
         }
         else
         {
-            Log::logError("knn","No instances for variance computation.");
+            this->logger.logError("knn","No instances for variance computation.");
             throw std::logic_error("No instances for variance computation.");
         }
     }
@@ -1055,9 +1056,9 @@ public:
         this->relativeOrdering = rel;
 
         if (this->relativeOrdering)
-            Log::logInfo("knn", "Relative ordering ON.");
+            this->logger.logInfo("knn", "Relative ordering ON.");
         else
-            Log::logInfo("knn", "Relative ordering OFF.");
+            this->logger.logInfo("knn", "Relative ordering OFF.");
     }
 
     /**
@@ -1070,13 +1071,13 @@ public:
         switch(this->distMetric)
         {
             case DistanceMetric::euclidean:
-                Log::logInfo("knn", "Distance metric: EUCLIDEAN.");
+                this->logger.logInfo("knn", "Distance metric: EUCLIDEAN.");
                 break;
             case DistanceMetric::taxi:
-                Log::logInfo("knn", "Distance metric: MANHATTAN (taxicab distance).");
+                this->logger.logInfo("knn", "Distance metric: MANHATTAN (taxicab distance).");
                 break;
             case DistanceMetric::correlation:
-                Log::logInfo("knn", "Distance metric: PEARSON CORRELATION COEFF.");
+                this->logger.logInfo("knn", "Distance metric: PEARSON CORRELATION COEFF.");
                 break;
             default:
                 break;
@@ -1097,7 +1098,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            Log::logError("knn","Weights list longer than current feature length. ignoring excess weights");
+            this->logger.logError("knn","Weights list longer than current feature length. ignoring excess weights");
             listLength = this->maxFeatureLength;
         }
 
@@ -1122,14 +1123,14 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            Log::logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
+            this->logger.logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
         for (i=0; i<listLength; ++i)
             this->attributeData[i].name = names[i];
 
-        Log::logInfo("knn", "Attribute names received.");
+        this->logger.logInfo("knn", "Attribute names received.");
     }
 
     /**
@@ -1146,7 +1147,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            Log::logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
+            this->logger.logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
@@ -1160,7 +1161,7 @@ public:
                 for (j=0; j<this->maxFeatureLength; ++j)
                     this->attributeData[j].order = j;
 
-                Log::logError("knn","Attribute "+std::to_string(this->attributeData[i].order)+" out of range. attribute order initialized.");
+                this->logger.logError("knn","Attribute "+std::to_string(this->attributeData[i].order)+" out of range. attribute order initialized.");
             }
         }
 
@@ -1168,7 +1169,7 @@ public:
         for (; i<this->maxFeatureLength; ++i)
             this->attributeData[i].order = 0;
 
-        Log::logInfo("knn", "Attributes re-ordered.");
+        this->logger.logInfo("knn", "Attributes re-ordered.");
     }
 
     /**
@@ -1190,7 +1191,7 @@ public:
             this->attributeLo = tmp;
         }
 
-        Log::logInfo("knn", "Attribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi)+".");
+        this->logger.logInfo("knn", "Attribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi)+".");
     }
 
     /**
@@ -1203,7 +1204,7 @@ public:
         for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
             this->attributeData[i].order = i;
 
-        Log::logInfo("knn", "Attribute order initialized.");
+        this->logger.logInfo("knn", "Attribute order initialized.");
     }
 
     /**
@@ -1241,7 +1242,7 @@ public:
         this->minFeatureLength = INT_MAX;
         this->normalize = false;
 
-        Log::logInfo("knn", "All instances cleared.");
+        this->logger.logInfo("knn", "All instances cleared.");
     }
 
     /**
@@ -1253,7 +1254,7 @@ public:
      * in the text file format using the writeText method
      * @see writeTextData
     */
-    void writeData(std::string filename)
+    bool writeData(std::string filename)
     {
         FILE *filePtr;
 
@@ -1264,8 +1265,8 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to create " + filename);
-            return;
+            this->logger.logError("knn","Failed to create " + filename);
+            return false;
         }
 
         // write the header information, which is the number of instances, and then the length of each instance
@@ -1279,9 +1280,10 @@ public:
         for (t_instanceIdx i = 0; i < this->numInstances; ++i)
             fwrite(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        Log::logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" non-normalized instances to "+filename+".");
+        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" non-normalized instances to "+filename+".");
 
         fclose(filePtr);
+        return true;
     }
 
     /*
@@ -1290,7 +1292,7 @@ public:
      * (i.e. 1000s of instances)
      * eg. writeData("./data/feature-db.timid")
     */
-    void readData(std::string filename)
+    bool readData(std::string filename)
     {
         FILE *filePtr;
         t_instanceIdx i;
@@ -1299,8 +1301,8 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to open " + filename);
-            return;
+            this->logger.logError("knn","Failed to open " + filename);
+            return false;
         }
 
         t_instanceIdx maxLength = 0;
@@ -1355,15 +1357,16 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        Log::logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from "+filename+".");
+        this->logger.logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from "+filename+".");
         fclose(filePtr);
+        return true;
     }
 
     /**
      * When needing to look at the feature database values, data can be exported
      * in the text file format using this method
     */
-    void writeTextData(std::string filename)
+    bool writeTextData(std::string filename)
     {
         FILE *filePtr;
         t_instanceIdx i;
@@ -1373,8 +1376,8 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to create " + filename);
-            return;
+            this->logger.logError("knn","Failed to create " + filename);
+            return false;
         }
 
         for (i=0; i<this->numInstances; ++i)
@@ -1409,14 +1412,15 @@ public:
             fprintf(filePtr, "\n");
         }
 
-        Log::logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" instances to " + filename + ".");
+        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" instances to " + filename + ".");
         fclose(filePtr);
+        return true;
     }
 
     /**
      * Used to read text file format
     */
-    void readTextData(std::string filename)
+    bool readTextData(std::string filename)
     {
         FILE *filePtr;
         t_instanceIdx i, j, numInstances, stringLength, numSpaces;
@@ -1426,8 +1430,8 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to open " + filename);
-            return;
+            this->logger.logError("knn","Failed to open " + filename);
+            return false;
         }
 
         numInstances = 0;
@@ -1509,8 +1513,9 @@ public:
                 fscanf(filePtr, "%f", &this->instances[i].data[j]);
         }
 
-        Log::logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from " + filename + ".");
+        this->logger.logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from " + filename + ".");
         fclose(filePtr);
+        return true;
     }
 
     /**
@@ -1531,7 +1536,7 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to create " + filename);
+            this->logger.logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1550,7 +1555,7 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fwrite(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        Log::logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to " + filename + ".");
+        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to " + filename + ".");
         fclose(filePtr);
     }
 
@@ -1572,7 +1577,7 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to open " + filename);
+            this->logger.logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1581,7 +1586,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            Log::logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
+            this->logger.logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1604,7 +1609,7 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        Log::logInfo("knn", "Read "+std::to_string(this->numClusters)+" clusters from "+filename+".");
+        this->logger.logInfo("knn", "Read "+std::to_string(this->numClusters)+" clusters from "+filename+".");
         fclose(filePtr);
     }
 
@@ -1629,7 +1634,7 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to create " + filename);
+            this->logger.logError("knn","Failed to create " + filename);
             return;
         }
 
@@ -1645,7 +1650,7 @@ public:
             fprintf(filePtr, "\n");
         }
 
-        Log::logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to "+filename+".");
+        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to "+filename+".");
         fclose(filePtr);
     }
 
@@ -1662,7 +1667,7 @@ public:
 
         if (!filePtr)
         {
-            Log::logError("knn","Failed to open " + filename);
+            this->logger.logError("knn","Failed to open " + filename);
             return;
         }
 
@@ -1673,7 +1678,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            Log::logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
+            this->logger.logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1746,7 +1751,7 @@ public:
             }
         }
 
-        Log::logInfo("knn", filename + ": read "+std::to_string(this->numClusters)+" clusters from " + filename);
+        this->logger.logInfo("knn", filename + ": read "+std::to_string(this->numClusters)+" clusters from " + filename);
         fclose(filePtr);
     }
 
@@ -1795,8 +1800,8 @@ public:
         res += "\njump probability: "+std::to_string(this->jumpProb);
         res += "\nstutter protect: "+std::to_string(this->stutterProtect);
         res += "\n";
-        res += "Info log path: " + Log::getInfoLogPath();
-        res += "Error log path: " + Log::getErrorLogPath();
+        res += "Log path: ";
+        res += logger.getLogPath();
         return res;
     }
 
@@ -1822,7 +1827,7 @@ public:
 
         if (idx > this->numInstances-1)
         {
-            Log::logError("knn","Instance "+std::to_string(idx)+" does not exist.");
+            this->logger.logError("knn","Instance "+std::to_string(idx)+" does not exist.");
             throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
         }
         else
@@ -1848,7 +1853,7 @@ public:
     {
         if (idx >= this->numInstances)
         {
-            Log::logError("knn","Instance "+std::to_string(idx)+" does not exist.");
+            this->logger.logError("knn","Instance "+std::to_string(idx)+" does not exist.");
             throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
         }
         else
@@ -1884,7 +1889,7 @@ public:
 
         if (idx >= this->numClusters)
         {
-            Log::logError("knn","Cluster "+std::to_string(idx)+" does not exist.");
+            this->logger.logError("knn","Cluster "+std::to_string(idx)+" does not exist.");
         }
         else
         {
@@ -1982,7 +1987,7 @@ public:
         }
         else
         {
-            Log::logError("knn","Feature database not normalized. minimum values not calculated yet.");
+            this->logger.logError("knn","Feature database not normalized. minimum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. minimum values not calculated yet.");
         }
     }
@@ -2005,7 +2010,7 @@ public:
         }
         else
         {
-            Log::logError("knn","Feature database not normalized. maximum values not calculated yet.");
+            this->logger.logError("knn","Feature database not normalized. maximum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. maximum values not calculated yet.");
         }
     }
@@ -2021,7 +2026,7 @@ public:
         }
         else
         {
-            Log::logError("knn","No training instances have been loaded.");
+            this->logger.logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2035,7 +2040,7 @@ public:
             return (this->maxFeatureLength);
         else
         {
-            Log::logError("knn","No training instances have been loaded.");
+            this->logger.logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2067,7 +2072,7 @@ public:
 
             if (finishInstance - startInstance == 0)
             {
-                Log::logError("knn","Bad instance range for similarity matrix");
+                this->logger.logError("knn","Bad instance range for similarity matrix");
                 std::vector<std::vector<float>> res;
                 return res;
             }
@@ -2128,13 +2133,13 @@ public:
             }
             else
             {
-                Log::logError("knn","Bad range of instances");
+                this->logger.logError("knn","Bad range of instances");
                 throw std::logic_error("Bad range of instances");
             }
         }
         else
         {
-            Log::logError("knn","No training instances have been loaded.");
+            this->logger.logError("knn","No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2150,7 +2155,7 @@ public:
         if (idx >= this->maxFeatureLength)
         {
             std::string errstr = "Attribute "+std::to_string(idx)+" does not exist";
-            Log::logError("knn",errstr);
+            this->logger.logError("knn",errstr);
             throw std::logic_error(errstr);
         }
         else
@@ -2230,7 +2235,7 @@ private:
 
             if (thisAttribute > this->instances[instanceID].length)
             {
-                Log::logError("knn","Attribute "+std::to_string(thisAttribute)+" out of range for database instance "+std::to_string(instanceID));
+                this->logger.logError("knn","Attribute "+std::to_string(thisAttribute)+" out of range for database instance "+std::to_string(instanceID));
                 return(FLT_MAX);
             }
 
@@ -2304,7 +2309,7 @@ private:
 
             if (thisAttribute > (instance1.length - 1) || thisAttribute > (instance2.length - 1))
             {
-                Log::logError("knn","Attribute "+std::to_string(thisAttribute)+" does not exist for both feature vectors. cannot compute distance.");
+                this->logger.logError("knn","Attribute "+std::to_string(thisAttribute)+" does not exist for both feature vectors. cannot compute distance.");
                 return(FLT_MAX);
             }
 
@@ -2376,7 +2381,7 @@ private:
             res += "\nattribute weights initialized";
             res += "\nattribute order initialized";
             res += ("\nattribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi));
-            Log::logInfo("knn", res);
+            this->logger.logInfo("knn", res);
         }
 
     }
@@ -2409,6 +2414,9 @@ private:
 
     t_attributeIdx attributeLo;
     t_attributeIdx attributeHi;
+
+    tid::Log logger;
+    const std::string LOG_FILENAME = "timbreid-knn";
 };
 
 } // namespace tid
@@ -2441,7 +2449,7 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
 
     if (!filePtr)
     {
-        Log::logError("knn","Failed to create %s", filenameBuf);
+        this->logger.logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
@@ -2511,7 +2519,7 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
         fprintf(filePtr, "\n");
     }
 
-    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2530,13 +2538,13 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
 
     if (!filePtr)
     {
-        Log::logError("knn","Failed to create %s", filenameBuf);
+        this->logger.logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        Log::logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        this->logger.logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2566,7 +2574,7 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
         fprintf(filePtr, "\n");
     }
 
-    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2585,13 +2593,13 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
 
     if (!filePtr)
     {
-        Log::logError("knn","Failed to create %s", filenameBuf);
+        this->logger.logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        Log::logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        this->logger.logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2620,7 +2628,7 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
         }
     }
 
-    Log::logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2638,7 +2646,7 @@ void timbreID_FANN(t_symbol *s, float normRange)
 
     if (!filePtr)
     {
-        Log::logError("knn","Failed to create %s", filenameBuf);
+        this->logger.logError("knn","Failed to create %s", filenameBuf);
         return;
     }
 
@@ -2679,7 +2687,7 @@ void timbreID_FANN(t_symbol *s, float normRange)
         fprintf(filePtr, "\n");
     }
 
-    Log::logInfo("knn", "Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
+    this->logger.logInfo("knn", "Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }

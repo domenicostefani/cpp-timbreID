@@ -1,24 +1,46 @@
 #pragma once
 
 #include <string>
-#include <memory>
 #include <JuceHeader.h>
+#include "tIDLib.hpp"
 
 namespace tid   /* TimbreID namespace*/
 {
 
 class Log {
 public:
-    static void setLogPath(std::string mpath);
-    static std::string getInfoLogPath();
-    static std::string getErrorLogPath();
+    Log(std::string filename)
+    {
+        this->logFilename = filename;
+        juce::String jpath(tIDLib::LOG_PATH);
+        jpath = juce::File::addTrailingSeparator(jpath);
+        this->path = jpath.toStdString();
 
-    static void logInfo(std::string module, std::string logtext);
-    static void logError(std::string module, std::string logtext);
+        this->jLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(this->path, this->logFilename, tIDLib::LOG_EXTENSION, "TimbreID - log"));
+        this->jLogger->logMessage("Starting log at: " + this->path);
+    }
+
+    ~Log(){}
+
+    std::string getLogPath() const
+    {
+        return "";
+        //return (this->path + this->logFilename + tIDLib::LOG_EXTENSION);
+    }
+
+    void logInfo(std::string module, std::string text) const
+    {
+        this->jLogger->logMessage(module + ": " + text);
+    }
+
+    void logError(std::string module, std::string text) const
+    {
+        this->jLogger->logMessage("ERROR! " + module + ": " + text);
+    }
 private:
-    static const std::string LOG_FILENAME;
-    static std::string path;
-    static std::unique_ptr<FileLogger> jLogger;
+    std::string logFilename;
+    std::string path;
+    std::unique_ptr<FileLogger> jLogger;
 };
 
 } // namespace tid

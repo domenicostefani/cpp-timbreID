@@ -38,6 +38,9 @@ constexpr float MAXMELS = 3962.0;
 constexpr int NUMWEIGHTPOINTS = 29;
 constexpr int MAXTIDTEXTSTRING = 100000;
 
+const std::string LOG_PATH = "/tmp/";
+const std::string LOG_EXTENSION = "log";
+
 enum t_bark2freqFormula
 {
 	bark2freqFormula0 = 0,
