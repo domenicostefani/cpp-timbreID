@@ -30,7 +30,7 @@ PROGRESS MADE SO FAR:
 | maxSample~.c
 | maxSampleDelta~.c
 | melSpec~.c
-| mfcc~.c --------------------------- X ------------ X                          <<< TODO: code the demo
+| mfcc~.c --------------------------- X ------------ X ------- X
 | minSample~.c
 | minSampleDelta~.c
 | peakSample~.c  ----------------------------------- X ------- X
