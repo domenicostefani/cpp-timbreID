@@ -24,13 +24,17 @@ public:
 
     std::string getLogPath() const
     {
-        return "";
-        //return (this->path + this->logFilename + tIDLib::LOG_EXTENSION);
+        return (this->path + this->logFilename + tIDLib::LOG_EXTENSION);
     }
 
     void logInfo(std::string module, std::string text) const
     {
         this->jLogger->logMessage(module + ": " + text);
+    }
+
+    void logInfo(std::string text) const
+    {
+        this->jLogger->logMessage(text);
     }
 
     void logError(std::string module, std::string text) const
