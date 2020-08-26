@@ -33,3 +33,5 @@ TimbreID original library was developed by William Brent
 #include "include/zeroCrossing.hpp"
 
 #include "include/knn.hpp"
+
+#include "include/aubioOnsetWrap.hpp"

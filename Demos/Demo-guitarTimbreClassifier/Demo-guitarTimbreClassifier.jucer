@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="l7Y3nX" name="Demo-guitarTimbreClassifier" projectType="audioplug"
+              jucerVersion="5.4.7" pluginFormats="buildVST" headerPath="../../../../include&#10;../../../../src&#10;../../../../&#10;/home/domenico/Develop/timbreInference/compiled_library ">
+  <MAINGROUP id="c9iv8T" name="Demo-guitarTimbreClassifier">
+    <GROUP id="{57C43C6D-AB21-5E5C-5B21-4EF023F7F83D}" name="Source">
+      <GROUP id="{F33E3E94-D577-DE09-7F19-505D758D5E4C}" name="cpp-timbreID">
+        <GROUP id="{AEF560FC-FF03-F78F-5CEA-89560BB54461}" name="include">
+          <FILE id="W6tmIA" name="attackTime.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/attackTime.hpp"/>
+          <FILE id="ITy7m1" name="bark.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/bark.hpp"/>
+          <FILE id="ti8cP1" name="bark2freq.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/bark2freq.hpp"/>
+          <FILE id="IEKTWR" name="barkSpec.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/barkSpec.hpp"/>
+          <FILE id="kxWbNi" name="barkSpecBrightness.hpp" compile="0" resource="0"
+                file="../../../../Desktop/Link to Develop/cpp-timbreID/include/barkSpecBrightness.hpp"/>
+          <FILE id="KCTt6O" name="bfcc.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/bfcc.hpp"/>
+          <FILE id="j9phVd" name="bin2freq.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/bin2freq.hpp"/>
+          <FILE id="lvo8Sf" name="cepstrum.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/cepstrum.hpp"/>
+          <FILE id="CFrhEn" name="freq2bark.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/freq2bark.hpp"/>
+          <FILE id="e9aSyo" name="freq2bin.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/freq2bin.hpp"/>
+          <FILE id="gpHrRR" name="freq2mel.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/freq2mel.hpp"/>
+          <FILE id="OAbD9S" name="knn.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/knn.hpp"/>
+          <FILE id="bA1Bjs" name="mel2freq.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/mel2freq.hpp"/>
+          <FILE id="aMgyeS" name="mfcc.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/mfcc.hpp"/>
+          <FILE id="sVrszm" name="peakSample.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/peakSample.hpp"/>
+          <FILE id="deJphb" name="tIDLib.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/tIDLib.hpp"/>
+          <FILE id="OWhfIm" name="tidLog.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/tidLog.hpp"/>
+          <FILE id="SMi2DV" name="tidTime.hpp" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/include/tidTime.hpp"/>
+          <FILE id="LyE10G" name="zeroCrossing.hpp" compile="0" resource="0"
+                file="../../../../Desktop/Link to Develop/cpp-timbreID/include/zeroCrossing.hpp"/>
+        </GROUP>
+        <GROUP id="{C2CF8043-B473-784C-CCD9-234B3062841B}" name="src">
+          <FILE id="SKwy0L" name="bin2freq.cpp" compile="1" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/src/bin2freq.cpp"/>
+          <FILE id="oNLXCB" name="freq2bin.cpp" compile="1" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/src/freq2bin.cpp"/>
+          <FILE id="UDeBgt" name="tIDLib.cpp" compile="1" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/src/tIDLib.cpp"/>
+        </GROUP>
+        <FILE id="c7qcQt" name="juce_timbreID.h" compile="0" resource="0" file="../../../../Desktop/Link to Develop/cpp-timbreID/juce_timbreID.h"/>
+      </GROUP>
+      <FILE id="Wbocz0" name="wavetableSine.h" compile="0" resource="0" file="Source/wavetableSine.h"/>
+      <FILE id="kSy7XO" name="setParamBox.hpp" compile="0" resource="0" file="Source/setParamBox.hpp"/>
+      <FILE id="hzsxlT" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="PNrThE" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="tDLe8Z" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="pyx13z" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <EXPORTFORMATS>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f&#10;liteclassifier&#10;tensorflow-lite">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="/home/domenico/Develop/timbreInference/compiled_library&#10;/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="/home/domenico/Develop/timbreInference/compiled_library&#10;/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../elkJUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <LIVE_SETTINGS>
+    <LINUX/>
+  </LIVE_SETTINGS>
+  <JUCEOPTIONS JUCE_VST3_CAN_REPLACE_VST2="0" JUCE_STRICT_REFCOUNTEDPOINTER="1"
+               JUCE_WEB_BROWSER="0"/>
+</JUCERPROJECT>
