@@ -21,7 +21,7 @@
 DemoEditor::DemoEditor (DemoProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
-    setSize (700, 650);
+    setSize (700, 750);
     addAndMakeVisible(titleLabel);
     titleLabel.setText("Onset detector + bfcc + classifier", NotificationType::dontSendNotification);
     titleLabel.setJustificationType(Justification::centred);
@@ -105,6 +105,12 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     readText.setLabelText("read Text");
     readText.setDefaultText("./data/feature-db.csv");
 
+    addAndMakeVisible(manualCluster);  //SetParamBox
+    manualCluster.addListener(this);
+    manualCluster.setLabelText("ManCluster");
+    manualCluster.setDefaultText("0,20,40,60,80");
+
+
     addAndMakeVisible(dispTimbre);  //Label
     dispTimbre.setText("dispTimbre", NotificationType::dontSendNotification);
 
@@ -160,6 +166,7 @@ void DemoEditor::resized()
 
     classifierState.setBounds(knnCommands.removeFromTop(boxHeight));
     cluster.setBounds(knnCommands.removeFromTop(boxHeight));
+    manualCluster.setBounds(knnCommands.removeFromTop(boxHeight));
     uncluster.setBounds(knnCommands.removeFromTop(boxHeight));
     clearAll.setBounds(knnCommands.removeFromTop(boxHeight));
     knnCommands.removeFromTop(boxHeight*0.5);
@@ -171,6 +178,26 @@ void DemoEditor::resized()
 
     dispTimbre.setBounds(knnDisplay.removeFromTop(boxHeight));
     dispDist.setBounds(knnDisplay.removeFromTop(boxHeight));
+}
+
+std::vector<std::string> splitString(const std::string& s, char seperator)
+{
+   std::vector<std::string> output;
+
+    std::string::size_type prev_pos = 0, pos = 0;
+
+    while((pos = s.find(seperator, pos)) != std::string::npos)
+    {
+        std::string substring( s.substr(prev_pos, pos-prev_pos) );
+
+        output.push_back(substring);
+
+        prev_pos = ++pos;
+    }
+
+    output.push_back(s.substr(prev_pos, pos-prev_pos)); // Last word
+
+    return output;
 }
 
 
@@ -238,6 +265,45 @@ void DemoEditor::buttonClicked (Button * button)
     else if(featureNumber.hasButton(button))
     {
         processor.featuresUsed = featureNumber.getText().getIntValue();
+    }
+    else if(manualCluster.hasButton(button))
+    {
+        /******/
+        /* How it works*/
+        /*
+         * When a string like "0,20,40,60,80" is read, it means that
+         * the number of clusters is 4 (size -1).
+         * Cluster 0 elements go from record 0 to record 19 (next number -1)
+         * Cluster 1 elements go from record 20 to record 39 (next number -1)
+         * Cluster 2 elements go from record 40 to record 59 (next number -1)
+         * Cluster 3 elements go from record 60 to record 79 (next number -1)
+        */
+        /******/
+
+        std::string indexes = manualCluster.getText().toStdString();
+        std::cout << "read the string '" << indexes << "'\n";
+
+        std::vector<std::string> indexesVec = splitString(indexes,',');
+        std::cout << "done the split" << "\n";
+
+        uint32 numClusters = indexesVec.size() -1;
+
+        uint32 clusterIdx = 0;
+        uint32 lowIdx = std::stoi(indexesVec[0]);
+
+        for(size_t i = 1; i < indexesVec.size(); ++i)
+        {
+            std::string s = indexesVec[i];
+            std::cout << "> '" << s << "'\n";
+            uint32 highIdx = std::stoi(s);
+
+
+            std::cout << "> manualCluster(" << numClusters << "," << clusterIdx << "," << lowIdx << "," << highIdx-1 << ")\n";
+            processor.knn.manualCluster(numClusters,clusterIdx,lowIdx,highIdx-1);
+
+            clusterIdx++;
+            lowIdx = highIdx;
+        }
     }
 }
 

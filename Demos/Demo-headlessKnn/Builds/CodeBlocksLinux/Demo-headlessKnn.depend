@@ -477,7 +477,7 @@
 
 1591291148 /usr/include/x86_64-linux-gnu/bits/sockaddr.h
 
-1592906493 /usr/include/x86_64-linux-gnu/asm/socket.h
+1594408954 /usr/include/x86_64-linux-gnu/asm/socket.h
 	<asm-generic/socket.h>
 
 1591291148 /usr/include/x86_64-linux-gnu/bits/socket-constants.h
@@ -541,7 +541,7 @@
 1591291148 /usr/include/x86_64-linux-gnu/bits/ioctls.h
 	<asm/ioctls.h>
 
-1592906493 /usr/include/x86_64-linux-gnu/asm/ioctls.h
+1594408954 /usr/include/x86_64-linux-gnu/asm/ioctls.h
 	<asm-generic/ioctls.h>
 
 1591291148 /usr/include/x86_64-linux-gnu/bits/ioctl-types.h
@@ -9380,7 +9380,7 @@
 	"PluginEditor.h"
 	<iostream>
 
-1595322532 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginProcessor.h
+1595509318 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginProcessor.h
 	<JuceHeader.h>
 	"juce_timbreID.h"
 	"wavetableSine.h"
@@ -9420,17 +9420,29 @@
 	<cmath>
 	<string>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/bark2freq.hpp
+1597731918 /home/domenico/Develop/cpp-timbreID//include/bark2freq.hpp
+	"tIDLib.hpp"
+	<string>
+	<stdexcept>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/freq2bark.hpp
+1597731891 /home/domenico/Develop/cpp-timbreID//include/freq2bark.hpp
+	"tIDLib.hpp"
+	<string>
+	<stdexcept>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/freq2mel.hpp
+1597731976 /home/domenico/Develop/cpp-timbreID//include/freq2mel.hpp
+	"tIDLib.hpp"
+	<string>
+	<stdexcept>
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/bin2freq.hpp
+1597731793 /home/domenico/Develop/cpp-timbreID//include/bin2freq.hpp
 
 1586415063 /home/domenico/Develop/cpp-timbreID//include/freq2bin.hpp
 
-1586415063 /home/domenico/Develop/cpp-timbreID//include/mel2freq.hpp
+1597732035 /home/domenico/Develop/cpp-timbreID//include/mel2freq.hpp
+	"tIDLib.hpp"
+	<string>
+	<stdexcept>
 
 1586961946 /home/domenico/Develop/cpp-timbreID//include/attackTime.hpp
 	"tIDLib.hpp"
@@ -9481,19 +9493,19 @@
 	"tIDLib.hpp"
 	<tuple>
 
-1595320361 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginEditor.h
+1595509318 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginEditor.h
 	<JuceHeader.h>
 	"PluginProcessor.h"
 	"LED.h"
 	"setParamBox.h"
 
-1595320361 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/LED.h
+1595509318 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/LED.h
 	<JuceHeader.h>
 
-1595320361 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/setParamBox.h
+1595509318 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/setParamBox.h
 	<JuceHeader.h>
 
-1595320361 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/setParamBox.cpp
+1595509318 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/setParamBox.cpp
 	"setParamBox.h"
 
 1593616314 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/JuceLibraryCode/include_juce_audio_plugin_client_VST2.cpp
@@ -9556,12 +9568,12 @@
 
 1583510154 /home/domenico/JUCE/modules/juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h
 
-1595320361 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginEditor.cpp
+1595509318 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/PluginEditor.cpp
 	"PluginProcessor.h"
 	"PluginEditor.h"
 	<iostream>
 	<string>
 
-1595323392 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/wavetableSine.h
+1595509318 /home/domenico/Develop/cpp-timbreID/Demos/Demo-headlessKnn/Source/wavetableSine.h
 	<JuceHeader.h>
 

@@ -17,8 +17,10 @@
 #include <iostream>
 
 // #define USE_TEXT_DATA
-#define DATA_PATH "./data/traindata.timid"
-#define LOG_PATH "/tmp"
+#define DATA_PATH "/udata/knnclassifier/traindata.timid"
+
+#define MONO_CHANNEL 1
+// #define DEBUG_WHICH_CHANNEL
 
 //==============================================================================
 DemoProcessor::DemoProcessor()
@@ -60,11 +62,42 @@ DemoProcessor::DemoProcessor()
 
     if(readDataResult)
     {
+        this->jLogger->logMessage("Performing clustering");
+       #ifdef AUTOCLUSTER
         std::vector<float> clusterout = this->knn.autoCluster(NUM_CLUSTERS);
         if( !clusterout.empty() )
         {
             this->classifierState = CState::classify;
         }
+       #else
+       /*
+        //Perform manual clustering for 4 clusters, 20 examples per cluster
+        // Indexes 0-19 > Cluster 0
+        this->knn.manualCluster(4,0,0,19);
+        // Indexes 20-39 > Cluster 1
+        this->knn.manualCluster(4,1,20,39);
+        // Indexes 30-59 > Cluster 2
+        this->knn.manualCluster(4,2,40,59);
+        // Indexes 60-79 > Cluster 3
+        this->knn.manualCluster(4,3,60,79);
+       */
+       
+        //Perform manual clustering for 4 clusters in moredata
+        //About 100 samples per cluster (circa)
+        // Indexes 0-99 > Cluster 0
+        this->knn.manualCluster(4,0,0,99);
+        // Indexes 100-199 > Cluster 1
+        this->knn.manualCluster(4,1,100,199);
+        // Indexes 200-289 > Cluster 2
+        this->knn.manualCluster(4,2,200,289);
+        // Indexes 290-390 > Cluster 3
+        this->knn.manualCluster(4,3,290,390);
+
+
+        this->knn.setK(this->KVALUE);
+
+        this->classifierState = CState::classify;
+       #endif
     }
 }
 
@@ -73,6 +106,7 @@ DemoProcessor::~DemoProcessor(){    /*DESTRUCTOR*/        }
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     /** PREPARE THE BARK MODULEs **/
+    this->jLogger->logMessage("prepareToPlay() was called");
     bark.prepare(sampleRate, (uint32)samplesPerBlock);
     bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
     sinewt.prepareToPlay(sampleRate);
@@ -81,6 +115,7 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 void DemoProcessor::releaseResources()
 {
     /** RESET THE MODULEs **/
+    this->jLogger->logMessage("releaseResources() was called");
     bark.reset();
     bfcc.reset();
 }
@@ -90,13 +125,21 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     ScopedNoDenormals noDenormals;
 
     /** STORE THE bfcc BUFFER FOR ANALYSIS **/
-    bfcc.store(buffer,(short int)0);
+    bfcc.store(buffer,(short int)MONO_CHANNEL);
+
+   #ifdef DEBUG_WHICH_CHANNEL
+    if(logCounter > (48000/64)){
+        logCounter = 0;
+        this->jLogger->logMessage("process 0:" + std::to_string(*buffer.getReadPointer(0,0)) + " 1:" + std::to_string(*buffer.getReadPointer(1,0)));
+    }
+    logCounter++;
+   #endif
 
     /** STORE THE bark BUFFER **/
     try
     {
         /** STORE THE BUFFER FOR COMPUTATION and retrieving growthdata**/
-        tid::Bark<float>::GrowthData growthData = bark.store(buffer,(short int)0);
+        tid::Bark<float>::GrowthData growthData = bark.store(buffer,(short int)MONO_CHANNEL);
 
         /** Retrieve the total growth and the growth data list **/
         std::vector<float>* growth = growthData.getGrowth();
@@ -150,7 +193,7 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
     if(bark == &this->bark)
         this->onsetMonitorState.exchange(true);
 
-    bool VERBOSE = false;
+    bool VERBOSE = true;
     bool VERBOSERES = true;
 
     if (VERBOSE) this->jLogger->logMessage("Onset Detected");

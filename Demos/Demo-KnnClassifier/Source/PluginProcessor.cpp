@@ -109,9 +109,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
     }
 
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    for (auto i = 0; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+//    auto totalNumOutputChannels = getTotalNumOutputChannels();
+//    for (auto i = 0; i < totalNumOutputChannels; ++i)
+//        buffer.clear (i, 0, buffer.getNumSamples());
 }
 
 /**

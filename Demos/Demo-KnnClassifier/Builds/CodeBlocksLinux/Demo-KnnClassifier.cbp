@@ -7412,6 +7412,7 @@
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
+		<Unit filename="../../../../include/knn.hpp" />
 		<Unit filename="../../../../include/mel2freq.hpp">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
@@ -7432,10 +7433,6 @@
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
-		<Unit filename="../../../../include/timbreID.hpp">
-			<Option target="Shared Code | Debug" />
-			<Option target="Shared Code | Release" />
-		</Unit>
 		<Unit filename="../../../../include/zeroCrossing.hpp">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
@@ -7444,15 +7441,7 @@
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
-		<Unit filename="../../../../src/bark2freq.cpp">
-			<Option target="Shared Code | Debug" />
-			<Option target="Shared Code | Release" />
-		</Unit>
 		<Unit filename="../../../../src/bin2freq.cpp">
-			<Option target="Shared Code | Debug" />
-			<Option target="Shared Code | Release" />
-		</Unit>
-		<Unit filename="../../../../src/freq2bark.cpp">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
@@ -7460,19 +7449,10 @@
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
-		<Unit filename="../../../../src/freq2mel.cpp">
-			<Option target="Shared Code | Debug" />
-			<Option target="Shared Code | Release" />
-		</Unit>
-		<Unit filename="../../../../src/mel2freq.cpp">
-			<Option target="Shared Code | Debug" />
-			<Option target="Shared Code | Release" />
-		</Unit>
 		<Unit filename="../../../../src/tIDLib.cpp">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />
 		</Unit>
-		<Unit filename="../../../../src/tidLog.cpp" />
 		<Unit filename="../../JuceLibraryCode/AppConfig.h">
 			<Option target="Shared Code | Debug" />
 			<Option target="Shared Code | Release" />

@@ -78,12 +78,15 @@ public:
     CState classifierState = CState::idle;
 
     const int NUM_CLUSTERS = 4;
+    const int KVALUE = 3;
 
     /** LOG */
     std::unique_ptr<FileLogger> jLogger;
     const std::string LOG_FOLDER_PATH = "/tmp/";
     const std::string LOG_FILENAME = "headlessKnn";
     const std::string LOG_EXTENSION = ".log";
+
+    uint32 logCounter = 0;
 
 
 private:

@@ -27,7 +27,7 @@
           <Add option="-DJucePlugin_Build_AUv3=0"/>
           <Add option="-DJucePlugin_Build_RTAS=0"/>
           <Add option="-DJucePlugin_Build_AAX=0"/>
-          <Add option="-DJucePlugin_Build_Standalone=1"/>
+          <Add option="-DJucePlugin_Build_Standalone=0"/>
           <Add option="-DJucePlugin_Build_Unity=0"/>
           <Add option="-DJUCE_SHARED_CODE=1"/>
           <Add option="-m64"/>
@@ -108,57 +108,6 @@
           <Add directory="&quot;bin/Debug&quot;"/>
         </Linker>
       </Target>
-      <Target title="Standalone Plugin | Debug">
-        <Option output="bin/Debug/Demo-headlessKnn"
-                prefix_auto="1"
-                extension_auto="0"/>
-        <Option object_output="obj/Debug"/>
-        <Option type="0"/>
-        <Option compiler="gcc"/>
-        <Option external_deps="bin/Debug/libDemo-headlessKnn.a"/>
-        <Compiler>
-          <Add option="-DLINUX=1"/>
-          <Add option="-DDEBUG=1"/>
-          <Add option="-D_DEBUG=1"/>
-          <Add option="-DJUCER_CODEBLOCKS_LINUX_191E0897=1"/>
-          <Add option="-DJUCE_APP_VERSION=1.0.0"/>
-          <Add option="-DJUCE_APP_VERSION_HEX=0x10000"/>
-          <Add option="-DJucePlugin_Build_VST=0"/>
-          <Add option="-DJucePlugin_Build_VST3=0"/>
-          <Add option="-DJucePlugin_Build_AU=0"/>
-          <Add option="-DJucePlugin_Build_AUv3=0"/>
-          <Add option="-DJucePlugin_Build_RTAS=0"/>
-          <Add option="-DJucePlugin_Build_AAX=0"/>
-          <Add option="-DJucePlugin_Build_Standalone=1"/>
-          <Add option="-DJucePlugin_Build_Unity=0"/>
-          <Add option="-m64"/>
-          <Add option="-O0"/>
-          <Add option="-std=c++14"/>
-          <Add option="-mstackrealign"/>
-          <Add option="-g"/>
-          <Add option="-fPIC"/>
-          <Add option="&#96;pkg-config --cflags alsa x11 xinerama xext freetype2 libcurl&#96;"/>
-          <Add option="-pthread"/>
-          <Add directory="."/>
-          <Add directory="/home/domenico/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"/>
-          <Add directory="/home/domenico/SDKs/VST2_SDK"/>
-          <Add directory="../../JuceLibraryCode"/>
-          <Add directory="/home/domenico/JUCE/modules"/>
-          <Add directory="../../../../include"/>
-          <Add directory="../../../../src"/>
-          <Add directory="../../../../"/>
-          <Add directory="/usr/include/freetype2"/>
-        </Compiler>
-        <Linker>
-          <Add option="&quot;bin/Debug/libDemo-headlessKnn.a&quot;"/>
-          <Add option="-m64"/>
-          <Add option="&#96;pkg-config --libs alsa x11 xinerama xext freetype2 libcurl&#96;"/>
-          <Add library="rt"/>
-          <Add library="dl"/>
-          <Add library="pthread"/>
-          <Add directory="&quot;bin/Debug&quot;"/>
-        </Linker>
-      </Target>
       <Target title="Shared Code | Release">
         <Option output="bin/Release/Demo-headlessKnn.a"
                 prefix_auto="1"
@@ -178,7 +127,7 @@
           <Add option="-DJucePlugin_Build_AUv3=0"/>
           <Add option="-DJucePlugin_Build_RTAS=0"/>
           <Add option="-DJucePlugin_Build_AAX=0"/>
-          <Add option="-DJucePlugin_Build_Standalone=1"/>
+          <Add option="-DJucePlugin_Build_Standalone=0"/>
           <Add option="-DJucePlugin_Build_Unity=0"/>
           <Add option="-DJUCE_SHARED_CODE=1"/>
           <Add option="-m64"/>
@@ -258,62 +207,12 @@
           <Add directory="&quot;bin/Release&quot;"/>
         </Linker>
       </Target>
-      <Target title="Standalone Plugin | Release">
-        <Option output="bin/Release/Demo-headlessKnn"
-                prefix_auto="1"
-                extension_auto="0"/>
-        <Option object_output="obj/Release"/>
-        <Option type="0"/>
-        <Option compiler="gcc"/>
-        <Option external_deps="bin/Release/libDemo-headlessKnn.a"/>
-        <Compiler>
-          <Add option="-DLINUX=1"/>
-          <Add option="-DNDEBUG=1"/>
-          <Add option="-DJUCER_CODEBLOCKS_LINUX_191E0897=1"/>
-          <Add option="-DJUCE_APP_VERSION=1.0.0"/>
-          <Add option="-DJUCE_APP_VERSION_HEX=0x10000"/>
-          <Add option="-DJucePlugin_Build_VST=0"/>
-          <Add option="-DJucePlugin_Build_VST3=0"/>
-          <Add option="-DJucePlugin_Build_AU=0"/>
-          <Add option="-DJucePlugin_Build_AUv3=0"/>
-          <Add option="-DJucePlugin_Build_RTAS=0"/>
-          <Add option="-DJucePlugin_Build_AAX=0"/>
-          <Add option="-DJucePlugin_Build_Standalone=1"/>
-          <Add option="-DJucePlugin_Build_Unity=0"/>
-          <Add option="-m64"/>
-          <Add option="-O3"/>
-          <Add option="-std=c++14"/>
-          <Add option="-mstackrealign"/>
-          <Add option="-fPIC"/>
-          <Add option="&#96;pkg-config --cflags alsa x11 xinerama xext freetype2 libcurl&#96;"/>
-          <Add option="-pthread"/>
-          <Add directory="."/>
-          <Add directory="/home/domenico/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"/>
-          <Add directory="/home/domenico/SDKs/VST2_SDK"/>
-          <Add directory="../../JuceLibraryCode"/>
-          <Add directory="/home/domenico/JUCE/modules"/>
-          <Add directory="../../../../include"/>
-          <Add directory="../../../../src"/>
-          <Add directory="../../../../"/>
-          <Add directory="/usr/include/freetype2"/>
-        </Compiler>
-        <Linker>
-          <Add option="&quot;bin/Release/libDemo-headlessKnn.a&quot;"/>
-          <Add option="-m64"/>
-          <Add option="-s"/>
-          <Add option="&#96;pkg-config --libs alsa x11 xinerama xext freetype2 libcurl&#96;"/>
-          <Add library="rt"/>
-          <Add library="dl"/>
-          <Add library="pthread"/>
-          <Add directory="&quot;bin/Release&quot;"/>
-        </Linker>
-      </Target>
     </Build>
     <VirtualTargets>
       <Add alias="Debug"
-           targets="Shared Code | Debug;VST | Debug;Standalone Plugin | Debug"/>
+           targets="Shared Code | Debug;VST | Debug"/>
       <Add alias="Release"
-           targets="Shared Code | Release;VST | Release;Standalone Plugin | Release"/>
+           targets="Shared Code | Release;VST | Release"/>
     </VirtualTargets>
     <Compiler>
       <Add option="-Wall"/>
@@ -323,12 +222,6 @@
     <Linker>
       <Add library="/usr/local/lib/libfftw3f.a"/>
     </Linker>
-    <Unit filename="../../Source/wavetableSine.h">
-      <Option target="Shared Code | Debug"/>
-      <Option target="Shared Code | Release"/>
-      <Option compile="0"/>
-      <Option link="0"/>
-    </Unit>
     <Unit filename="../../../../include/attackTime.hpp">
       <Option target="Shared Code | Debug"/>
       <Option target="Shared Code | Release"/>
@@ -443,27 +336,11 @@
       <Option compile="0"/>
       <Option link="0"/>
     </Unit>
-    <Unit filename="../../../../src/bark2freq.cpp">
-      <Option target="Shared Code | Debug"/>
-      <Option target="Shared Code | Release"/>
-    </Unit>
     <Unit filename="../../../../src/bin2freq.cpp">
       <Option target="Shared Code | Debug"/>
       <Option target="Shared Code | Release"/>
     </Unit>
-    <Unit filename="../../../../src/freq2bark.cpp">
-      <Option target="Shared Code | Debug"/>
-      <Option target="Shared Code | Release"/>
-    </Unit>
     <Unit filename="../../../../src/freq2bin.cpp">
-      <Option target="Shared Code | Debug"/>
-      <Option target="Shared Code | Release"/>
-    </Unit>
-    <Unit filename="../../../../src/freq2mel.cpp">
-      <Option target="Shared Code | Debug"/>
-      <Option target="Shared Code | Release"/>
-    </Unit>
-    <Unit filename="../../../../src/mel2freq.cpp">
       <Option target="Shared Code | Debug"/>
       <Option target="Shared Code | Release"/>
     </Unit>
@@ -472,6 +349,12 @@
       <Option target="Shared Code | Release"/>
     </Unit>
     <Unit filename="../../../../juce_timbreID.h">
+      <Option target="Shared Code | Debug"/>
+      <Option target="Shared Code | Release"/>
+      <Option compile="0"/>
+      <Option link="0"/>
+    </Unit>
+    <Unit filename="../../Source/wavetableSine.h">
       <Option target="Shared Code | Debug"/>
       <Option target="Shared Code | Release"/>
       <Option compile="0"/>
@@ -8864,10 +8747,6 @@
     <Unit filename="../../JuceLibraryCode/include_juce_audio_formats.cpp">
       <Option target="Shared Code | Debug"/>
       <Option target="Shared Code | Release"/>
-    </Unit>
-    <Unit filename="../../JuceLibraryCode/include_juce_audio_plugin_client_Standalone.cpp">
-      <Option target="Standalone Plugin | Debug"/>
-      <Option target="Standalone Plugin | Release"/>
     </Unit>
     <Unit filename="../../JuceLibraryCode/include_juce_audio_plugin_client_utils.cpp">
       <Option target="Shared Code | Debug"/>

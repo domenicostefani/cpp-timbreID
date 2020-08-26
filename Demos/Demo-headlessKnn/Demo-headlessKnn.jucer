@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="SVwiM8" name="Demo-headlessKnn" projectType="audioplug" jucerVersion="5.4.7"
-              pluginFormats="buildStandalone,buildVST" headerPath="../../../../include&#10;../../../../src&#10;../../../../">
+              pluginFormats="buildVST" headerPath="../../../../include&#10;../../../../src&#10;../../../../">
   <MAINGROUP id="Y0fpBb" name="Demo-headlessKnn">
     <GROUP id="{740D15BD-4D93-909C-88A5-02A91F435950}" name="Source">
-      <FILE id="IVfGD6" name="wavetableSine.h" compile="0" resource="0" file="Source/wavetableSine.h"/>
       <GROUP id="{3BCBD79E-5809-D724-F9DB-2E7451926D9F}" name="cpp-timbreID">
         <GROUP id="{20205318-7E43-5FFF-4696-0C8CEF2A5C75}" name="include">
           <FILE id="mgO0e0" name="attackTime.hpp" compile="0" resource="0" file="../../include/attackTime.hpp"/>
@@ -30,16 +29,13 @@
                 file="../../include/zeroCrossing.hpp"/>
         </GROUP>
         <GROUP id="{63489561-0375-0826-B7B6-71F8470F0467}" name="src">
-          <FILE id="lQacLa" name="bark2freq.cpp" compile="1" resource="0" file="../../src/bark2freq.cpp"/>
           <FILE id="KG1uw3" name="bin2freq.cpp" compile="1" resource="0" file="../../src/bin2freq.cpp"/>
-          <FILE id="MFGUWy" name="freq2bark.cpp" compile="1" resource="0" file="../../src/freq2bark.cpp"/>
           <FILE id="HPi8B9" name="freq2bin.cpp" compile="1" resource="0" file="../../src/freq2bin.cpp"/>
-          <FILE id="DQSUuH" name="freq2mel.cpp" compile="1" resource="0" file="../../src/freq2mel.cpp"/>
-          <FILE id="WaI1KD" name="mel2freq.cpp" compile="1" resource="0" file="../../src/mel2freq.cpp"/>
           <FILE id="la5v0B" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
         </GROUP>
         <FILE id="C4oE9f" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
       </GROUP>
+      <FILE id="IVfGD6" name="wavetableSine.h" compile="0" resource="0" file="Source/wavetableSine.h"/>
       <FILE id="WZmoxH" name="setParamBox.cpp" compile="1" resource="0" file="Source/setParamBox.cpp"/>
       <FILE id="RAhrBx" name="setParamBox.h" compile="0" resource="0" file="Source/setParamBox.h"/>
       <FILE id="tz5TVU" name="LED.h" compile="0" resource="0" file="Source/LED.h"/>

@@ -66,7 +66,7 @@ public:
     std::atomic<float> distAtomic{-1.0f};
 
     /**    Only the first n features of bfcc are used  **/
-    int featuresUsed = 1;
+    int featuresUsed = 50;
 
     enum class CState {
         idle,

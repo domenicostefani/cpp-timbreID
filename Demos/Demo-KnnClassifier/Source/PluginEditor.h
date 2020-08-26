@@ -117,7 +117,7 @@ private:
     Label classifierTitle;
     ComboBox classifierState;
     TextButton uncluster,clearAll;
-    setParamBox cluster,write,read, writeText, readText;
+    setParamBox cluster,write,read, writeText, readText,manualCluster;
     Label dispTimbre;
     Label dispDist;
     void updateKnnLabel(unsigned int match, float distance);
