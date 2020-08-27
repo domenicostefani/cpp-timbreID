@@ -105,7 +105,6 @@ public:
     void prepare(unsigned long int sampleRate, unsigned int blockSize)
     {
         logger.logInfo("Preparing onset detector");
-        this->blockSize = blockSize;
 
         o = new_aubio_onset (this->getStringMethod().c_str(), (uint_t)this->analysisWindowSize, this->hopSize, (uint_t)sampleRate);
         if (o == NULL)
@@ -167,6 +166,41 @@ public:
             throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
 
         perform(buffer.getReadPointer(channel), buffer.getNumSamples());
+    }
+
+    unsigned int getHopSize()
+    {
+        return this->hopSize;
+    }
+
+    SampleType getSilenceThreshold()
+    {
+        return this->silence_threshold;
+    }
+
+    OnsetMethod getOnsetMethod()
+    {
+        return this->getOnsetMethod;
+    }
+
+    std::string getStringOnsetMethod()
+    {
+        return getStringMethod();
+    }
+
+    SampleType getOnsetThreshold()
+    {
+        return this->onset_threshold;
+    }
+
+    SampleType getOnsetMinInterOnsetInterval()
+    {
+        return this->onset_minioi;
+    }
+
+    unsigned long int getWindowSize()
+    {
+        return this->analysisWindowSize;
     }
 
     /*-----------------------------*/
@@ -300,8 +334,6 @@ private:
 
     std::vector<SampleType> signalBuffer;
 
-
-    unsigned int blockSize = 64;
     unsigned long int analysisWindowSize = 2048;
 
     unsigned long int dspTick = 0;
