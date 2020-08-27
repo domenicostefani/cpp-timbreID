@@ -3,7 +3,7 @@
 
   Plugin Editor
 
-  DEMO PROJECT - TimbreID - bark Module
+  DEMO PROJECT - TimbreID -  Training + classification with knn
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
   Date: 25th March 2020
@@ -35,9 +35,13 @@ public:
     void buttonClicked (Button *) override;
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
 
-    LED barkLed;
+    LED onsetLed;
+
+   #ifdef USE_AUBIO_ONSET
+   #else
     setParamBox boxDebounce;
     setDualParamBox boxThresh;
+   #endif
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -84,7 +88,7 @@ private:
     void pollingRoutine()
     {
         if(processor.onsetMonitorState.exchange(false))
-            barkLed.switchOn();
+            onsetLed.switchOn();
         updateDataLabel();
         updateBFCCDataLabel();
 

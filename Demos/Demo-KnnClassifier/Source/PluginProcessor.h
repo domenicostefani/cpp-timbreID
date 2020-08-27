@@ -16,11 +16,17 @@
 #include <JuceHeader.h>
 #include "juce_timbreID.h"
 
+#define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
+
 //==============================================================================
 /**
 */
 class DemoProcessor : public AudioProcessor,
+#ifdef USE_AUBIO_ONSET
+                      public tid::aubio::Onset<float>::Listener
+#else
                       public tid::Bark<float>::Listener
+#endif
 {
 public:
     //=========================== Juce System Stuff ============================
@@ -47,15 +53,33 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //===================== Bark module initialization =============================
 
-    /**    Set initial parameters      **/
-    const unsigned int WINDOW_SIZE = 1024; //previous 2048
-    const unsigned int HOP = 128;
+    const unsigned int WINDOW_SIZE = 1024;
     const float BARK_SPACING = 0.5;
+    //=================== Onset module initialization ==========================
+
+   #ifdef USE_AUBIO_ONSET
+    /**    Set initial parameters      **/
+    const unsigned int HOP = 128;
+    const float ONSET_THRESHOLD = 0.0f;
+    const float ONSET_MINIOI = 0.020f;  //20 ms debounce
+    const float SILENCE_THRESHOLD = -80.0f;
+    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::defaultMethod;
+
+    tid::aubio::Onset<float> aubioOnset{WINDOW_SIZE,HOP,ONSET_THRESHOLD,ONSET_MINIOI,SILENCE_THRESHOLD,ONSET_METHOD};
+
+    void onsetDetected (tid::aubio::Onset<float> *);
+   #else
+    /**    Set initial parameters      **/
+    const unsigned int HOP = 128;
+
+    /**    Initialize the onset detector      **/
+    tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};
+    void onsetDetected (tid::Bark<float>* bark);
+   #endif
+    void onsetDetectedRoutine();
 
     /**    Initialize the modules      **/
-    tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};
     tid::Bfcc<float> bfcc{WINDOW_SIZE, BARK_SPACING};
     tid::KNNclassifier knn;
 
@@ -77,7 +101,6 @@ public:
     CState classifierState = CState::idle;
 
 private:
-    void onsetDetected (tid::Bark<float>* bark);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
 };

@@ -3,7 +3,7 @@
 
   Plugin Editor
 
-  DEMO PROJECT - TimbreID - bark Module
+  DEMO PROJECT - TimbreID - Training + classification with knn
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
   Date: 26th March 2020
@@ -30,8 +30,11 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     dataLabel.setJustificationType(Justification::topLeft);
     updateDataLabel();
 
-    addAndMakeVisible(barkLed);
+    addAndMakeVisible(onsetLed);
 
+   #ifdef USE_AUBIO_ONSET
+
+   #else
     addAndMakeVisible(boxDebounce);
     boxDebounce.setLabelText("Debounce time (millis) [0-inf]: ");
     boxDebounce.addListener(this);
@@ -39,6 +42,7 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     addAndMakeVisible(boxThresh);
     boxThresh.setLabelText("Thresholds (low,high): ");
     boxThresh.addListener(this);
+   #endif
 
 
     pollingTimer.startPolling();
@@ -143,11 +147,14 @@ void DemoEditor::resized()
     Rectangle<int> bottom = usable;
 
     dataLabel.setBounds(data.removeFromLeft(data.getWidth()*0.5));
-    barkLed.setBounds(data.reduced(15));
+    onsetLed.setBounds(data.reduced(15));
 
+   #ifdef USE_AUBIO_ONSET
+   #else
     boxDebounce.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
     boxThresh.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
     bottom.removeFromTop(boxHeight*1.5);
+   #endif
 
     int spacer = 25;
     int lateralWidth = (bottom.getWidth()-spacer)/2;
@@ -203,6 +210,12 @@ std::vector<std::string> splitString(const std::string& s, char seperator)
 
 void DemoEditor::buttonClicked (Button * button)
 {
+   #ifdef USE_AUBIO_ONSET
+    if(false)
+    {
+        std::cout << "No func\n"; //TODO fix
+    }
+   #else
     if(boxDebounce.hasButton(button))
     {
          unsigned int millis = boxDebounce.getText().getIntValue();
@@ -218,6 +231,7 @@ void DemoEditor::buttonClicked (Button * button)
 
          processor.bark.setThresh(lo,hi);
     }
+   #endif
     else if(cluster.hasButton(button))
     {
         std::cout << "cluster pressed" << std::endl;
@@ -308,11 +322,22 @@ void DemoEditor::buttonClicked (Button * button)
 }
 
 void DemoEditor::updateDataLabel(){
+    std::string text = "";
+   #ifdef USE_AUBIO_ONSET
+    text += "Using AUBIO ONSET DETECTOR";
+    text+=("\nWindow Size: " + std::to_string(processor.aubioOnset.getWindowSize()));
+    text+=("\nHopSize: " + std::to_string(processor.aubioOnset.getHopSize()));
+    text+=("\nSilence Threshold: " + std::to_string(processor.aubioOnset.getSilenceThreshold()));
+    text+=("\nOnset Method: " + processor.aubioOnset.getStringOnsetMethod());
+    text+=("\nOnset Threshold: " + std::to_string(processor.aubioOnset.getOnsetThreshold()));
+    text+=("\nOnset Min Inter-Onset Interval: " + std::to_string(processor.aubioOnset.getOnsetMinInterOnsetInterval()));
+   #else
     std::string sampleRate_s = std::to_string((int)this->mSampleRate);
     std::string blockSize_s = std::to_string((int)this->mBlockSize);
     std::string windowSize_s = std::to_string((int)this->processor.bark.getWindowSize());
 
-    std::string text = "Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nWindow size:  " +windowSize_s;
+    text += "Using BARK ONSET DETECTOR\n";
+    text += "Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nWindow size:  " +windowSize_s;
     text += "\nDebug mode: ";
     text += processor.bark.getDebugMode()?"True":"False";
     text += "\nSpew mode: ";
@@ -329,6 +354,7 @@ void DemoEditor::updateDataLabel(){
     text += std::to_string(threshs.first);
     text += ", ";
     text += std::to_string(threshs.second);
+   #endif
 
 
     this->dataLabel.setText(text,NotificationType::dontSendNotification);

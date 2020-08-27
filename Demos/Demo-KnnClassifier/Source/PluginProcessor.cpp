@@ -3,7 +3,7 @@
 
   Plugin Processor
 
-  DEMO PROJECT - TimbreID - bark Module
+  DEMO PROJECT - TimbreID - Training + classification with knn
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
   Date: 25th March 2020
@@ -15,6 +15,8 @@
 #include "PluginEditor.h"
 
 #include <iostream>
+
+#define MONO_CHANNEL 0
 
 
 //==============================================================================
@@ -30,6 +32,10 @@ DemoProcessor::DemoProcessor()
                        )
 #endif
 {
+   #ifdef USE_AUBIO_ONSET
+    /** ADD THE LISTENER **/
+    aubioOnset.addListener(this);
+   #else
     /** SET SOME DEFAULT PARAMETERS OF THE BARK MODULE **/
     bark.setDebounce(200);
     bark.setMask(4, 0.75);
@@ -38,21 +44,32 @@ DemoProcessor::DemoProcessor()
 
     /** ADD THE LISTENER **/
     bark.addListener(this);
+   #endif
 }
 
 DemoProcessor::~DemoProcessor(){    /*DESTRUCTOR*/        }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+   #ifdef USE_AUBIO_ONSET
+    /** PREPARE THE BARK MODULEs **/
+    aubioOnset.prepare(sampleRate,samplesPerBlock); // Important step
+   #else
     /** PREPARE THE BARK MODULEs **/
     bark.prepare(sampleRate, (uint32)samplesPerBlock);
+   #endif
+
     bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()
 {
     /** RESET THE MODULEs **/
+   #ifdef USE_AUBIO_ONSET
+    aubioOnset.reset(); // Important step
+   #else
     bark.reset();
+   #endif
     bfcc.reset();
 }
 
@@ -61,13 +78,16 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     ScopedNoDenormals noDenormals;
 
     /** STORE THE bfcc BUFFER FOR ANALYSIS **/
-    bfcc.store(buffer,(short int)0);
+    bfcc.store(buffer,(short int)MONO_CHANNEL);
 
-    /** STORE THE bark BUFFER **/
+    /** STORE THE ONSET BUFFER **/
     try
     {
+       #ifdef USE_AUBIO_ONSET
+           aubioOnset.store(buffer,MONO_CHANNEL);
+       #else
         /** STORE THE BUFFER FOR COMPUTATION and retrieving growthdata**/
-        tid::Bark<float>::GrowthData growthData = bark.store(buffer,(short int)0);
+        tid::Bark<float>::GrowthData growthData = bark.store(buffer,(short int)MONO_CHANNEL);
 
         /** Retrieve the total growth and the growth data list **/
         std::vector<float>* growth = growthData.getGrowth();
@@ -83,7 +103,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
                 The standard stream output shouldn't be used from
                 the audio thread.
             **/
-#ifdef PRINT_GROWTH
+           #ifdef PRINT_GROWTH
             std::cout << *totalGrowth << " : ";
 
             std::string growth_s = "";
@@ -95,8 +115,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
             }
 
             std::cout << growth_s << std::endl;
-#endif // PRINT_GROWTH
+           #endif // PRINT_GROWTH
         }
+       #endif
 
     }
     catch(std::exception& e)
@@ -108,21 +129,29 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     {
         std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
     }
-
-//    auto totalNumOutputChannels = getTotalNumOutputChannels();
-//    for (auto i = 0; i < totalNumOutputChannels; ++i)
-//        buffer.clear (i, 0, buffer.getNumSamples());
 }
+
+#ifdef USE_AUBIO_ONSET
+void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
+    if(aubioOnset == &this->aubioOnset)
+        this->onsetMonitorState.exchange(true);
+    onsetDetectedRoutine();
+}
+#else
+void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
+{
+    if(bark == &this->bark)
+        this->onsetMonitorState.exchange(true);
+    onsetDetectedRoutine();
+}
+#endif
 
 /**
  * Onset Detected Callback
  * Remember that this is called from the audio thread so it must not update the GUI directly
 **/
-void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
+void DemoProcessor::onsetDetectedRoutine ()
 {
-    if(bark == &this->bark)
-        this->onsetMonitorState.exchange(true);
-
     bool VERBOSE = false;
     bool VERBOSERES = true;
 

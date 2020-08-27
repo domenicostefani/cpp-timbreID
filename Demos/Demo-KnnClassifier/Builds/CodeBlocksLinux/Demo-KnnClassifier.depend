@@ -9296,13 +9296,13 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID/include/bark2freq.hpp
 
-1595319881 /home/domenico/Develop/cpp-timbreID/include/tIDLib.hpp
+1598512260 /home/domenico/Develop/cpp-timbreID/include/tIDLib.hpp
 	<vector>
 	"fftw3.h"
 	<cmath>
 	<string>
 
-1597731798 source:/home/domenico/Develop/cpp-timbreID/src/bin2freq.cpp
+1598510968 source:/home/domenico/Develop/cpp-timbreID/src/bin2freq.cpp
 	"bin2freq.hpp"
 	"tIDLib.hpp"
 	<string>
@@ -9343,13 +9343,13 @@
 
 1586415063 /home/domenico/Develop/cpp-timbreID/include/mel2freq.hpp
 
-1597767340 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginEditor.cpp
+1598511811 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginEditor.cpp
 	"PluginProcessor.h"
 	"PluginEditor.h"
 	<iostream>
 	<string>
 
-1597768081 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginProcessor.h
+1598512328 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginProcessor.h
 	<JuceHeader.h>
 	"juce_timbreID.h"
 
@@ -9370,7 +9370,7 @@
 	<juce_gui_extra/juce_gui_extra.h>
 	<juce_opengl/juce_opengl.h>
 
-1591603474 /home/domenico/Develop/cpp-timbreID//juce_timbreID.h
+1598375458 /home/domenico/Develop/cpp-timbreID//juce_timbreID.h
 	<juce_core/juce_core.h>
 	"include/tidTime.hpp"
 	"include/tidLog.hpp"
@@ -9391,10 +9391,11 @@
 	"include/peakSample.hpp"
 	"include/zeroCrossing.hpp"
 	"include/knn.hpp"
+	"include/aubioOnsetWrap.hpp"
 
 1591603654 /home/domenico/Develop/cpp-timbreID//include/tidTime.hpp
 
-1595319881 /home/domenico/Develop/cpp-timbreID//include/tIDLib.hpp
+1598512260 /home/domenico/Develop/cpp-timbreID//include/tIDLib.hpp
 	<vector>
 	"fftw3.h"
 	<cmath>
@@ -9429,7 +9430,7 @@
 	<vector>
 	<climits>
 
-1595316659 /home/domenico/Develop/cpp-timbreID//include/bark.hpp
+1598512260 /home/domenico/Develop/cpp-timbreID//include/bark.hpp
 	"tIDLib.hpp"
 	"fftw3.h"
 
@@ -9469,24 +9470,24 @@
 	"tIDLib.hpp"
 	<vector>
 
-1597765563 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginEditor.h
+1598512328 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginEditor.h
 	<JuceHeader.h>
 	"PluginProcessor.h"
 	"LED.h"
 	"setParamBox.h"
 
-1593616645 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/LED.h
+1598512328 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/LED.h
 	<JuceHeader.h>
 
-1593616645 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/setParamBox.h
+1598512328 /home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/setParamBox.h
 	<JuceHeader.h>
 
-1597764042 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginProcessor.cpp
+1598511955 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/PluginProcessor.cpp
 	"PluginProcessor.h"
 	"PluginEditor.h"
 	<iostream>
 
-1593616645 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/setParamBox.cpp
+1598510968 source:/home/domenico/Develop/cpp-timbreID/Demos/Demo-KnnClassifier/Source/setParamBox.cpp
 	"setParamBox.h"
 
 1597732714 source:/home/domenico/Develop/cpp-timbreID/src/tIDLib.cpp
@@ -9564,7 +9565,7 @@
 	"tIDLib.hpp"
 	<tuple>
 
-1595320600 /home/domenico/Develop/cpp-timbreID//include/tidLog.hpp
+1598512260 /home/domenico/Develop/cpp-timbreID//include/tidLog.hpp
 	<string>
 	<JuceHeader.h>
 	"tIDLib.hpp"
@@ -9576,4 +9577,173 @@
 	<string>
 	<memory>
 	<JuceHeader.h>
+
+1598512260 /home/domenico/Develop/cpp-timbreID//include/aubioOnsetWrap.hpp
+	<aubio.h>
+
+1598359667 /home/domenico/Develop/aubio/src/aubio.h
+	<aubio/aubio.h>
+	<aubio/aubio.h>
+	<aubio/aubio.h>
+	"types.h"
+	"fvec.h"
+	"cvec.h"
+	"lvec.h"
+	"fmat.h"
+	"musicutils.h"
+	"vecutils.h"
+	"temporal/resampler.h"
+	"temporal/filter.h"
+	"temporal/biquad.h"
+	"temporal/a_weighting.h"
+	"temporal/c_weighting.h"
+	"spectral/fft.h"
+	"spectral/dct.h"
+	"spectral/phasevoc.h"
+	"spectral/filterbank.h"
+	"spectral/filterbank_mel.h"
+	"spectral/mfcc.h"
+	"spectral/specdesc.h"
+	"spectral/awhitening.h"
+	"spectral/tss.h"
+	"pitch/pitch.h"
+	"onset/onset.h"
+	"tempo/tempo.h"
+	"notes/notes.h"
+	"io/source.h"
+	"io/sink.h"
+	"synth/sampler.h"
+	"synth/wavetable.h"
+	"utils/parameter.h"
+	"utils/log.h"
+	"mathutils.h"
+	"io/source_sndfile.h"
+	"io/source_apple_audio.h"
+	"io/source_avcodec.h"
+	"io/source_wavread.h"
+	"io/sink_sndfile.h"
+	"io/sink_apple_audio.h"
+	"io/sink_wavwrite.h"
+	"io/audio_unit.h"
+	"onset/peakpicker.h"
+	"pitch/pitchmcomb.h"
+	"pitch/pitchyin.h"
+	"pitch/pitchyinfft.h"
+	"pitch/pitchyinfast.h"
+	"pitch/pitchschmitt.h"
+	"pitch/pitchfcomb.h"
+	"pitch/pitchspecacf.h"
+	"tempo/beattracking.h"
+	"effects/pitchshift.h"
+	"effects/timestretch.h"
+	"utils/scale.h"
+	"utils/hist.h"
+
+1598359667 /home/domenico/Develop/aubio/src/types.h
+
+1598359667 /home/domenico/Develop/aubio/src/fvec.h
+
+1598359667 /home/domenico/Develop/aubio/src/cvec.h
+
+1598359667 /home/domenico/Develop/aubio/src/lvec.h
+
+1598359667 /home/domenico/Develop/aubio/src/fmat.h
+
+1598359667 /home/domenico/Develop/aubio/src/musicutils.h
+
+1598359667 /home/domenico/Develop/aubio/src/vecutils.h
+
+1598359667 /home/domenico/Develop/aubio/src/temporal/resampler.h
+
+1598359667 /home/domenico/Develop/aubio/src/temporal/filter.h
+
+1598359667 /home/domenico/Develop/aubio/src/temporal/biquad.h
+
+1598359667 /home/domenico/Develop/aubio/src/temporal/a_weighting.h
+
+1598359667 /home/domenico/Develop/aubio/src/temporal/c_weighting.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/fft.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/dct.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/phasevoc.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/filterbank.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/filterbank_mel.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/mfcc.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/specdesc.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/awhitening.h
+
+1598359667 /home/domenico/Develop/aubio/src/spectral/tss.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitch.h
+
+1598359667 /home/domenico/Develop/aubio/src/onset/onset.h
+
+1598359667 /home/domenico/Develop/aubio/src/tempo/tempo.h
+
+1598359667 /home/domenico/Develop/aubio/src/notes/notes.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/source.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/sink.h
+
+1598359667 /home/domenico/Develop/aubio/src/synth/sampler.h
+
+1598359667 /home/domenico/Develop/aubio/src/synth/wavetable.h
+
+1598359667 /home/domenico/Develop/aubio/src/utils/parameter.h
+
+1598359667 /home/domenico/Develop/aubio/src/utils/log.h
+
+1598359667 /home/domenico/Develop/aubio/src/mathutils.h
+	"fvec.h"
+	"musicutils.h"
+
+1598359667 /home/domenico/Develop/aubio/src/io/source_sndfile.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/source_apple_audio.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/source_avcodec.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/source_wavread.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/sink_sndfile.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/sink_apple_audio.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/sink_wavwrite.h
+
+1598359667 /home/domenico/Develop/aubio/src/io/audio_unit.h
+
+1598359667 /home/domenico/Develop/aubio/src/onset/peakpicker.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchmcomb.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchyin.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchyinfft.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchyinfast.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchschmitt.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchfcomb.h
+
+1598359667 /home/domenico/Develop/aubio/src/pitch/pitchspecacf.h
+
+1598359667 /home/domenico/Develop/aubio/src/tempo/beattracking.h
+
+1598359667 /home/domenico/Develop/aubio/src/effects/pitchshift.h
+
+1598359667 /home/domenico/Develop/aubio/src/effects/timestretch.h
+
+1598359667 /home/domenico/Develop/aubio/src/utils/scale.h
+
+1598359667 /home/domenico/Develop/aubio/src/utils/hist.h
 
