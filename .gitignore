@@ -6,3 +6,4 @@ UnitTests/obj/*
 *.layout
 obj/
 bin/
+build/
