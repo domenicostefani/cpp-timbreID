@@ -241,6 +241,19 @@ public:
         this->onsetMethod = method;
     }
 
+    void setOnsetThreshold(float onset_threshold)
+    {
+        this->onset_threshold = onset_threshold;
+    }
+    void setSilenceThreshold(float silence_threshold)
+    {
+        this->silence_threshold = silence_threshold;
+    }
+    void setOnsetMinioi(float onset_minioi)
+    {
+        this->onset_minioi = onset_minioi;
+    }
+
 private:
     void resizeBuffer()
     {
