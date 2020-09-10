@@ -17,6 +17,8 @@
 #include <iostream>
 
 #define MONO_CHANNEL 0
+#define MAXIMUM_LATENCY_MSEC 10
+#define DO_DELAY_ONSET // If commented there is no delay between onset detection and feature extraction (bad)
 
 
 //==============================================================================
@@ -32,6 +34,8 @@ DemoProcessor::DemoProcessor()
                        )
 #endif
 {
+    logger.logInfo("Initializing Onset detector");
+
    #ifdef USE_AUBIO_ONSET
     /** ADD THE LISTENER **/
     aubioOnset.addListener(this);
@@ -51,6 +55,9 @@ DemoProcessor::~DemoProcessor(){    /*DESTRUCTOR*/        }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    logger.logInfo("Prepare to play called");
+    logger.logInfo("Setting up onset detector");
+
    #ifdef USE_AUBIO_ONSET
     /** PREPARE THE BARK MODULEs **/
     aubioOnset.prepare(sampleRate,samplesPerBlock); // Important step
@@ -59,23 +66,32 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     bark.prepare(sampleRate, (uint32)samplesPerBlock);
    #endif
 
+    logger.logInfo("Setting up BFCC extractor");
     bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()
 {
+    logger.logInfo("ReleaseResources called");
+
+
+    logger.logInfo("Releasing Onset detector resources");
     /** RESET THE MODULEs **/
    #ifdef USE_AUBIO_ONSET
     aubioOnset.reset(); // Important step
    #else
     bark.reset();
    #endif
+    logger.logInfo("Releasing BFCC extractor resources");
     bfcc.reset();
 }
 
 void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
+
+    if(this->onsetWasDetected.exchange(false))
+        onsetDetectedRoutine();
 
     /** STORE THE bfcc BUFFER FOR ANALYSIS **/
     bfcc.store(buffer,(short int)MONO_CHANNEL);
@@ -86,39 +102,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
        #ifdef USE_AUBIO_ONSET
            aubioOnset.store(buffer,MONO_CHANNEL);
        #else
-        /** STORE THE BUFFER FOR COMPUTATION and retrieving growthdata**/
-        tid::Bark<float>::GrowthData growthData = bark.store(buffer,(short int)MONO_CHANNEL);
-
-        /** Retrieve the total growth and the growth data list **/
-        std::vector<float>* growth = growthData.getGrowth();
-        float* totalGrowth = growthData.getTotalGrowth();
-
-        /** Check whether the data is valid: depending on analysis and
-            whether spew mode is ON, the growthData will be provided
-            at different calls
-        **/
-        if(growth != nullptr && totalGrowth != nullptr)
-        {
-            /** This is not a good example of how to log the list
-                The standard stream output shouldn't be used from
-                the audio thread.
-            **/
-           #ifdef PRINT_GROWTH
-            std::cout << *totalGrowth << " : ";
-
-            std::string growth_s = "";
-            for(int i=0; i<growth->size(); ++i)
-            {
-                growth_s += std::to_string(growth->at(i));
-                if(i != growth->size()-1)
-                    growth_s += ", ";
-            }
-
-            std::cout << growth_s << std::endl;
-           #endif // PRINT_GROWTH
-        }
+        /** STORE THE BUFFER FOR COMPUTATION **/
+        bark.store(buffer,(short int)MONO_CHANNEL);
        #endif
-
     }
     catch(std::exception& e)
     {
@@ -129,22 +115,54 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     {
         std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
     }
+    //buffer.clear();
 }
 
 #ifdef USE_AUBIO_ONSET
 void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
     if(aubioOnset == &this->aubioOnset)
-        this->onsetMonitorState.exchange(true);
-    onsetDetectedRoutine();
+    {
+       #ifdef DO_DELAY_ONSET
+        /* We assume that there could be a delay of one entire Hop window */
+        const unsigned int SAMPLES_FROM_PEAK = this->aubioOnset.getHopSize();
+        float delayMsec = (bfcc.getWindowSize()-SAMPLES_FROM_PEAK) / this->getSampleRate() * 1000;
+        /* Check that the timer does not interfere with successive onsets */
+        float minIoiMsec = this->aubioOnset.getOnsetMinInterOnsetInterval()*1000.0;
+        /* Check that complessive delay does not go over MAXIMUM_LATENCY_MSEC milliseconds */
+        float ms_remaining_to_maxlatency = MAXIMUM_LATENCY_MSEC - (SAMPLES_FROM_PEAK / this->getSampleRate() * 1000);
+        ms_remaining_to_maxlatency = ms_remaining_to_maxlatency < 0 ? 0 : ms_remaining_to_maxlatency;
+
+        float realtimeThresh = ms_remaining_to_maxlatency < minIoiMsec ? ms_remaining_to_maxlatency : minIoiMsec;
+
+        Timer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
+       #else
+        onsetDetectedRoutine();
+       #endif
+    }
 }
 #else
 void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 {
     if(bark == &this->bark)
-        this->onsetMonitorState.exchange(true);
-    onsetDetectedRoutine();
+    {
+       #ifdef DO_DELAY_ONSET
+        //This is an assumption on the magnitude of the samplesFromPeak
+        unsigned int samplesFromPeak = this->bark.getHop() * 2; //TODO: fix as soon as the bark mods are confirmed
+
+        float delayMsec = (bfcc.getWindowSize()-samplesFromPeak) / this->getSampleRate() * 1000;
+        float realtimeThresh = MAXIMUM_LATENCY_MSEC - (samplesFromPeak/this->getSampleRate() * 1000);
+        Timer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
+       #else
+        onsetDetectedRoutine();
+       #endif
+    }
 }
 #endif
+
+void DemoProcessor::timerCallback(){
+    Timer::stopTimer();
+    this->onsetWasDetected.exchange(true);
+}
 
 /**
  * Onset Detected Callback
@@ -152,31 +170,37 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 **/
 void DemoProcessor::onsetDetectedRoutine ()
 {
-    bool VERBOSE = false;
-    bool VERBOSERES = true;
+    logger.logInfo("Onset detected");
+   #ifdef DO_DELAY_ONSET
+    logger.logInfo("delay applied");
+   #endif
 
-    if (VERBOSE) std::cout << "Onset Detected" << '\n';
+    this->onsetMonitorState.exchange(true);
+
+    bool VERBOSE = true;
+    bool VERBOSERES = true;
 
     std::vector<float> featureVector = bfcc.compute();
 
-    if (VERBOSE) std::cout << "Bfcc computed" << '\n';
+    if (VERBOSE) logger.logInfo("Bfcc computed");
 
     featureVector.resize(this->featuresUsed);
 
-    if (VERBOSE) std::cout << "Feature vector size cut down to " << this->featuresUsed << '\n';
+    if (VERBOSE) logger.logInfo("Feature vector size cut down to " + std::to_string(this->featuresUsed));
 
     if (VERBOSE)
     {
+        std::string featVecStr = "feature vector: ";
         for(float val : featureVector)
-            std::cout << val << " ";
-        std::cout << "\n";
+            featVecStr += (std::to_string(val) + " ");
+        logger.logInfo(featVecStr);
     }
 
     switch (classifierState)
     {
 
         case CState::idle:
-            if (VERBOSERES) std::cout << "detected onset but classifier is idling\n";
+            if (VERBOSERES) logger.logInfo("detected onset but classifier is idling");
             break;
         case CState::train:
             {
@@ -184,7 +208,7 @@ void DemoProcessor::onsetDetectedRoutine ()
                 matchAtomic.exchange(idAssigned);
                 if (VERBOSERES)
                 {
-                    std::cout << "Trained model\n";
+                    logger.logInfo("Trained model");
                 }
             }
             break;
@@ -196,9 +220,9 @@ void DemoProcessor::onsetDetectedRoutine ()
                 float distance = std::get<2>(res[0]);
                 if (VERBOSERES)
                 {
-                    std::cout << "Match: " << prediction << '\n';
-                    std::cout << "Confidence: " << confidence << '\n';
-                    std::cout << "Distance: " << distance << '\n';
+                    logger.logInfo("Match: " + std::to_string(prediction));
+                    logger.logInfo("Confidence: " + std::to_string(confidence));
+                    logger.logInfo("Distance: " + std::to_string(distance));
                 }
                 matchAtomic.exchange(prediction);
                 distAtomic.exchange(distance);

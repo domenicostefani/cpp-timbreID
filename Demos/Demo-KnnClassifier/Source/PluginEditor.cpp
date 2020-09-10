@@ -34,6 +34,17 @@ DemoEditor::DemoEditor (DemoProcessor& p)
 
    #ifdef USE_AUBIO_ONSET
 
+    addAndMakeVisible(boxIoI);
+    boxIoI.setLabelText("Min Inter Onset Interval (millis) [0-inf]: ");
+    boxIoI.addListener(this);
+
+    addAndMakeVisible(boxThresh);
+    boxThresh.setLabelText("Onset Threshold: ");
+    boxThresh.addListener(this);
+
+    addAndMakeVisible(boxSilenceThresh);
+    boxSilenceThresh.setLabelText("Silence Threshold: ");
+    boxSilenceThresh.addListener(this);
    #else
     addAndMakeVisible(boxDebounce);
     boxDebounce.setLabelText("Debounce time (millis) [0-inf]: ");
@@ -150,6 +161,10 @@ void DemoEditor::resized()
     onsetLed.setBounds(data.reduced(15));
 
    #ifdef USE_AUBIO_ONSET
+    boxIoI.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxIoI.getHeight()));
+    boxThresh.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxThresh.getHeight()));
+    boxSilenceThresh.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxSilenceThresh.getHeight()));
+    bottom.removeFromTop(boxHeight*1.5);
    #else
     boxDebounce.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
     boxThresh.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
@@ -211,25 +226,39 @@ std::vector<std::string> splitString(const std::string& s, char seperator)
 void DemoEditor::buttonClicked (Button * button)
 {
    #ifdef USE_AUBIO_ONSET
-    if(false)
+    if(boxIoI.hasButton(button))
     {
-        std::cout << "No func\n"; //TODO fix
+        unsigned int millis = boxIoI.getText().getIntValue();
+        std::cout << "Setting minIOI time to " << (millis/1000.0f) << " seconds at next memory release/alloc" << std::endl;
+        this->processor.aubioOnset.setOnsetMinioi(millis/1000.0f);
+    }
+    if(boxThresh.hasButton(button))
+    {
+        float val = boxThresh.getText().getFloatValue();
+        std::cout << "Setting Onset Threshold to " << val << " at next memory release/alloc" << std::endl;
+        this->processor.aubioOnset.setOnsetThreshold(val);
+    }
+    if(boxSilenceThresh.hasButton(button))
+    {
+        float val = boxSilenceThresh.getText().getFloatValue();
+        std::cout << "Setting Silence Threshold to " << val << " at next memory release/alloc" << std::endl;
+        this->processor.aubioOnset.setSilenceThreshold(val);
     }
    #else
     if(boxDebounce.hasButton(button))
     {
-         unsigned int millis = boxDebounce.getText().getIntValue();
-         std::cout << "Setting debounce time to " << millis << " milliseconds" << std::endl;
+        unsigned int millis = boxDebounce.getText().getIntValue();
+        std::cout << "Setting debounce time to " << millis << " milliseconds" << std::endl;
 
-         processor.bark.setDebounce(millis);
+        processor.bark.setDebounce(millis);
     }
     else if(boxThresh.hasButton(button))
     {
-         float lo = boxThresh.getText1().getFloatValue();
-         float hi = boxThresh.getText2().getFloatValue();
-         std::cout << "Setting thresholds to " << lo << ", " << hi << std::endl;
+        float lo = boxThresh.getText1().getFloatValue();
+        float hi = boxThresh.getText2().getFloatValue();
+        std::cout << "Setting thresholds to " << lo << ", " << hi << std::endl;
 
-         processor.bark.setThresh(lo,hi);
+        processor.bark.setThresh(lo,hi);
     }
    #endif
     else if(cluster.hasButton(button))

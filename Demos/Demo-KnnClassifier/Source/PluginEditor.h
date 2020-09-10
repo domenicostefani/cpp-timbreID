@@ -38,6 +38,9 @@ public:
     LED onsetLed;
 
    #ifdef USE_AUBIO_ONSET
+    setParamBox boxIoI;
+    setParamBox boxThresh;
+    setParamBox boxSilenceThresh;
    #else
     setParamBox boxDebounce;
     setDualParamBox boxThresh;

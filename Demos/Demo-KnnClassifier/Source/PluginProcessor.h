@@ -22,6 +22,7 @@
 /**
 */
 class DemoProcessor : public AudioProcessor,
+                      public Timer,
 #ifdef USE_AUBIO_ONSET
                       public tid::aubio::Onset<float>::Listener
 #else
@@ -53,6 +54,7 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    tid::Log logger{"knnDemo-"};
 
     const unsigned int WINDOW_SIZE = 1024;
     const float BARK_SPACING = 0.5;
@@ -89,6 +91,8 @@ public:
     std::atomic<unsigned int> matchAtomic{0};
     std::atomic<float> distAtomic{-1.0f};
 
+    std::atomic<bool> onsetWasDetected{false};
+
     /**    Only the first n features of bfcc are used  **/
     int featuresUsed = 50;
 
@@ -99,6 +103,8 @@ public:
     };
 
     CState classifierState = CState::idle;
+
+    void timerCallback();
 
 private:
 
