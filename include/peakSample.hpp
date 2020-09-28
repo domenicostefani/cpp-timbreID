@@ -41,6 +41,12 @@ public:
     /** Creates a PeakSample module with default parameters. */
     PeakSample(){ resizeBuffers(); reset(); }
 
+    PeakSample(unsigned long int windowSize){
+        this->analysisWindowSize = windowSize;
+        resizeBuffers();
+        reset();
+    }
+
     /** Creates a copy of another PeakSample module. */
     PeakSample (const PeakSample&) = default;
 
@@ -69,7 +75,7 @@ public:
     }
 
     template <typename OtherSampleType>
-    void store (AudioBuffer<OtherSampleType>& buffer, short channel) noexcept
+    void store (AudioBuffer<OtherSampleType>& buffer, short channel)
     {
         static_assert (std::is_same<OtherSampleType, SampleType>::value,
                        "The sample-type of the PeakSample module must match the sample-type supplied to this store callback");
@@ -127,6 +133,28 @@ public:
     uint32 getWindowSize() const
     {
         return this->analysisWindowSize;
+    }
+
+    /**
+     * Return a string containing the main parameters of the module.
+     * Refer to the PD helper files of the original timbreID library to know more:
+     * https://github.com/wbrent/timbreID/tree/master/help
+     * @return string with parameter info
+    */
+    std::string getInfoString() const noexcept
+    {
+        std::string res = "";
+
+        res += "Samplerate: ";
+        res += std::to_string((unsigned long int)(this->sampleRate));
+
+        res += "\nBlock size: ";
+        res += std::to_string(this->blockSize);
+
+        res += "\nWindow: ";
+        res += std::to_string(this->analysisWindowSize);
+
+        return res;
     }
 
 private:

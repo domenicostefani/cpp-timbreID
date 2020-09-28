@@ -62,7 +62,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 */
 uint32 DemoProcessor::computeZeroCrossing(){
     // COMPUTE THE NUMBER OF CROSSING IN THE ANALYSIS BUFFER
-    return zeroCrossing.countCrossings();
+    return zeroCrossing.compute();
 }
 
 /**
@@ -156,4 +156,3 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new DemoProcessor();
 }
-

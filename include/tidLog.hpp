@@ -17,7 +17,7 @@ public:
         this->path = jpath.toStdString();
 
         this->jLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(this->path, this->logFilename, tIDLib::LOG_EXTENSION, "TimbreID - log"));
-        this->jLogger->logMessage("Starting log at: " + this->path);
+        this->jLogger->logMessage("Starting " + filename + " log at: " + this->path);
     }
 
     ~Log(){}

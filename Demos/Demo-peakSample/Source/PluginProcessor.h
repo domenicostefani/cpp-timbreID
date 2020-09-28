@@ -62,7 +62,8 @@ public:
     std::pair<float, unsigned long int> computePeakSample();
     uint32 getWindowSize();
 private:
-    tid::PeakSample<float> peakSample;
+    const unsigned long int WINDOW_SIZE = 1024;
+    tid::PeakSample<float> peakSample{WINDOW_SIZE};
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)

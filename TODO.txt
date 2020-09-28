@@ -92,6 +92,7 @@ INSTRUCTIONS:
 +------------------------------------------------------------------------------+
  - Some modules have the perform() function and some other storeAudioBlock,
    choose one name
+ !! - AUBIO WRAPPER: Buffering with hopSizes and uneven intervals FAILS! check better
 
 
 REMOVE "=== bark module initialization ===" from old demos

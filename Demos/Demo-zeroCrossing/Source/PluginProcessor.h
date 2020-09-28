@@ -62,7 +62,8 @@ public:
     uint32 computeZeroCrossing();
     uint32 getWindowSize();
 private:
-    tid::ZeroCrossing<float> zeroCrossing;
+    unsigned long int WINDOW_SIZE = 1024;
+    tid::ZeroCrossing<float> zeroCrossing{WINDOW_SIZE};
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)

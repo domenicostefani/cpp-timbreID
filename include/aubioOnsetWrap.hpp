@@ -59,7 +59,6 @@ public:
         this->onsetMethod = OnsetMethod::defaultMethod;
         this->onset_threshold = 0.0;
         this->onset_minioi = 0.0;
-        resizeBuffer();
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -70,7 +69,6 @@ public:
         this->onsetMethod = onsetMethod;
         this->onset_threshold = 0.0;
         this->onset_minioi = 0.0;
-        resizeBuffer();
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, SampleType onset_threshold, SampleType onset_minioi, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -80,7 +78,6 @@ public:
         this->hopSize = hopSize;
         this->onset_threshold = onset_threshold;
         this->onset_minioi = onset_minioi;
-        resizeBuffer();
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, SampleType onset_threshold, SampleType onset_minioi, SampleType silenceThreshold, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -91,7 +88,6 @@ public:
         this->onset_threshold = onset_threshold;
         this->onset_minioi = onset_minioi;
         this->silence_threshold = silenceThreshold;
-        resizeBuffer();
     }
 
     ~Onset(){}
@@ -104,7 +100,10 @@ public:
 
     void prepare(unsigned long int sampleRate, unsigned int blockSize)
     {
+        this->blockSize = blockSize;
+        resizeBuffer();
         logger.logInfo("Preparing onset detector");
+        const bool VERBOSE = false;
 
         o = new_aubio_onset (this->getStringMethod().c_str(), (uint_t)this->analysisWindowSize, this->hopSize, (uint_t)sampleRate);
         if (o == NULL)
@@ -114,28 +113,31 @@ public:
 
         if (onset_threshold != 0.)
         {
-            logger.logInfo("Setting onset threshold to " + std::to_string(onset_threshold));
+            if(VERBOSE) logger.logInfo("Setting onset threshold to " + std::to_string(onset_threshold));
             aubio_onset_set_threshold (o, onset_threshold);
         }
         if (silence_threshold != -90.)
         {
-            logger.logInfo("Setting silence threshold to " + std::to_string(silence_threshold));
+            if(VERBOSE) logger.logInfo("Setting silence threshold to " + std::to_string(silence_threshold));
             aubio_onset_set_silence (o, silence_threshold);
         }
         if (onset_minioi != 0.)
         {
-            logger.logInfo("Setting minimum inter-onset interval to " + std::to_string(onset_minioi));
+            if(VERBOSE) logger.logInfo("Setting minimum inter-onset interval to " + std::to_string(onset_minioi));
             aubio_onset_set_minioi_s (o, onset_minioi);
         }
 
-        logger.logInfo("Sample rate: "+std::to_string(sampleRate)+"Hz");
-        logger.logInfo("onset method: " + getStringMethod() + ", ");
-        logger.logInfo("buffer_size: "+std::to_string(analysisWindowSize)+", ");
-        logger.logInfo("hop_size: "+std::to_string(hopSize)+", ");
-        logger.logInfo("silence: "+std::to_string(aubio_onset_get_silence(o))+", ");
-        logger.logInfo("threshold: "+std::to_string(aubio_onset_get_threshold(o))+", ");
-        logger.logInfo("awhitening: "+std::to_string(aubio_onset_get_awhitening(o))+", ");
-        logger.logInfo("compression "+std::to_string(aubio_onset_get_compression(o)));
+        if(VERBOSE)
+        {
+            logger.logInfo("Sample rate: "+std::to_string(sampleRate)+"Hz");
+            logger.logInfo("onset method: " + getStringMethod() + ", ");
+            logger.logInfo("buffer_size: "+std::to_string(analysisWindowSize)+", ");
+            logger.logInfo("hop_size: "+std::to_string(hopSize)+", ");
+            logger.logInfo("silence: "+std::to_string(aubio_onset_get_silence(o))+", ");
+            logger.logInfo("threshold: "+std::to_string(aubio_onset_get_threshold(o))+", ");
+            logger.logInfo("awhitening: "+std::to_string(aubio_onset_get_awhitening(o))+", ");
+            logger.logInfo("compression "+std::to_string(aubio_onset_get_compression(o)));
+        }
 
         onset_fvec = new_fvec (1);
         input_fvec = new_fvec (hopSize);
@@ -145,11 +147,21 @@ public:
     {
         logger.logInfo("Reset and release memory");
         // destroy the input vector
-        del_fvec(input_fvec);
-        // When playback stops, you can use this as an opportunity to free up any
-        // spare memory, etc.
-        del_aubio_onset (o);
-        del_fvec (onset_fvec);
+        if(input_fvec)
+        {
+            del_fvec(input_fvec);
+            input_fvec = nullptr;
+        }
+        if(o)
+        {
+            del_aubio_onset (o);
+            o = nullptr;
+        }
+        if(onset_fvec)
+        {
+            del_fvec (onset_fvec);
+            onset_fvec = nullptr;
+        }
     }
 
     template <typename OtherSampleType>
@@ -257,30 +269,67 @@ public:
 private:
     void resizeBuffer()
     {
-        signalBuffer.resize(this->hopSize);
+        signalBuffer.resize(this->hopSize, this->blockSize);
     }
 
     void perform(const SampleType* input, size_t n)
     {
+        //#define VERBOSE_PERFORM
         // write new block to end of signal buffer.
         for(unsigned long int i=0; i<n; ++i)
-            this->signalBuffer[this->dspTick+i] = input[i];
+            signalBuffer[this->dspTick+i] = input[i];
 
-        //Count the samples until we get a full "hopsize" vector
-        this->dspTick += n;
-        if(this->dspTick >= hopSize)
+        int numSamples = this->dspTick + n;
+        jassert(numSamples < this->blockSize + this->hopSize);
+        int turns = numSamples/hopSize;
+
+       #ifdef VERBOSE_PERFORM
+        logger.logInfo("numSamples: " + std::to_string(numSamples) + " turns: " + std::to_string(turns) + "\n");
+       #endif
+
+        bool onsetDetected = false;
+        // Analyze buffer in hopSize increments
+        for (int j = 0; j < turns; ++j)
         {
-            this->dspTick = 0;
+            int firstIndex = (j * hopSize);
+
+           #ifdef VERBOSE_PERFORM
+            logger.logInfo("Analyzing section [" + std::to_string(firstIndex) + "," + std::to_string(lastIndex) + ")\n"); //TODO: remove
+           #endif
 
             for(unsigned long int i=0; i<hopSize; ++i)
-                fvec_set_sample(input_fvec, signalBuffer[i],i);
-
+                fvec_set_sample(input_fvec, this->signalBuffer[firstIndex+i],firstIndex+i);
             aubio_onset_do (o, input_fvec, onset_fvec);
             smpl_t is_onset = fvec_get_sample(onset_fvec, 0);
 
-            if(is_onset)
-                outputOnset();
+            if (is_onset)
+                onsetDetected = true; //One onset in the frame is sufficient to send signal
+            this->dspTick = 0;
         }
+
+        // Buffer for next round
+        {
+            int remaining = numSamples % hopSize;
+            if (remaining)
+            {
+                int firstIndex = (int) (n / hopSize) * hopSize;
+
+               #ifdef VERBOSE_PERFORM
+                logger.logInfo("Buffering section [" + std::to_string(firstIndex) + "," + std::to_string(lastIndex) + ")\n"); //Todo remove
+               #endif
+
+                for(int i=0; i < signalBuffer.size(); ++i)
+                {
+                    if(i<remaining)
+                        signalBuffer[i] = signalBuffer[firstIndex+i];
+                    else
+                        signalBuffer[i] = 0.0f;
+                }
+                this->dspTick = remaining;
+            }
+        }
+        if (onsetDetected)
+            outputOnset();
     }
 
     void outputOnset()
@@ -332,7 +381,7 @@ private:
 
     ListenerList<Listener> onsetListeners;
 
-    aubio_onset_t *o;
+    aubio_onset_t *o = nullptr;
     fvec_t * input_fvec; //input vector
     fvec_t *onset_fvec;       //output vector/value
 
@@ -350,6 +399,7 @@ private:
     unsigned long int analysisWindowSize = 2048;
 
     unsigned long int dspTick = 0;
+    unsigned int blockSize = 0;
 
     Log logger{"aubio-onset_"};
 };

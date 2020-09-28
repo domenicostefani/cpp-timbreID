@@ -3,7 +3,7 @@
 
   Plugin Processor
 
-  DEMO PROJECT - TimbreID - bark Module
+  DEMO PROJECT - TimbreID - Headless Classifier
 
   Author: Domenico Stefani (domenico.stefani96 AT gmail.com)
   Date: 25th March 2020
