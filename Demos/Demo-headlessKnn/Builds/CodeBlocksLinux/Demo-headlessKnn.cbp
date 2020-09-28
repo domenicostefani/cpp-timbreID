@@ -46,6 +46,7 @@
           <Add directory="../../../../include"/>
           <Add directory="../../../../src"/>
           <Add directory="../../../../"/>
+          <Add directory="/home/domenico/Develop/aubio/src/"/>
           <Add directory="/usr/include/freetype2"/>
         </Compiler>
         <Linker>
@@ -95,6 +96,7 @@
           <Add directory="../../../../include"/>
           <Add directory="../../../../src"/>
           <Add directory="../../../../"/>
+          <Add directory="/home/domenico/Develop/aubio/src/"/>
           <Add directory="/usr/include/freetype2"/>
         </Compiler>
         <Linker>
@@ -145,6 +147,7 @@
           <Add directory="../../../../include"/>
           <Add directory="../../../../src"/>
           <Add directory="../../../../"/>
+          <Add directory="/home/domenico/Develop/aubio/src/"/>
           <Add directory="/usr/include/freetype2"/>
         </Compiler>
         <Linker>
@@ -193,6 +196,7 @@
           <Add directory="../../../../include"/>
           <Add directory="../../../../src"/>
           <Add directory="../../../../"/>
+          <Add directory="/home/domenico/Develop/aubio/src/"/>
           <Add directory="/usr/include/freetype2"/>
         </Compiler>
         <Linker>

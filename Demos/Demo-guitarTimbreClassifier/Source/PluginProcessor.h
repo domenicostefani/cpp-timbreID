@@ -17,11 +17,19 @@
 
 #include "liteclassifier.h"
 
+#define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
+#define MEASURE_COMPUTATION_LATENCY
+
 //==============================================================================
 /**
 */
 class DemoProcessor : public AudioProcessor,
+                      public HighResolutionTimer,
+#ifdef USE_AUBIO_ONSET
+                      public tid::aubio::Onset<float>::Listener
+#else
                       public tid::Bark<float>::Listener
+#endif
 {
 public:
     //=========================== Juce System Stuff ============================
@@ -50,14 +58,57 @@ public:
 
     //===================== module initialization =============================
 
-    /**    Set initial parameters      **/
-    const unsigned int WINDOW_SIZE = 1024; //previous 2048
-    const unsigned int HOP = 128;
+    const unsigned int WINDOW_SIZE = 1024;
     const float BARK_SPACING = 0.5;
+    const float BARK_BOUNDARY = 8.5;
+    const float MEL_SPACING = 100;
+    //=================== Onset module initialization ==========================
+
+   #ifdef USE_AUBIO_ONSET
+    /**    Set initial parameters      **/
+    const unsigned int HOP = 128;
+    const float ONSET_THRESHOLD = 0.0f;
+    const float ONSET_MINIOI = 0.2f;  //200 ms debounce
+    const float SILENCE_THRESHOLD = -48.0f;
+    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::defaultMethod;
+
+    tid::aubio::Onset<float> aubioOnset{WINDOW_SIZE,HOP,ONSET_THRESHOLD,ONSET_MINIOI,SILENCE_THRESHOLD,ONSET_METHOD};
+
+    void onsetDetected (tid::aubio::Onset<float> *);
+   #else
+    /**    Set initial parameters      **/
+    const unsigned int HOP = 128;
+
+    /**    Initialize the onset detector      **/
+    tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};
+    void onsetDetected (tid::Bark<float>* bark);
+   #endif
+    void onsetDetectedRoutine();
 
     /**    Initialize the modules      **/
-    tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};
+
+    // tid::AttackTime<float> attackTime;
+    // tid::BarkSpecBrightness<float> barkSpecBrightness{WINDOW_SIZE, BARK_SPACING, BARK_BOUNDARY};
+    // tid::BarkSpec<float> barkSpec{WINDOW_SIZE, BARK_SPACING};
     tid::Bfcc<float> bfcc{WINDOW_SIZE, BARK_SPACING};
+    tid::Cepstrum<float> cepstrum{this->WINDOW_SIZE};
+    // tid::Mfcc<float> mfcc{this->WINDOW_SIZE, this->MEL_SPACING};
+    // tid::PeakSample<float> peakSample{WINDOW_SIZE};
+    // tid::ZeroCrossing<float> zeroCrossing{WINDOW_SIZE};
+
+    const unsigned int VECTOR_SIZE = 110; // It would be 658 with all the extractors
+
+    std::vector<float> featureVector;
+    void computeFeatureVector();
+
+    std::atomic<bool> onsetWasDetected{false};
+
+    void hiResTimerCallback();
+
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    double latencyTime = 0;
+   #endif
+
     ClassifierPtr timbreClassifier;
 
     /**    This atomic is used to update the onset LED in the GUI **/
@@ -66,31 +117,14 @@ public:
     std::atomic<unsigned int> matchAtomic{0};
     std::atomic<float> distAtomic{-1.0f};
 
-    /**    Only the first n features of bfcc are used  **/
-    int featuresUsed = 25;
-
-    enum class CState {
-        idle,
-        train,
-        classify
-    };
-
     const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
 
     /** LOG */
-    std::unique_ptr<FileLogger> jLogger;
-    const std::string LOG_FOLDER_PATH = "/tmp/";
-    const std::string LOG_FILENAME = "guitarTC-";
-    const std::string LOG_EXTENSION = ".log";
-
-    uint32 logCounter = 0;
-
-
+    tid::Log logger{"guitarTC-"};
+    uint32 logCounter = 0;  //To debug which channel to use
 private:
     /* Output sound */
     WavetableSine sinewt;
-
-    void onsetDetected (tid::Bark<float>* bark);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
 };

@@ -35,7 +35,7 @@ ifeq ($(CONFIG),Debug)
     TARGET_ARCH := 
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl) -pthread -I/home/domenico/elkJUCE/modules/juce_audio_processors/format_types/VST3_SDK -I/home/domenico/SDKs/VST2_SDK -I../../JuceLibraryCode -I/home/domenico/elkJUCE/modules -I../../../../include -I../../../../src -I../../../../ -I/home/domenico/Develop/timbreInference/compiled_library $(CPPFLAGS)
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl) -pthread -I/home/domenico/elkJUCE/modules/juce_audio_processors/format_types/VST3_SDK -I/home/domenico/SDKs/VST2_SDK -I../../JuceLibraryCode -I/home/domenico/elkJUCE/modules -I../../../../include -I../../../../src -I../../../../ -I/home/domenico/Develop/timbreInference/compiled_library -I/home/domenico/Develop/aubio/src/ $(CPPFLAGS)
 
   JUCE_CPPFLAGS_VST := -DJucePlugin_Build_VST=1 -DJucePlugin_Build_VST3=0 -DJucePlugin_Build_AU=0 -DJucePlugin_Build_AUv3=0 -DJucePlugin_Build_RTAS=0 -DJucePlugin_Build_AAX=0 -DJucePlugin_Build_Standalone=0 -DJucePlugin_Build_Unity=0
   JUCE_CFLAGS_VST := -fPIC -fvisibility=hidden
@@ -47,7 +47,7 @@ ifeq ($(CONFIG),Debug)
 
   JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -fPIC -g -ggdb -O0 $(CFLAGS)
   JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=c++14 $(CXXFLAGS)
-  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -L/home/domenico/Develop/timbreInference/compiled_library -L/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib $(shell pkg-config --libs alsa freetype2 libcurl) -lrt -ldl -lpthread -lfftw3f -lliteclassifier -ltensorflow-lite $(LDFLAGS)
+  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -L/home/domenico/Develop/timbreInference/compiled_library -L/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib -L$(HOME)/Develop/aubio/build/src/ -L$(HOME)/Develop/aubio/build/src-aarch64/ $(shell pkg-config --libs alsa freetype2 libcurl) -lrt -ldl -lpthread -lfftw3f -lliteclassifier -ltensorflow-lite -laubio $(LDFLAGS)
 
   CLEANCMD = rm -rf $(JUCE_OUTDIR)/$(TARGET) $(JUCE_OBJDIR)
 endif
@@ -62,7 +62,7 @@ ifeq ($(CONFIG),Release)
     TARGET_ARCH := 
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl) -pthread -I/home/domenico/elkJUCE/modules/juce_audio_processors/format_types/VST3_SDK -I/home/domenico/SDKs/VST2_SDK -I../../JuceLibraryCode -I/home/domenico/elkJUCE/modules -I../../../../include -I../../../../src -I../../../../ -I/home/domenico/Develop/timbreInference/compiled_library $(CPPFLAGS)
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl) -pthread -I/home/domenico/elkJUCE/modules/juce_audio_processors/format_types/VST3_SDK -I/home/domenico/SDKs/VST2_SDK -I../../JuceLibraryCode -I/home/domenico/elkJUCE/modules -I../../../../include -I../../../../src -I../../../../ -I/home/domenico/Develop/timbreInference/compiled_library -I/home/domenico/Develop/aubio/src/ $(CPPFLAGS)
 
   JUCE_CPPFLAGS_VST := -DJucePlugin_Build_VST=1 -DJucePlugin_Build_VST3=0 -DJucePlugin_Build_AU=0 -DJucePlugin_Build_AUv3=0 -DJucePlugin_Build_RTAS=0 -DJucePlugin_Build_AAX=0 -DJucePlugin_Build_Standalone=0 -DJucePlugin_Build_Unity=0
   JUCE_CFLAGS_VST := -fPIC -fvisibility=hidden
@@ -74,7 +74,7 @@ ifeq ($(CONFIG),Release)
 
   JUCE_CFLAGS += $(JUCE_CPPFLAGS) $(TARGET_ARCH) -fPIC -O3 $(CFLAGS)
   JUCE_CXXFLAGS += $(JUCE_CFLAGS) -std=c++14 $(CXXFLAGS)
-  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -L/home/domenico/Develop/timbreInference/compiled_library -L/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -lfftw3f -lliteclassifier -ltensorflow-lite $(LDFLAGS)
+  JUCE_LDFLAGS += $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -L/home/domenico/Develop/timbreInference/compiled_library -L/home/domenico/Develop/timbreInference/tensorflow-src/tensorflow/lite/tools/make/gen/linux_aarch64/lib -L$(HOME)/Develop/aubio/build/src/ -L$(HOME)/Develop/aubio/build/src-aarch64/ $(shell pkg-config --libs alsa freetype2 libcurl) -fvisibility=hidden -lrt -ldl -lpthread -lfftw3f -lliteclassifier -ltensorflow-lite -laubio $(LDFLAGS)
 
   CLEANCMD = rm -rf $(JUCE_OUTDIR)/$(TARGET) $(JUCE_OBJDIR)
 endif
