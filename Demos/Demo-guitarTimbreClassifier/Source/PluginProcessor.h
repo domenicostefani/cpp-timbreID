@@ -56,75 +56,164 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //===================== module initialization =============================
+    //===================== ONSET DETECTION PARAMS =============================
+    const unsigned int ONSETDETECTOR_WINDOW_SIZE = 1024;
 
-    const unsigned int WINDOW_SIZE = 1024;
+   #ifdef USE_AUBIO_ONSET
+    const unsigned int AUBIO_HOP_SIZE = 128;
+    const float ONSET_THRESHOLD = 0.0f;
+    const float ONSET_MINIOI = 0.1f;  //200 ms debounce
+    const float SILENCE_THRESHOLD = -48.0f;
+   #else
+    const unsigned int BARK_HOP_SIZE = 128;
+   #endif
+
+    //==================== FEATURE EXTRACTION PARAMS ===========================
+    const unsigned int FEATUREEXT_WINDOW_SIZE = 1024;
     const float BARK_SPACING = 0.5;
     const float BARK_BOUNDARY = 8.5;
     const float MEL_SPACING = 100;
-    //=================== Onset module initialization ==========================
 
+
+    //========================= ONSET DETECTION ================================
    #ifdef USE_AUBIO_ONSET
-    /**    Set initial parameters      **/
-    const unsigned int HOP = 128;
-    const float ONSET_THRESHOLD = 0.0f;
-    const float ONSET_MINIOI = 0.2f;  //200 ms debounce
-    const float SILENCE_THRESHOLD = -48.0f;
     const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::defaultMethod;
-
-    tid::aubio::Onset<float> aubioOnset{WINDOW_SIZE,HOP,ONSET_THRESHOLD,ONSET_MINIOI,SILENCE_THRESHOLD,ONSET_METHOD};
-
+    tid::aubio::Onset<float> aubioOnset{ONSETDETECTOR_WINDOW_SIZE,
+                                        AUBIO_HOP_SIZE,
+                                        ONSET_THRESHOLD,
+                                        ONSET_MINIOI,
+                                        SILENCE_THRESHOLD,
+                                        ONSET_METHOD};
     void onsetDetected (tid::aubio::Onset<float> *);
    #else
-    /**    Set initial parameters      **/
-    const unsigned int HOP = 128;
-
     /**    Initialize the onset detector      **/
-    tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};
+    tid::Bark<float> bark{ONSETDETECTOR_WINDOW_SIZE,
+                          BARK_HOP_SIZE,
+                          BARK_SPACING};
     void onsetDetected (tid::Bark<float>* bark);
    #endif
+
     void onsetDetectedRoutine();
-
-    /**    Initialize the modules      **/
-
-    // tid::AttackTime<float> attackTime;
-    // tid::BarkSpecBrightness<float> barkSpecBrightness{WINDOW_SIZE, BARK_SPACING, BARK_BOUNDARY};
-    // tid::BarkSpec<float> barkSpec{WINDOW_SIZE, BARK_SPACING};
-    tid::Bfcc<float> bfcc{WINDOW_SIZE, BARK_SPACING};
-    tid::Cepstrum<float> cepstrum{this->WINDOW_SIZE};
-    // tid::Mfcc<float> mfcc{this->WINDOW_SIZE, this->MEL_SPACING};
-    // tid::PeakSample<float> peakSample{WINDOW_SIZE};
-    // tid::ZeroCrossing<float> zeroCrossing{WINDOW_SIZE};
-
-    const unsigned int VECTOR_SIZE = 110; // It would be 658 with all the extractors
-
-    std::vector<float> featureVector;
-    void computeFeatureVector();
-
     std::atomic<bool> onsetWasDetected{false};
-
     void hiResTimerCallback();
 
+    //======================== FEATURE EXTRACTION ==============================
+    // tid::AttackTime<float> attackTime;
+    // tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
+    //                                                   BARK_SPACING,
+    //                                                   BARK_BOUNDARY};
+    // tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
+    tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
+    tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
+    // tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
+    // tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
+    // tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
+
+    /**    Feature Vector    **/
+    const unsigned int VECTOR_SIZE = 110; // Number of features (preallocation)
+    std::vector<float> featureVector;     // Vector that is preallocated
+    void computeFeatureVector();          // Compose vector
+
+    //========================== CLASSIFICATION ================================
+    ClassifierPtr timbreClassifier; // Tensorflow interpreter
+    const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
+
+
+    //============================== OTHER =====================================
+    /**    Debugging    */
+   #ifdef DEBUG_WHICH_CHANNEL
+    uint32 logCounter = 0;  //To debug which channel to use
+   #endif
+    /**    Profiling    **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     double latencyTime = 0;
    #endif
 
-    ClassifierPtr timbreClassifier;
+    /**    Logging    **/
+    /*
+     * Since many log messages need to be written from the Audio thread, there
+     * is a real-time safe logger that uses a FIFO queue as a ring buffer.
 
-    /**    This atomic is used to update the onset LED in the GUI **/
-    std::atomic<bool> onsetMonitorState{false};
+     * Messages are written to the queue with:
+     * rtlogger.logInfo(message); // message is a char array of size RealTimeLogger::LogEntry::MESSAGE_LENGTH+1
+     * or
+     * rtlogger.logInfo(message, timeAtStart, timeAtEnd); // both times can be obtained with Time::getHighResolutionTicks();
+     *
+     * Messages have to be consumed with:
+     * rtlogger.pop(le)
+     *
+     * Log Entries are consumed and written to file with a Juce FileLogger from a
+     * low priority thread (timer callback), hence why a FileLogger is used.
+    */
+    tid::RealTimeLogger rtlogger{"main-app"}; // Real time logger that queues messages
 
-    std::atomic<unsigned int> matchAtomic{0};
-    std::atomic<float> distAtomic{-1.0f};
+   #ifdef USE_AUBIO_ONSET
+    std::vector<tid::RealTimeLogger*> loggerList = {&rtlogger, aubioOnset.getLoggerPtr()};
+   #else
+    std::vector<tid::RealTimeLogger*> loggerList = {&rtlogger, bark.getLoggerPtr()};
+   #endif
+    std::unique_ptr<FileLogger> fileLogger; // Logger that writes RT entries to file SAFELY (Outside rt thread
+    std::string LOG_PATH = "/tmp/";
+    std::string LOG_FILENAME = "guitarTimbreClassifier";
+    const int64 highResFrequency = Time::getHighResolutionTicksPerSecond();
 
-    const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
+    /**
+     * Timer that calls a function every @interval milliseconds.
+     * It is used to consume log entries and write them to file safely
+    */
+    typedef std::function<void (void)> TimerEventCallback;
+    class PollingTimer : public Timer
+    {
+    public:
+        PollingTimer(TimerEventCallback cb) { this->cb = cb; }
+        void startLogRoutine() { Timer::startTimer(this->interval); }
+        void startLogRoutine(int interval) { this->interval = interval; Timer::startTimer(this->interval); }
+        void timerCallback() override { cb(); }
+    private:
+        TimerEventCallback cb;
+        int interval = 500; // Half second default polling interval
+    };
 
-    /** LOG */
-    tid::Log logger{"guitarTC-"};
-    uint32 logCounter = 0;  //To debug which channel to use
+    // Routine that will be called at regular intervals by the timer.
+    void logPollingRoutine()
+    {
+        // Initialize the fileLogger if necessary
+        if (!this->fileLogger)
+            this->fileLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(LOG_PATH, LOG_FILENAME, tIDLib::LOG_EXTENSION, "Guitar Timbre Classifier"));
+
+        tid::RealTimeLogger::LogEntry le;
+        for(tid::RealTimeLogger* loggerpointer : this->loggerList) // Cycle through all loggers subscribed to the list
+        {
+            std::string moduleName = loggerpointer->getName();
+            while (loggerpointer->pop(le))  // Continue if there are log entries in the rtlogger queue
+            {
+                //
+                // Consume rtlogger entries and write them to file
+                //
+                std::string msg = moduleName + "\t|\t";
+                msg += le.message;
+                double start,end,diff;
+                start = (le.timeAtStart * 1.0) / this->highResFrequency;
+                end = (le.timeAtEnd * 1.0) / this->highResFrequency;
+                diff = end-start;
+
+                if (start != 0)
+                {
+                    msg += " | start: " + std::to_string(start);
+                    msg += " | end: " + std::to_string(end);
+                    msg += " | difference: " + std::to_string(diff) + "s";
+                }
+                fileLogger->logMessage(msg);
+            }
+        }
+    }
+
+    PollingTimer pollingTimer{[this]{logPollingRoutine();}};
+
+
 private:
-    /* Output sound */
-    WavetableSine sinewt;
+    //============================== OUTPUT ====================================
+    WavetableSine sinewt;   // Simple wavetable sine synth with short decay
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
 };

@@ -26,8 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 #include <tuple>
 
-#define KNN_LOG_FILENAME "timbreid-knn"
-
 namespace tid   /* TimbreID namespace*/
 {
 
@@ -44,7 +42,7 @@ class KNNclassifier
 {
 public:
 
-    KNNclassifier() : logger(KNN_LOG_FILENAME)
+    KNNclassifier()
     {
         this->initModule();
     }
@@ -117,7 +115,7 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                this->logger.logError("knn","Input feature list longer than current max feature length of database. input ignored.");
+                rtlogger.logInfo("Input feature list longer than current max feature length of database. input ignored.");
                 return {};
             }
 
@@ -236,7 +234,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","No training instances have been loaded. cannot perform ID.");
+            rtlogger.logInfo("No training instances have been loaded. cannot perform ID.");
             return {};
         }
     }
@@ -249,7 +247,7 @@ public:
         {
             if (input.size() > this->maxFeatureLength)
             {
-                this->logger.logError("knn","Input feature list too long. input ignored.");
+                rtlogger.logInfo("Input feature list too long. input ignored.");
                 return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
@@ -281,7 +279,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","No training instances have been loaded. cannot perform worst match.");
+            rtlogger.logInfo("No training instances have been loaded. cannot perform worst match.");
             return std::make_tuple(-1,-1,-1);
         }
     }
@@ -317,7 +315,7 @@ public:
 
             if (listLength > this->maxFeatureLength)
             {
-                this->logger.logError("knn","Input feature list too long. input ignored.");
+                rtlogger.logInfo("Input feature list too long. input ignored.");
                 return std::make_tuple(-1,-1.0f,-1.0f);
             }
 
@@ -428,7 +426,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","No training instances have been loaded. cannot perform ID.");
+            rtlogger.logInfo("No training instances have been loaded. cannot perform ID.");
             return std::make_tuple(-1,-1,-1);
         }
     }
@@ -529,20 +527,20 @@ public:
     {
         if (k < 1.0)
         {
-            std::string errtxt = "K must be greater than one.";
-            this->logger.logError("knn",errtxt);
+            char errtxt[RealTimeLogger::LogEntry::MESSAGE_LENGTH+1] = "K must be greater than one.";
+            rtlogger.logInfo(errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         if (k > this->numInstances)
         {
-            std::string errtxt = "K must be less than the total number of instances.";
-            this->logger.logError("knn",errtxt);
+            char errtxt[RealTimeLogger::LogEntry::MESSAGE_LENGTH+1] = "K must be less than the total number of instances.";
+            rtlogger.logInfo(errtxt);
             throw std::invalid_argument(errtxt);
         }
 
         this->kValue = k;
-        this->logger.logInfo("knn", "Searching "+std::to_string(this->kValue)+" neighbors for KNN.");
+        rtlogger.logValue("K value (neighbors): ",this->kValue);
     }
 
     /**
@@ -556,9 +554,9 @@ public:
         this->outputKnnMatches = out;
 
         if (this->outputKnnMatches)
-            this->logger.logInfo("knn", "Reporting all KNN matches.");
+            rtlogger.logInfo("Reporting all KNN matches.");
         else
-            this->logger.logInfo("knn", "Reporting best match only.");
+            rtlogger.logInfo("Reporting best match only.");
     }
 
     /**
@@ -591,7 +589,7 @@ public:
             }
 
             this->normalize = false;
-            this->logger.logInfo("knn", "Eature attribute normalization OFF.");
+            rtlogger.logInfo("Eature attribute normalization OFF.");
         }
         else
         {
@@ -604,9 +602,11 @@ public:
                     {
                         if (j > this->instances[i].length-1)
                         {
-                            this->logger.logError("knn","Attribute "+std::to_string(j)+" out of range for database instance "+std::to_string(i)+". aborting normalization");
+                            char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+                            snprintf(message,sizeof(message),"Attribute %d out of range for database instance %d. Aborting normalization",(int)j,(int)i);
+                            rtlogger.logInfo(message);
                             this->normalize = false;
-                            this->logger.logInfo("knn", "Feature attribute normalization OFF.");
+                            rtlogger.logInfo("Feature attribute normalization OFF.");
                             return;
                         }
                         else
@@ -630,10 +630,10 @@ public:
                 }
 
                 this->normalize = true;
-                this->logger.logInfo("knn", "Feature attribute normalization ON.");
+                rtlogger.logInfo("Feature attribute normalization ON.");
             }
             else
-                this->logger.logError("knn","No training instances have been loaded. cannot calculate normalization terms.");
+                rtlogger.logInfo("No training instances have been loaded. cannot calculate normalization terms.");
         }
     }
 
@@ -670,19 +670,21 @@ public:
 
         if (low > this->numInstances-1 || hi > this->numInstances-1)
         {
-            this->logger.logError("knn","Instances out of range. clustering failed.");
+            rtlogger.logInfo("Instances out of range. clustering failed.");
             return;
         }
 
         if (clusterIdx >= numClusters)
         {
-            this->logger.logError("knn","Cluster index "+std::to_string(clusterIdx)+" out of range for given number of clusters "+std::to_string(numClusters)+". clustering failed.");
+            char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+            snprintf(message,sizeof(message),"Cluster index %u out of range for given number of clusters %u. clustering failed.",clusterIdx,numClusters);
+            rtlogger.logInfo(message);
             return;
         }
 
         if (this->numInstances < numClusters)
         {
-            this->logger.logError("knn","Not enough instances to cluster. clustering failed.");
+            rtlogger.logInfo("Not enough instances to cluster. clustering failed.");
             throw std::logic_error("Not enough instances to cluster. clustering failed.");
         }
         else
@@ -716,7 +718,9 @@ public:
                 this->clusters[i].members[1] = UINT_MAX;
             }
 
-            this->logger.logInfo("knn", "Cluster "+std::to_string(clusterIdx)+" contains instances "+std::to_string(low)+" through "+std::to_string(hi)+".");
+            char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+            snprintf(message,sizeof(message),"Cluster %u contains instances %u through %u.",clusterIdx,low,hi);
+            rtlogger.logInfo("message");
         }
     }
 
@@ -729,11 +733,11 @@ public:
     {
         std::vector<float> listOut;
         if (this->numInstances < numClusters)
-            this->logger.logError("knn","Not enough instances to cluster.");
+            rtlogger.logInfo("Not enough instances to cluster.");
         else if (this->numClusters != this->numInstances)
-            this->logger.logError("knn","Instances already clustered. uncluster first.");
+            rtlogger.logInfo("Instances already clustered. uncluster first.");
         else if (numClusters==0)
-            this->logger.logError("knn","Cannot create 0 clusters.");
+            rtlogger.logInfo("Cannot create 0 clusters.");
         else
         {
             t_instanceIdx i, j, k, numInstances, numInstancesM1, numPairs, numClusterMembers1, numClusterMembers2, numClusterMembersSum, clusterCount;
@@ -919,7 +923,7 @@ public:
                 }
             }
 
-            this->logger.logInfo("knn", "Instances clustered.");
+            rtlogger.logInfo("Instances clustered.");
         }
         return listOut;
     }
@@ -951,7 +955,7 @@ public:
             this->clusters[i].votes = 0;
         }
 
-        this->logger.logInfo("knn", "Instances unclustered.");
+        rtlogger.logInfo("Instances unclustered.");
     }
 
     /**
@@ -1032,11 +1036,11 @@ public:
                 attributeVar[this->attributeData[i].order] = -FLT_MAX;
             }
 
-            this->logger.logInfo("knn", "Attributes ordered by variance.");
+            rtlogger.logInfo("Attributes ordered by variance.");
         }
         else
         {
-            this->logger.logError("knn","No instances for variance computation.");
+            rtlogger.logInfo("No instances for variance computation.");
             throw std::logic_error("No instances for variance computation.");
         }
     }
@@ -1056,9 +1060,9 @@ public:
         this->relativeOrdering = rel;
 
         if (this->relativeOrdering)
-            this->logger.logInfo("knn", "Relative ordering ON.");
+            rtlogger.logInfo("Relative ordering ON.");
         else
-            this->logger.logInfo("knn", "Relative ordering OFF.");
+            rtlogger.logInfo("Relative ordering OFF.");
     }
 
     /**
@@ -1071,13 +1075,13 @@ public:
         switch(this->distMetric)
         {
             case DistanceMetric::euclidean:
-                this->logger.logInfo("knn", "Distance metric: EUCLIDEAN.");
+                rtlogger.logInfo("Distance metric: EUCLIDEAN.");
                 break;
             case DistanceMetric::taxi:
-                this->logger.logInfo("knn", "Distance metric: MANHATTAN (taxicab distance).");
+                rtlogger.logInfo("Distance metric: MANHATTAN (taxicab distance).");
                 break;
             case DistanceMetric::correlation:
-                this->logger.logInfo("knn", "Distance metric: PEARSON CORRELATION COEFF.");
+                rtlogger.logInfo("Distance metric: PEARSON CORRELATION COEFF.");
                 break;
             default:
                 break;
@@ -1098,7 +1102,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            this->logger.logError("knn","Weights list longer than current feature length. ignoring excess weights");
+            rtlogger.logInfo("Weights list longer than current feature length. ignoring excess weights");
             listLength = this->maxFeatureLength;
         }
 
@@ -1123,14 +1127,14 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            this->logger.logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
+            rtlogger.logInfo("Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
         for (i=0; i<listLength; ++i)
             this->attributeData[i].name = names[i];
 
-        this->logger.logInfo("knn", "Attribute names received.");
+        rtlogger.logInfo("Attribute names received.");
     }
 
     /**
@@ -1147,7 +1151,7 @@ public:
 
         if (listLength > this->maxFeatureLength)
         {
-            this->logger.logError("knn","Attribute list longer than current max feature length. ignoring excess attributes");
+            rtlogger.logInfo("Attribute list longer than current max feature length. ignoring excess attributes");
             listLength = this->maxFeatureLength;
         }
 
@@ -1161,7 +1165,7 @@ public:
                 for (j=0; j<this->maxFeatureLength; ++j)
                     this->attributeData[j].order = j;
 
-                this->logger.logError("knn","Attribute "+std::to_string(this->attributeData[i].order)+" out of range. attribute order initialized.");
+                rtlogger.logValue("Attribute",this->attributeData[i].order,"out of range. attribute order initialized.");
             }
         }
 
@@ -1169,7 +1173,7 @@ public:
         for (; i<this->maxFeatureLength; ++i)
             this->attributeData[i].order = 0;
 
-        this->logger.logInfo("knn", "Attributes re-ordered.");
+        rtlogger.logInfo("Attributes re-ordered.");
     }
 
     /**
@@ -1191,7 +1195,9 @@ public:
             this->attributeLo = tmp;
         }
 
-        this->logger.logInfo("knn", "Attribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi)+".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Attribute range: %u through %u.",attributeLo,attributeHi);
+        rtlogger.logInfo(message);
     }
 
     /**
@@ -1204,7 +1210,7 @@ public:
         for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
             this->attributeData[i].order = i;
 
-        this->logger.logInfo("knn", "Attribute order initialized.");
+        rtlogger.logInfo("Attribute order initialized.");
     }
 
     /**
@@ -1242,7 +1248,7 @@ public:
         this->minFeatureLength = INT_MAX;
         this->normalize = false;
 
-        this->logger.logInfo("knn", "All instances cleared.");
+        rtlogger.logInfo("All instances cleared.");
     }
 
     /**
@@ -1265,7 +1271,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to create " + filename);
+            rtlogger.logInfo("Failed to create ",filename.c_str());
             return false;
         }
 
@@ -1280,7 +1286,9 @@ public:
         for (t_instanceIdx i = 0; i < this->numInstances; ++i)
             fwrite(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" non-normalized instances to "+filename+".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Wrote %u non-normalized instances to %s.",this->numInstances,filename.c_str());
+        rtlogger.logInfo(message);
 
         fclose(filePtr);
         return true;
@@ -1301,7 +1309,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to open " + filename);
+            rtlogger.logInfo("Failed to open ",filename.c_str());
             return false;
         }
 
@@ -1357,7 +1365,10 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->instances[i].data[0]), sizeof(float), this->instances[i].length, filePtr);
 
-        this->logger.logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from "+filename+".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Read %u instances from %s.",this->numInstances,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
         return true;
     }
@@ -1376,7 +1387,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to create " + filename);
+            rtlogger.logInfo("Failed to create ",filename.c_str());
             return false;
         }
 
@@ -1412,7 +1423,10 @@ public:
             fprintf(filePtr, "\n");
         }
 
-        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numInstances)+" instances to " + filename + ".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Wrote %u instances to %s.",this->numInstances,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
         return true;
     }
@@ -1430,7 +1444,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to open " + filename);
+            rtlogger.logInfo("Failed to open ",filename.c_str());
             return false;
         }
 
@@ -1513,7 +1527,10 @@ public:
                 fscanf(filePtr, "%f", &this->instances[i].data[j]);
         }
 
-        this->logger.logInfo("knn", "Read "+std::to_string(this->numInstances)+" instances from " + filename + ".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Read %u instances from %s.",this->numInstances,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
         return true;
     }
@@ -1536,7 +1553,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to create " + filename);
+            rtlogger.logInfo("Failed to create ",filename.c_str());
             return;
         }
 
@@ -1555,7 +1572,10 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fwrite(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to " + filename + ".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Wrote %u clusters to %s.",this->numClusters,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
     }
 
@@ -1577,7 +1597,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to open " + filename);
+            rtlogger.logInfo("Failed to open ",filename.c_str());
             return;
         }
 
@@ -1586,7 +1606,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            this->logger.logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
+            rtlogger.logInfo(filename.c_str()," contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1609,7 +1629,10 @@ public:
         for (i=0; i<this->numInstances; ++i)
             fread(&(this->clusters[i].members[0]), sizeof(t_instanceIdx), this->clusters[i].numMembers, filePtr);
 
-        this->logger.logInfo("knn", "Read "+std::to_string(this->numClusters)+" clusters from "+filename+".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Read %u clusters from %s.",this->numClusters,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
     }
 
@@ -1634,7 +1657,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to create " + filename);
+            rtlogger.logInfo("Failed to create ",filename.c_str());
             return;
         }
 
@@ -1650,7 +1673,9 @@ public:
             fprintf(filePtr, "\n");
         }
 
-        this->logger.logInfo("knn", "Wrote "+std::to_string(this->numClusters)+" clusters to "+filename+".");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Wrote %u clusters to %s.",this->numClusters,filename.c_str());
+        rtlogger.logInfo(message);
         fclose(filePtr);
     }
 
@@ -1667,7 +1692,7 @@ public:
 
         if (!filePtr)
         {
-            this->logger.logError("knn","Failed to open " + filename);
+            rtlogger.logInfo("Failed to open ",filename.c_str());
             return;
         }
 
@@ -1678,7 +1703,7 @@ public:
 
         if (numClusters>this->numInstances)
         {
-            this->logger.logError("knn",filename + " contains more clusters than current number of database instances. read failed.");
+            rtlogger.logInfo(filename.c_str()," contains more clusters than current number of database instances. read failed.");
             fclose(filePtr);
             return;
         }
@@ -1751,7 +1776,10 @@ public:
             }
         }
 
-        this->logger.logInfo("knn", filename + ": read "+std::to_string(this->numClusters)+" clusters from " + filename);
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+        snprintf(message,sizeof(message),"Read %u clusters from %s.",this->numClusters,filename.c_str());
+        rtlogger.logInfo(message);
+
         fclose(filePtr);
     }
 
@@ -1799,9 +1827,6 @@ public:
         res += "\nmax matches: "+std::to_string(this->maxMatches);
         res += "\njump probability: "+std::to_string(this->jumpProb);
         res += "\nstutter protect: "+std::to_string(this->stutterProtect);
-        res += "\n";
-        res += "Log path: ";
-        res += logger.getLogPath();
         return res;
     }
 
@@ -1818,7 +1843,7 @@ public:
     /**
      * Returns the feature vector for the specified instance
     */
-    std::vector<float> getFeatureVec(t_instanceIdx idx) const
+    std::vector<float> getFeatureVec(t_instanceIdx idx)
     {
         idx = (idx < 0) ? 0 : idx;
 
@@ -1827,8 +1852,8 @@ public:
 
         if (idx > this->numInstances-1)
         {
-            this->logger.logError("knn","Instance "+std::to_string(idx)+" does not exist.");
-            throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
+            rtlogger.logValue("Instance",idx,"does not exist.");
+            throw std::logic_error("Instance"+std::to_string(idx)+"does not exist.");
         }
         else
         {
@@ -1849,11 +1874,11 @@ public:
     /**
      * Returns the cluster to which the specified instance belongs.
     */
-    t_instanceIdx getClusterMembership(t_instanceIdx idx) const
+    t_instanceIdx getClusterMembership(t_instanceIdx idx)
     {
         if (idx >= this->numInstances)
         {
-            this->logger.logError("knn","Instance "+std::to_string(idx)+" does not exist.");
+            rtlogger.logValue("Instance",(idx),"does not exist.");
             throw std::logic_error("Instance "+std::to_string(idx)+" does not exist.");
         }
         else
@@ -1867,7 +1892,7 @@ public:
      * (Notice the difference of singular vs. plural - clustersList vs.
      * clusterList)
     */
-    std::vector<float> getClustersList() const
+    std::vector<float> getClustersList()
     {
         // create local memory
         std::vector<float> listOut(this->numInstances);
@@ -1883,13 +1908,13 @@ public:
      * (Notice the difference of singular vs. plural - clustersList vs.
      * clusterList)
     */
-    std::vector<float> clusterList(t_instanceIdx idx) const
+    std::vector<float> clusterList(t_instanceIdx idx)
     {
         idx = (idx < 0) ? 0 : idx;
 
         if (idx >= this->numClusters)
         {
-            this->logger.logError("knn","Cluster "+std::to_string(idx)+" does not exist.");
+            rtlogger.logValue("Cluster",idx,"does not exist.");
         }
         else
         {
@@ -1908,7 +1933,7 @@ public:
     /**
      * Try an order starting from a particular instrument/cluster
     */
-    std::vector<float> setOrder(t_instanceIdx reference) const
+    std::vector<float> setOrder(t_instanceIdx reference)
     {
         t_instanceIdx ref;
 
@@ -1974,7 +1999,7 @@ public:
      * Spit out a list of the min values for all attributes in the feature
      * database.
     */
-    std::vector<float> getMinValues() const
+    std::vector<float> getMinValues()
     {
         if (this->normalize)
         {
@@ -1987,7 +2012,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","Feature database not normalized. minimum values not calculated yet.");
+            rtlogger.logInfo("Feature database not normalized. minimum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. minimum values not calculated yet.");
         }
     }
@@ -1996,7 +2021,7 @@ public:
      * Spit out a list of the max values for all attributes in the feature
      * database.
     */
-    std::vector<float> getMaxValues() const
+    std::vector<float> getMaxValues()
     {
         if (this->normalize)
         {
@@ -2010,7 +2035,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","Feature database not normalized. maximum values not calculated yet.");
+            rtlogger.logInfo("Feature database not normalized. maximum values not calculated yet.");
             throw std::logic_error("Feature database not normalized. maximum values not calculated yet.");
         }
     }
@@ -2018,7 +2043,7 @@ public:
     /**
      * Query the minimum instance length in the database
     */
-    t_attributeIdx getMinFeatureLength() const
+    t_attributeIdx getMinFeatureLength()
     {
         if (this->numInstances)
         {
@@ -2026,7 +2051,7 @@ public:
         }
         else
         {
-            this->logger.logError("knn","No training instances have been loaded.");
+            rtlogger.logInfo("No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2034,13 +2059,13 @@ public:
     /**
      * Query the maximum instance length in the database
     */
-    t_attributeIdx getMaxFeatureLength() const
+    t_attributeIdx getMaxFeatureLength()
     {
         if (this->numInstances)
             return (this->maxFeatureLength);
         else
         {
-            this->logger.logError("knn","No training instances have been loaded.");
+            rtlogger.logInfo("No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2051,7 +2076,7 @@ public:
      * flag. The data is sent out as N lists with N elements in each (where N is
      * the number of instances in the requested range).
     */
-    std::vector<std::vector<float>> getSimilarityMatrix(t_instanceIdx startInstance, t_instanceIdx finishInstance, bool normalize) const
+    std::vector<std::vector<float>> getSimilarityMatrix(t_instanceIdx startInstance, t_instanceIdx finishInstance, bool normalize)
     {
         if (this->numInstances)
         {
@@ -2072,7 +2097,7 @@ public:
 
             if (finishInstance - startInstance == 0)
             {
-                this->logger.logError("knn","Bad instance range for similarity matrix");
+                rtlogger.logInfo("Bad instance range for similarity matrix");
                 std::vector<std::vector<float>> res;
                 return res;
             }
@@ -2133,13 +2158,13 @@ public:
             }
             else
             {
-                this->logger.logError("knn","Bad range of instances");
+                rtlogger.logInfo("Bad range of instances");
                 throw std::logic_error("Bad range of instances");
             }
         }
         else
         {
-            this->logger.logError("knn","No training instances have been loaded.");
+            rtlogger.logInfo("No training instances have been loaded.");
             throw std::logic_error("No training instances have been loaded.");
         }
     }
@@ -2148,18 +2173,26 @@ public:
      * Returns a tuple containing the name, the weight and the order of the
      * specified attribute
     */
-    std::tuple<std::string,float,t_attributeIdx> getAttributeInfo(t_attributeIdx idx) const
+    std::tuple<std::string,float,t_attributeIdx> getAttributeInfo(t_attributeIdx idx)
     {
         idx = (idx < 0) ? 0 : idx;
 
         if (idx >= this->maxFeatureLength)
         {
-            std::string errstr = "Attribute "+std::to_string(idx)+" does not exist";
-            this->logger.logError("knn",errstr);
-            throw std::logic_error(errstr);
+            rtlogger.logValue("Attribute",idx,"does not exist");
+            throw std::logic_error("Attribute "+std::to_string(idx)+" does not exist");
         }
         else
             return std::make_tuple(this->attributeData[idx].name, this->attributeData[idx].weight, this->attributeData[idx].order);
+    }
+
+    /**
+     * Return a pointer to the tid::RealTimeLogger used, so that log Messages
+     * can be consumed outside of the real-time thread execution
+    */
+    tid::RealTimeLogger* getLoggerPtr()
+    {
+        return &rtlogger;
     }
 
     /* -------- END information functions -------- */
@@ -2216,7 +2249,7 @@ private:
     }
 
     // this gives the distance between the current inputData and a given instance from this->instances. Same as getDist() below, except more convenient for use in the _id() method because you don't have to fill 2 float buffers in order to use it.
-    float getInputDist(t_instanceIdx instanceID) const
+    float getInputDist(t_instanceIdx instanceID)
     {
         t_attributeIdx vecLen = this->attributeHi - this->attributeLo + 1;
         std::vector<float> vec1Buffer(vecLen);
@@ -2235,7 +2268,9 @@ private:
 
             if (thisAttribute > this->instances[instanceID].length)
             {
-                this->logger.logError("knn","Attribute "+std::to_string(thisAttribute)+" out of range for database instance "+std::to_string(instanceID));
+                char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+                snprintf(message,sizeof(message),"Attribute %d out of range for database instance %d.",(int)thisAttribute,(int)instanceID);
+                rtlogger.logInfo(message);
                 return(FLT_MAX);
             }
 
@@ -2291,7 +2326,7 @@ private:
     }
 
     // this gives the distance between two vectors stored in the .data part of t_instance arrays.
-    float getDist(tIDLib::t_instance instance1, tIDLib::t_instance instance2) const
+    float getDist(tIDLib::t_instance instance1, tIDLib::t_instance instance2)
     {
         t_attributeIdx vecLen = this->attributeHi - this->attributeLo + 1;
         std::vector<float> vec1Buffer(vecLen);
@@ -2309,7 +2344,7 @@ private:
 
             if (thisAttribute > (instance1.length - 1) || thisAttribute > (instance2.length - 1))
             {
-                this->logger.logError("knn","Attribute "+std::to_string(thisAttribute)+" does not exist for both feature vectors. cannot compute distance.");
+                rtlogger.logValue("Attribute",thisAttribute,"does not exist for both feature vectors. cannot compute distance.");
                 return(FLT_MAX);
             }
 
@@ -2374,14 +2409,15 @@ private:
 
         if(postFlag)
         {
-            std::string res = "";
-            res += ("\nmax feature length: "+std::to_string(this->maxFeatureLength));
-            res += ("\nmin feature length: "+std::to_string(this->minFeatureLength));
-            res += "\nfeature attribute normalization OFF.";
-            res += "\nattribute weights initialized";
-            res += "\nattribute order initialized";
-            res += ("\nattribute range: "+std::to_string(this->attributeLo)+" through "+std::to_string(this->attributeHi));
-            this->logger.logInfo("knn", res);
+            rtlogger.logValue("max feature length:",this->maxFeatureLength);
+            rtlogger.logValue("min feature length:",this->minFeatureLength);
+            rtlogger.logInfo("\nfeature attribute normalization OFF.");
+            rtlogger.logInfo("\nattribute weights initialized");
+            rtlogger.logInfo("\nattribute order initialized");
+
+            char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH+1];
+            snprintf(message,sizeof(message),"attribute range: %u through %u",this->attributeLo,this->attributeHi);
+            rtlogger.logInfo(message);
         }
 
     }
@@ -2415,8 +2451,7 @@ private:
     t_attributeIdx attributeLo;
     t_attributeIdx attributeHi;
 
-    tid::Log logger;
-    const std::string LOG_FILENAME = "timbreid-knn";
+    tid::RealTimeLogger rtlogger { "knn (~timbreId)" };
 };
 
 } // namespace tid
@@ -2449,7 +2484,7 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
 
     if (!filePtr)
     {
-        this->logger.logError("knn","Failed to create %s", filenameBuf);
+        rtlogger.logInfo("Failed to create ",filename.c_str());
         return;
     }
 
@@ -2519,7 +2554,7 @@ void timbreID_ARFF(t_symbol *s, int argc, t_atom *argv)
         fprintf(filePtr, "\n");
     }
 
-    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    rtlogger.logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2538,13 +2573,13 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
 
     if (!filePtr)
     {
-        this->logger.logError("knn","Failed to create %s", filenameBuf);
+        rtlogger.logInfo("Failed to create ",filename.c_str());
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        this->logger.logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        rtlogger.logInfo("Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2574,7 +2609,7 @@ void timbreID_MATLAB(t_symbol *file_symbol, t_symbol *var_symbol)
         fprintf(filePtr, "\n");
     }
 
-    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    rtlogger.logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2593,13 +2628,13 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
 
     if (!filePtr)
     {
-        this->logger.logError("knn","Failed to create %s", filenameBuf);
+        rtlogger.logInfo("Failed to create %s", filenameBuf);
         return;
     }
 
     if (this->maxFeatureLength != this->minFeatureLength)
     {
-        this->logger.logError("knn","Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
+        rtlogger.logInfo("Database instances must have uniform length for MATLAB matrix formatting. failed to create %s", filenameBuf);
         fclose(filePtr);
         return;
     }
@@ -2628,7 +2663,7 @@ void timbreID_OCTAVE(t_symbol *file_symbol, t_symbol *var_symbol)
         }
     }
 
-    this->logger.logInfo("knn", "Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
+    rtlogger.logInfo("Wrote %i non-normalized instances to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }
@@ -2646,7 +2681,7 @@ void timbreID_FANN(t_symbol *s, float normRange)
 
     if (!filePtr)
     {
-        this->logger.logError("knn","Failed to create %s", filenameBuf);
+        rtlogger.logInfo("Failed to create %s", filenameBuf);
         return;
     }
 
@@ -2687,7 +2722,7 @@ void timbreID_FANN(t_symbol *s, float normRange)
         fprintf(filePtr, "\n");
     }
 
-    this->logger.logInfo("knn", "Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
+    rtlogger.logInfo("Wrote %i training instances and labels to %s.", this->numInstances, filenameBuf);
 
     fclose(filePtr);
 }

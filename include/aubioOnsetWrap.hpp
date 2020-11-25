@@ -101,8 +101,9 @@ public:
     void prepare(unsigned long int sampleRate, unsigned int blockSize)
     {
         this->blockSize = blockSize;
+        this->sampleRate = sampleRate;
         resizeBuffer();
-        logger.logInfo("Preparing onset detector");
+        rtlogger.logInfo("Preparing onset detector");
         const bool VERBOSE = false;
 
         o = new_aubio_onset (this->getStringMethod().c_str(), (uint_t)this->analysisWindowSize, this->hopSize, (uint_t)sampleRate);
@@ -111,32 +112,22 @@ public:
             throw std::logic_error("Aubio Onset initialization failed");
         }
 
-        if (onset_threshold != 0.)
-        {
-            if(VERBOSE) logger.logInfo("Setting onset threshold to " + std::to_string(onset_threshold));
-            aubio_onset_set_threshold (o, onset_threshold);
-        }
-        if (silence_threshold != -90.)
-        {
-            if(VERBOSE) logger.logInfo("Setting silence threshold to " + std::to_string(silence_threshold));
-            aubio_onset_set_silence (o, silence_threshold);
-        }
-        if (onset_minioi != 0.)
-        {
-            if(VERBOSE) logger.logInfo("Setting minimum inter-onset interval to " + std::to_string(onset_minioi));
-            aubio_onset_set_minioi_s (o, onset_minioi);
-        }
+        if (onset_threshold != 0.) { aubio_onset_set_threshold (o, onset_threshold); }
+        if (silence_threshold != -90.) { aubio_onset_set_silence (o, silence_threshold); }
+        if (onset_minioi != 0.) { aubio_onset_set_minioi_s (o, onset_minioi); }
 
         if(VERBOSE)
         {
-            logger.logInfo("Sample rate: "+std::to_string(sampleRate)+"Hz");
-            logger.logInfo("onset method: " + getStringMethod() + ", ");
-            logger.logInfo("buffer_size: "+std::to_string(analysisWindowSize)+", ");
-            logger.logInfo("hop_size: "+std::to_string(hopSize)+", ");
-            logger.logInfo("silence: "+std::to_string(aubio_onset_get_silence(o))+", ");
-            logger.logInfo("threshold: "+std::to_string(aubio_onset_get_threshold(o))+", ");
-            logger.logInfo("awhitening: "+std::to_string(aubio_onset_get_awhitening(o))+", ");
-            logger.logInfo("compression "+std::to_string(aubio_onset_get_compression(o)));
+            rtlogger.logValue("Sample rate(Hz): ", sampleRate);
+            char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+            snprintf(message,sizeof(message),"onset method: %s",getStringMethod().c_str());
+            rtlogger.logInfo(message);
+            rtlogger.logValue("buffer_size: ",analysisWindowSize);
+            rtlogger.logValue("hop_size: ",hopSize);
+            rtlogger.logValue("silence: ",aubio_onset_get_silence(o));
+            rtlogger.logValue("threshold: ",aubio_onset_get_threshold(o));
+            rtlogger.logValue("awhitening: ",aubio_onset_get_awhitening(o));
+            rtlogger.logValue("compression ",aubio_onset_get_compression(o));
         }
 
         onset_fvec = new_fvec (1);
@@ -145,7 +136,7 @@ public:
 
     void reset()
     {
-        logger.logInfo("Reset and release memory");
+        rtlogger.logInfo("Reset and release memory");
         // destroy the input vector
         if(input_fvec)
         {
@@ -215,6 +206,15 @@ public:
         return this->analysisWindowSize;
     }
 
+    /**
+     * Return a pointer to the tid::RealTimeLogger used, so that log Messages
+     * can be consumed outside of the real-time thread execution
+    */
+    tid::RealTimeLogger* getLoggerPtr()
+    {
+        return &rtlogger;
+    }
+
     /*-----------------------------*/
 
     /**
@@ -274,7 +274,8 @@ private:
 
     void perform(const SampleType* input, size_t n)
     {
-        //#define VERBOSE_PERFORM
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+        // #define VERBOSE_PERFORM
         // write new block to end of signal buffer.
         for(unsigned long int i=0; i<n; ++i)
             signalBuffer[this->dspTick+i] = input[i];
@@ -284,17 +285,19 @@ private:
         int turns = numSamples/hopSize;
 
        #ifdef VERBOSE_PERFORM
-        logger.logInfo("numSamples: " + std::to_string(numSamples) + " turns: " + std::to_string(turns) + "\n");
+        rtlogger.logValue("numSamples: ", numSamples);
+        rtlogger.logValue("turns: ", turns);
        #endif
 
-        bool onsetDetected = false;
+        bool isOnsetDetected = false;
         // Analyze buffer in hopSize increments
         for (int j = 0; j < turns; ++j)
         {
             int firstIndex = (j * hopSize);
 
            #ifdef VERBOSE_PERFORM
-            logger.logInfo("Analyzing section [" + std::to_string(firstIndex) + "," + std::to_string(lastIndex) + ")\n"); //TODO: remove
+            snprintf(message,sizeof(message),"Analyzing section [%d,%d]",firstIndex,firstIndex+hopSize);
+            rtlogger.logInfo(message);
            #endif
 
             for(unsigned long int i=0; i<hopSize; ++i)
@@ -302,8 +305,8 @@ private:
             aubio_onset_do (o, input_fvec, onset_fvec);
             smpl_t is_onset = fvec_get_sample(onset_fvec, 0);
 
-            if (is_onset)
-                onsetDetected = true; //One onset in the frame is sufficient to send signal
+            if(is_onset)
+                isOnsetDetected = true; //One onset in the frame is sufficient to send signal
             this->dspTick = 0;
         }
 
@@ -315,7 +318,8 @@ private:
                 int firstIndex = (int) (n / hopSize) * hopSize;
 
                #ifdef VERBOSE_PERFORM
-                logger.logInfo("Buffering section [" + std::to_string(firstIndex) + "," + std::to_string(lastIndex) + ")\n"); //Todo remove
+                snprintf(message,sizeof(message),"Buffering section [%d,%d]",firstIndex,firstIndex+numSamples);
+                rtlogger.logInfo(message);
                #endif
 
                 for(int i=0; i < signalBuffer.size(); ++i)
@@ -328,8 +332,11 @@ private:
                 this->dspTick = remaining;
             }
         }
-        if (onsetDetected)
+        if (isOnsetDetected)
+        {
             outputOnset();
+            rtlogger.logInfo("Onset Detected");
+        }
     }
 
     void outputOnset()
@@ -337,7 +344,7 @@ private:
         onsetListeners.call([this] (Listener& l) { l.onsetDetected (this); });
     }
 
-    std::string getStringMethod()
+    std::string getStringMethod() //TODO: consider returning char string
     {
         std::string res;
 
@@ -400,8 +407,9 @@ private:
 
     unsigned long int dspTick = 0;
     unsigned int blockSize = 0;
+    double sampleRate = 0;
 
-    Log logger{"aubio-onset_"};
+    tid::RealTimeLogger rtlogger { "aubioonset" };
 };
 
 } // namespace Aubio

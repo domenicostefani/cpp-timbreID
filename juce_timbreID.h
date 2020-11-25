@@ -12,7 +12,7 @@ TimbreID original library was developed by William Brent
 #include <juce_core/juce_core.h>
 
 #include "include/tidTime.hpp"
-#include "include/tidLog.hpp"
+#include "include/tidRTLog.hpp"
 
 #include "include/tIDLib.hpp"
 #include "include/bark2freq.hpp"

@@ -357,11 +357,6 @@ public:
     void setDebugMode(bool debug)
     {
         this->debug = debug;
-        if(debug)
-        {
-            debugLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(DEBUGLOG_SUBFOLDER, DEBUGLOG_FILENAME, ".txt", "TimbreID bark module - Debug log"));
-            this->debugLogger->logMessage("Starting DEBUG log at: " + getDebugLogPath());
-        }
     }
 
     /**
@@ -379,7 +374,7 @@ public:
      * output on every analysis period. Note that this is different from bonk's
      * spew mode, which provides the power in each band, not the growth.
      * (From wbrent tIDLib bark~.pd help example)
-     * @param debug Debug mode state
+     * @param spew Spew mode state
     */
     void setSpewMode(bool spew)
     {
@@ -408,16 +403,15 @@ public:
     {
         if(measure)
         {
-            measureLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(MEASURELOG_SUBFOLDER, MEASURELOG_SUBFOLDER, ".txt", "TimbreID bark module - MEASURE log"));
-            this->measureLogger->logMessage("Starting log at: " + getDebugLogPath());
-            this->measureLogger->logMessage("Measuring average growth...");
-            this->measureTicks = 0;
+            rtlogger.logInfo("Measuring average growth...");
+            measureTicks = 0;
         }
-        else if(measureLogger != nullptr)
+        else
         {
-            this->measureLogger->logMessage("Number of ticks: "+std::to_string(this->measureTicks));
-            this->measureLogger->logMessage("Average growth: "+std::to_string(this->avgGrowth/this->measureTicks));
-            this->measureLogger->logMessage("Peak growth: "+std::to_string(this->peakGrowth));
+            rtlogger.logInfo("Finished measuring average growth");
+            rtlogger.logValue("Number of ticks: ", this->measureTicks);
+            rtlogger.logValue("Average growth: ", (this->avgGrowth/this->measureTicks));
+            rtlogger.logValue("Peak growth: ", this->peakGrowth);
             this->avgGrowth = 0.0;
             this->peakGrowth = 0.0;
             this->measureTicks = UINT_MAX;
@@ -502,22 +496,12 @@ public:
     }
 
     /**
-     * Get the path to the Debug log folder
-     * @return debug log folder path
+     * Return a pointer to the tid::RealTimeLogger used, so that log Messages
+     * can be consumed outside of the real-time thread execution
     */
-    String getDebugLogPath() const
+    tid::RealTimeLogger* getLoggerPtr()
     {
-        return this->debugLogger->getSystemLogFileFolder().getFullPathName() + "/" + DEBUGLOG_SUBFOLDER + "/";
-    }
-
-
-    /**
-     * Get the path to the Measure log folder
-     * @return measure log folder path
-    */
-    String getMeasureLogPath() const
-    {
-        return this->measureLogger->getSystemLogFileFolder().getFullPathName() + "/" + MEASURELOG_SUBFOLDER + "/";
+        return &rtlogger;
     }
 
     /*-----------------------------*/
@@ -615,8 +599,7 @@ private:
     std::vector<float> mask;
     std::vector<float> growth;
 
-    std::unique_ptr<FileLogger> debugLogger;
-    std::unique_ptr<FileLogger> measureLogger;
+    tid::RealTimeLogger rtlogger { "bark onset" };
 
     /* Utility functions -----------------------------------------------------*/
 
@@ -862,8 +845,8 @@ private:
 
             if(totalVel >= this->minvel && totalGrowth > this->hiThresh && !this->haveHit && !this->debounceActive)
             {
-                 if(this->isDebugMode)
-                     this->debugLogger->logMessage("Peak: " + std::to_string(totalGrowth));
+                if(this->isDebugMode)
+                    rtlogger.logValue("Peak: ",totalGrowth);
 
                 this->haveHit = true;
                 this->debounceActive = true;
@@ -872,7 +855,7 @@ private:
             else if(this->haveHit && this->loThresh>0 && totalGrowth < this->loThresh) // if loThresh is an actual value (not -1), then wait until growth drops below that value before reporting attack
             {
                 if(this->isDebugMode)
-                    this->debugLogger->logMessage("Drop: "+std::to_string(totalGrowth));
+                    rtlogger.logValue("Drop: ",totalGrowth);
 
                 this->haveHit = false;
 
@@ -885,7 +868,7 @@ private:
             else if(this->haveHit && this->loThresh<0 && totalGrowth < this->prevTotalGrowth) // if loThresh == -1, report attack as soon as growth shows any decay at all
             {
                 if(this->isDebugMode)
-                    this->debugLogger->logMessage("Drop: "+std::to_string(totalGrowth));
+                    rtlogger.logValue("Drop: ",totalGrowth);
 
                 this->haveHit = false;
 

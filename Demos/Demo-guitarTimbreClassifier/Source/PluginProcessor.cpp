@@ -35,11 +35,11 @@ DemoProcessor::DemoProcessor()
                        )
 #endif
 {
-    logger.logInfo("Initializing Onset detector");
+    rtlogger.logInfo("Initializing Onset detector");
 
    #ifdef USE_AUBIO_ONSET
     /** ADD THE LISTENER **/
-    aubioOnset.addListener(this);
+    // aubioOnset.addListener(this);
    #else
     /** SET SOME DEFAULT PARAMETERS OF THE BARK MODULE **/
     bark.setDebounce(200);
@@ -54,20 +54,25 @@ DemoProcessor::DemoProcessor()
     featureVector.resize(VECTOR_SIZE);
 
     /** SET UP CLASSIFIER **/
-    logger.logInfo("Model path set to '" + TFLITE_MODEL_PATH + "'");
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+    snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH);
+    rtlogger.logInfo(message);
     this->timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
-    logger.logInfo("Classifier object istantiated");
+    rtlogger.logInfo("Classifier object istantiated");
+    // Start the polling routine that writes to file all the log entries
+    pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
 }
 
 DemoProcessor::~DemoProcessor(){
     deleteClassifier(this->timbreClassifier);
-    logger.logInfo("Classifier object deleted");
+    rtlogger.logInfo("Classifier object deleted");
+    logPollingRoutine(); // Log last messages before closing
 }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    logger.logInfo("+--Prepare to play called");
-    logger.logInfo("+  Setting up onset detector");
+    rtlogger.logInfo("+--Prepare to play called");
+    rtlogger.logInfo("+  Setting up onset detector");
 
    #ifdef USE_AUBIO_ONSET
     /** PREPARE THE BARK MODULEs **/
@@ -88,21 +93,21 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     sinewt.prepareToPlay(sampleRate);
 
-    logger.logInfo("+--Prepare to play completed");
+    rtlogger.logInfo("+--Prepare to play completed");
 }
 
 void DemoProcessor::releaseResources()
 {
-    logger.logInfo("+--ReleaseResources called");
+    rtlogger.logInfo("+--ReleaseResources called");
 
-    logger.logInfo("+  Releasing Onset detector resources");
+    rtlogger.logInfo("+  Releasing Onset detector resources");
     /** RESET THE MODULEs **/
    #ifdef USE_AUBIO_ONSET
     aubioOnset.reset(); // Important step
    #else
     bark.reset();
    #endif
-    logger.logInfo("+  Releasing extractor resources");
+    rtlogger.logInfo("+  Releasing extractor resources");
 
     // attackTime.reset();
     // barkSpecBrightness.reset();
@@ -113,23 +118,29 @@ void DemoProcessor::releaseResources()
     // peakSample.reset();
     // zeroCrossing.reset();
 
-    logger.logInfo("+--ReleaseResources completed");
+    rtlogger.logInfo("+--ReleaseResources completed");
 }
 
 void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH]; // logger message
 
    #ifdef DEBUG_WHICH_CHANNEL
     if(logCounter > (48000/64)){
         logCounter = 0;
-        logger.logInfo("process 0:" + std::to_string(*buffer.getReadPointer(0,0)) + " 1:" + std::to_string(*buffer.getReadPointer(1,0)));
+        snprintf(message,sizeof(message),"process 0:%f 1:%f",*buffer.getReadPointer(0,0),*buffer.getReadPointer(1,0));
+        rtlogger.logInfo(message);
     }
     logCounter++;
    #endif
 
+    int64 timeAtClassificationStart = 0;
     if(this->onsetWasDetected.exchange(false))
-       onsetDetectedRoutine();
+    {
+        timeAtClassificationStart = Time::Time::getHighResolutionTicks();
+        onsetDetectedRoutine();
+    }
 
     /** STORE THE BUFFER FOR ANALYSIS **/
     // attackTime.store(buffer,(short int)MONO_CHANNEL);
@@ -162,6 +173,11 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     }
     // buffer.clear();
     sinewt.processBlock(buffer);
+    if(timeAtClassificationStart)   // If this round a classification is happning, I'm going to log it
+    {
+        snprintf(message,sizeof(message),"Classification happened this time");
+        rtlogger.logInfo(message,timeAtClassificationStart,Time::Time::getHighResolutionTicks());
+    }
 }
 
 #ifdef USE_AUBIO_ONSET
@@ -175,7 +191,7 @@ void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
        #ifdef DO_DELAY_ONSET
         /* We assume that there could be a delay of one entire Hop window */
         const unsigned int SAMPLES_FROM_PEAK = this->aubioOnset.getHopSize();
-        float delayMsec = (bfcc.getWindowSize()-SAMPLES_FROM_PEAK) / this->getSampleRate() * 1000;
+        float delayMsec = (this->ONSETDETECTOR_WINDOW_SIZE-SAMPLES_FROM_PEAK) / this->getSampleRate() * 1000;
         /* Check that the timer does not interfere with successive onsets */
         float minIoiMsec = this->aubioOnset.getOnsetMinInterOnsetInterval()*1000.0;
         /* Check that complessive delay does not go over MAXIMUM_LATENCY_MSEC milliseconds */
@@ -185,7 +201,9 @@ void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
         float realtimeThresh = ms_remaining_to_maxlatency < minIoiMsec ? ms_remaining_to_maxlatency : minIoiMsec;
 
        #ifdef MEASURE_COMPUTATION_LATENCY
-        logger.logInfo("Set timer for " + std::to_string(delayMsec < realtimeThresh ? delayMsec : realtimeThresh) + "ms");
+        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+        snprintf(message,sizeof(message),"Set timer for %fms", delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
+        rtlogger.logInfo(message);
        #endif
         HighResolutionTimer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
        #else
@@ -216,7 +234,9 @@ void DemoProcessor::hiResTimerCallback(){
     HighResolutionTimer::stopTimer();
     this->onsetWasDetected.exchange(true);
    #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Timer stopped after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+    snprintf(message,sizeof(message),"Timer stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    rtlogger.logInfo(message);
    #endif
 }
 
@@ -227,55 +247,59 @@ void DemoProcessor::hiResTimerCallback(){
 **/
 void DemoProcessor::onsetDetectedRoutine ()
 {
-    logger.logInfo("Onset detected");
+    rtlogger.logInfo("Onset detected");
    #ifdef DO_DELAY_ONSET
-    logger.logInfo("delay applied");
+    rtlogger.logInfo("delay applied");
    #endif
-
-    this->onsetMonitorState.exchange(true);
 
     bool VERBOSE = false;
     bool VERBOSERES = true;
 
    #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Computation started after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+    snprintf(message,sizeof(message),"Computation started after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    rtlogger.logInfo(message);
    #endif
 
     this->computeFeatureVector();
 
    #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Computation stopped after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    snprintf(message,sizeof(message),"Computation stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    rtlogger.logInfo(message);
    #endif
 
-    if (VERBOSE)
-    {
-        std::string toprint = "";
-        for(float val : featureVector)
-            toprint += (std::to_string(val) + " ");
-        logger.logInfo(toprint);
-    }
-    std::string predictionInfo = "";
 
+    std::string predictionInfo = ""; //TODO check if this is bad
+    predictionInfo.reserve(10000);   //TODO at least this should be good
     auto start = std::chrono::high_resolution_clock::now();
     std::pair<int,float> result = classify(timbreClassifier,featureVector,predictionInfo);
     auto stop = std::chrono::high_resolution_clock::now();
 
-    logger.logInfo("----\n" + predictionInfo + "\n----");
-    logger.logInfo("Predicted class " + std::to_string(result.first) + " with confidence: " + std::to_string(result.second));
-    logger.logInfo("It took " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()) + "us");
-    logger.logInfo("(or " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()) + "ms)");
+    // rtlogger.logInfo("----\n" + predictionInfo + "\n----"); //TODO fix
+    snprintf(message,sizeof(message),"Predicted class %d with confidence %f",result.first,result.second);
+    rtlogger.logInfo(message);
+    snprintf(message,sizeof(message),"It took %f us\nor %f ms", \
+        std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
+        std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
+    rtlogger.logInfo(message);
     /*---------------------*/
+
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    snprintf(message,sizeof(message),"Prediction stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    rtlogger.logInfo(message);
+   #endif
 
     int prediction = std::get<0>(result);
     float confidence = std::get<1>(result);
 
     if (VERBOSERES)
     {
-        logger.logInfo("Match: " + std::to_string(prediction));
-        logger.logInfo("Confidence: " + std::to_string(confidence));
+        snprintf(message,sizeof(message),"Match: %d\nConfidence: %f", prediction,confidence);
+        rtlogger.logInfo(message);
     }
 
-    if(confidence > 0.90 && prediction != 4)
+    // if(confidence > 0.90 && prediction != 4)
+    if(prediction != 4)
         sinewt.playNote((prediction+1) * 440);
 }
 
