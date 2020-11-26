@@ -17,8 +17,7 @@
 #include <chrono>  //TODO: remove
 
 
-#define MONO_CHANNEL 1
-// #define DEBUG_WHICH_CHANNEL
+#define MONO_CHANNEL 0
 #define MAXIMUM_LATENCY_MSEC 10
 #define DO_DELAY_ONSET // If commented there is no delay between onset detection and feature extraction (bad)
 
@@ -28,9 +27,9 @@ DemoProcessor::DemoProcessor()
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  AudioChannelSet::stereo(), true)
+                       .withInput  ("Input",  AudioChannelSet::mono(), true)
                       #endif
-                       .withOutput ("Output", AudioChannelSet::stereo(), true)
+                       .withOutput ("Output", AudioChannelSet::mono(), true)
                      #endif
                        )
 #endif
@@ -39,7 +38,7 @@ DemoProcessor::DemoProcessor()
 
    #ifdef USE_AUBIO_ONSET
     /** ADD THE LISTENER **/
-    // aubioOnset.addListener(this);
+    aubioOnset.addListener(this);
    #else
     /** SET SOME DEFAULT PARAMETERS OF THE BARK MODULE **/
     bark.setDebounce(200);
@@ -55,7 +54,7 @@ DemoProcessor::DemoProcessor()
 
     /** SET UP CLASSIFIER **/
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-    snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH);
+    snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH.c_str());
     rtlogger.logInfo(message);
     this->timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
     rtlogger.logInfo("Classifier object istantiated");
@@ -129,16 +128,31 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
    #ifdef DEBUG_WHICH_CHANNEL
     if(logCounter > (48000/64)){
         logCounter = 0;
-        snprintf(message,sizeof(message),"process 0:%f 1:%f",*buffer.getReadPointer(0,0),*buffer.getReadPointer(1,0));
-        rtlogger.logInfo(message);
+        for(int c = 0; c < buffer.getNumChannels(); ++c)
+        {
+            snprintf(message,sizeof(message),"DEBUG | Channel %d, first sample: %f ",c,*buffer.getReadPointer(c,0));
+            rtlogger.logInfo(message);
+        }
     }
     logCounter++;
    #endif
 
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    int64 timeAtBlockStart = 0;
+    if (++logProcessblock_counter >= logProcessblock_period)
+    {
+        logProcessblock_fixedCounter += logProcessblock_counter; // Add the number of processed blocks to the total
+        logProcessblock_counter = 0;
+        timeAtBlockStart = Time::Time::getHighResolutionTicks();
+    }
+
     int64 timeAtClassificationStart = 0;
+   #endif
     if(this->onsetWasDetected.exchange(false))
     {
+       #ifdef MEASURE_COMPUTATION_LATENCY
         timeAtClassificationStart = Time::Time::getHighResolutionTicks();
+       #endif
         onsetDetectedRoutine();
     }
 
@@ -173,11 +187,20 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     }
     // buffer.clear();
     sinewt.processBlock(buffer);
-    if(timeAtClassificationStart)   // If this round a classification is happning, I'm going to log it
+
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    if(timeAtClassificationStart)   // If this time a classification is happening, We are going to log it
     {
-        snprintf(message,sizeof(message),"Classification happened this time");
+        snprintf(message,sizeof(message),"Classification round ");
         rtlogger.logInfo(message,timeAtClassificationStart,Time::Time::getHighResolutionTicks());
     }
+
+    if (timeAtBlockStart)   // If timeAtBlockStart was initialized this round, we are computing and logging processBlock Duration
+    {
+        snprintf(message,sizeof(message),"block nr %d processed",logProcessblock_fixedCounter);
+        rtlogger.logInfo(message,timeAtBlockStart,Time::Time::getHighResolutionTicks());
+    }
+   #endif
 }
 
 #ifdef USE_AUBIO_ONSET
@@ -235,7 +258,7 @@ void DemoProcessor::hiResTimerCallback(){
     this->onsetWasDetected.exchange(true);
    #ifdef MEASURE_COMPUTATION_LATENCY
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-    snprintf(message,sizeof(message),"Timer stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    snprintf(message,sizeof(message),"Timer stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime)); // TODO: May violate thread safety (Or not, since this should be called from a different thread)
     rtlogger.logInfo(message);
    #endif
 }
@@ -278,7 +301,7 @@ void DemoProcessor::onsetDetectedRoutine ()
     // rtlogger.logInfo("----\n" + predictionInfo + "\n----"); //TODO fix
     snprintf(message,sizeof(message),"Predicted class %d with confidence %f",result.first,result.second);
     rtlogger.logInfo(message);
-    snprintf(message,sizeof(message),"It took %f us\nor %f ms", \
+    snprintf(message,sizeof(message),"It took %d us\nor %d ms", \
         std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
         std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
     rtlogger.logInfo(message);

@@ -8,3 +8,4 @@ obj/
 bin/
 build/
 Builds/
+.vscode

@@ -19,6 +19,7 @@
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
+//#define DEBUG_WHICH_CHANNEL
 
 //==============================================================================
 /**
@@ -127,6 +128,8 @@ public:
     /**    Profiling    **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     double latencyTime = 0;
+    uint64 logProcessblock_counter = 0, logProcessblock_fixedCounter = 0;
+    const uint64 logProcessblock_period = 48000/64 * 5; // Log every 5 second the duration of the processblock routine (SampleRate/BlockSize)
    #endif
 
     /**    Logging    **/
