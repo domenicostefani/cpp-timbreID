@@ -95,28 +95,40 @@ inline bool RealTimeLogger::pop(LogEntry& logEntry)
 inline bool RealTimeLogger::logValue(const char message[], int value, const char suffix[])
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
-    snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+    if (suffix)
+        snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+    else
+        snprintf(cmessage,sizeof(cmessage),"%s %f", message,value);
     return logInfo(cmessage);
 }
 
 inline bool RealTimeLogger::logValue(const char message[], float value, const char suffix[])
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
-    snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+    if (suffix)
+        snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+    else
+        snprintf(cmessage,sizeof(cmessage),"%s %f", message,value);
     return logInfo(cmessage);
 }
 
 inline bool RealTimeLogger::logValue(const char message[], long unsigned int value, const char suffix[])
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
-    snprintf(cmessage,sizeof(cmessage),"%s %lu %s", message,value,suffix);
+    if (suffix)
+        snprintf(cmessage,sizeof(cmessage),"%s %lu %s", message,value,suffix);
+    else
+        snprintf(cmessage,sizeof(cmessage),"%s %lu", message,value);
     return logInfo(cmessage);
 }
 
 inline bool RealTimeLogger::logValue(const char message[], unsigned int value, const char suffix[])
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
-    snprintf(cmessage,sizeof(cmessage),"%s %u %s", message,value,suffix);
+    if (suffix)
+        snprintf(cmessage,sizeof(cmessage),"%s %u %s", message,value,suffix);
+    else
+        snprintf(cmessage,sizeof(cmessage),"%s %u", message,value);
     return logInfo(cmessage);
 }
 
