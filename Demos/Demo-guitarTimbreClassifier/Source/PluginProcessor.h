@@ -16,6 +16,7 @@
 #include "wavetableSine.h"
 
 #include "liteclassifier.h"
+#include "postOnsetTimer.h"
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
@@ -25,7 +26,6 @@
 /**
 */
 class DemoProcessor : public AudioProcessor,
-                      public HighResolutionTimer,
 #ifdef USE_AUBIO_ONSET
                       public tid::aubio::Onset<float>::Listener
 #else
@@ -94,9 +94,8 @@ public:
     void onsetDetected (tid::Bark<float>* bark);
    #endif
 
+    PostOnsetTimer postOnsetTimer;
     void onsetDetectedRoutine();
-    std::atomic<bool> onsetWasDetected{false};
-    void hiResTimerCallback();
 
     //======================== FEATURE EXTRACTION ==============================
     // tid::AttackTime<float> attackTime;

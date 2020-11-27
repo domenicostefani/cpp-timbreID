@@ -18,7 +18,7 @@
 
 
 #define MONO_CHANNEL 0
-#define MAXIMUM_LATENCY_MSEC 10
+#define POST_ONSET_DELAY_MS 7.33
 #define DO_DELAY_ONSET // If commented there is no delay between onset detection and feature extraction (bad)
 
 //==============================================================================
@@ -79,6 +79,10 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
    #else
     /** PREPARE THE BARK MODULEs **/
     bark.prepare(sampleRate, (uint32)samplesPerBlock);
+   #endif
+
+   #ifdef DO_DELAY_ONSET
+    postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
 
     // attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
@@ -148,7 +152,8 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 
     int64 timeAtClassificationStart = 0;
    #endif
-    if(this->onsetWasDetected.exchange(false))
+
+    if(postOnsetTimer.isExpired())
     {
        #ifdef MEASURE_COMPUTATION_LATENCY
         timeAtClassificationStart = Time::Time::getHighResolutionTicks();
@@ -193,13 +198,19 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     {
         snprintf(message,sizeof(message),"Classification round ");
         rtlogger.logInfo(message,timeAtClassificationStart,Time::Time::getHighResolutionTicks());
+        timeAtClassificationStart = 0;
     }
 
     if (timeAtBlockStart)   // If timeAtBlockStart was initialized this round, we are computing and logging processBlock Duration
     {
         snprintf(message,sizeof(message),"block nr %d processed",logProcessblock_fixedCounter);
         rtlogger.logInfo(message,timeAtBlockStart,Time::Time::getHighResolutionTicks());
+        timeAtBlockStart = 0;
     }
+   #endif
+
+   #ifdef DO_DELAY_ONSET
+    postOnsetTimer.updateTimer(); // Update the block counter of the postOnsetTimer
    #endif
 }
 
@@ -207,62 +218,25 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
     if(aubioOnset == &this->aubioOnset)
     {
-       #ifdef MEASURE_COMPUTATION_LATENCY
-        latencyTime = juce::Time::getMillisecondCounterHiRes();
-       #endif
-
-       #ifdef DO_DELAY_ONSET
-        /* We assume that there could be a delay of one entire Hop window */
-        const unsigned int SAMPLES_FROM_PEAK = this->aubioOnset.getHopSize();
-        float delayMsec = (this->ONSETDETECTOR_WINDOW_SIZE-SAMPLES_FROM_PEAK) / this->getSampleRate() * 1000;
-        /* Check that the timer does not interfere with successive onsets */
-        float minIoiMsec = this->aubioOnset.getOnsetMinInterOnsetInterval()*1000.0;
-        /* Check that complessive delay does not go over MAXIMUM_LATENCY_MSEC milliseconds */
-        float ms_remaining_to_maxlatency = MAXIMUM_LATENCY_MSEC - (SAMPLES_FROM_PEAK / this->getSampleRate() * 1000);
-        ms_remaining_to_maxlatency = ms_remaining_to_maxlatency < 0 ? 0 : ms_remaining_to_maxlatency;
-
-        float realtimeThresh = ms_remaining_to_maxlatency < minIoiMsec ? ms_remaining_to_maxlatency : minIoiMsec;
-
-       #ifdef MEASURE_COMPUTATION_LATENCY
-        char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-        snprintf(message,sizeof(message),"Set timer for %fms", delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
-        rtlogger.logInfo(message);
-       #endif
-        HighResolutionTimer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
-       #else
-        onsetDetectedRoutine();
-       #endif
-    }
-}
 #else
 void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 {
     if(bark == &this->bark)
     {
-       #ifdef DO_DELAY_ONSET
-        //This is an assumption on the magnitude of the samplesFromPeak
-        unsigned int samplesFromPeak = this->bark.getHop() * 2; //TODO: fix as soon as the bark mods are confirmed
+#endif
+       #ifdef MEASURE_COMPUTATION_LATENCY
+        latencyTime = juce::Time::getMillisecondCounterHiRes();
+       #endif
 
-        float delayMsec = (bfcc.getWindowSize()-samplesFromPeak) / this->getSampleRate() * 1000;
-        float realtimeThresh = MAXIMUM_LATENCY_MSEC - (samplesFromPeak/this->getSampleRate() * 1000);
-        HighResolutionTimer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
+       #ifdef DO_DELAY_ONSET
+        rtlogger.logValue("Start waiting for ",(float)POST_ONSET_DELAY_MS,"ms"); // TODO: remove
+        if(postOnsetTimer.isIdle())
+            postOnsetTimer.start(POST_ONSET_DELAY_MS);
        #else
         onsetDetectedRoutine();
        #endif
     }
 }
-#endif
-
-void DemoProcessor::hiResTimerCallback(){
-    HighResolutionTimer::stopTimer();
-    this->onsetWasDetected.exchange(true);
-   #ifdef MEASURE_COMPUTATION_LATENCY
-    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-    snprintf(message,sizeof(message),"Timer stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime)); // TODO: May violate thread safety (Or not, since this should be called from a different thread)
-    rtlogger.logInfo(message);
-   #endif
-}
-
 
 /**
  * Onset Detected Callback
@@ -280,14 +254,14 @@ void DemoProcessor::onsetDetectedRoutine ()
 
    #ifdef MEASURE_COMPUTATION_LATENCY
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-    snprintf(message,sizeof(message),"Computation started after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    snprintf(message,sizeof(message),"Computation started %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
     rtlogger.logInfo(message);
    #endif
 
     this->computeFeatureVector();
 
    #ifdef MEASURE_COMPUTATION_LATENCY
-    snprintf(message,sizeof(message),"Computation stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    snprintf(message,sizeof(message),"Computation stopped %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
     rtlogger.logInfo(message);
    #endif
 
@@ -308,7 +282,7 @@ void DemoProcessor::onsetDetectedRoutine ()
     /*---------------------*/
 
    #ifdef MEASURE_COMPUTATION_LATENCY
-    snprintf(message,sizeof(message),"Prediction stopped after %f",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
+    snprintf(message,sizeof(message),"Prediction stopped %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
     rtlogger.logInfo(message);
    #endif
 
