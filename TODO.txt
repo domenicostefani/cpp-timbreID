@@ -5,9 +5,9 @@ Instructions for the programmer, should be removed before release, disregard thi
 +------------------------------------------------------------------------------+
 
 PROGRESS MADE SO FAR:
-+----------------------+-------------------------+-------+------------+--------+
-|        MODULE        |  Most relevant measures | Coded | Demo Coded | Tested |
-+----------------------+-------------------------+-------+------------+--------+
++----------------------+-------------------------+-------+------------+
+|        MODULE        |  Most relevant measures | Coded | Demo Coded |
++----------------------+-------------------------+-------+------------+
 | attackTime~.c ------------------------------------ X ------- X
 | bark~.c ------------------------------------------ X ------- X
 | barkSpecBrightness~.c ---------------------------- X ------- X
@@ -63,8 +63,8 @@ INSTRUCTIONS:
  - Replace HARD tabs with SOFT tabs
  - Copy licence disclaimer
  - Correct DATE and module NAME in licence disclaimer
- - Create constuctors
- - Copy move constuctor + destructor
+ - Create constructors
+ - Copy move constructor + destructor
  - Copy Prepare & Reset methods
  - Copy substitutions for filterAvg, specBand, powerSpectrum ***
  - Comment every method in Doxygen style
@@ -90,9 +90,6 @@ INSTRUCTIONS:
 +------------------------------------------------------------------------------+
 | TODO: (Technical Debt)                                                       |
 +------------------------------------------------------------------------------+
- - Some modules have the perform() function and some other storeAudioBlock,
-   choose one name
  !! - AUBIO WRAPPER: Buffering with hopSizes and uneven intervals FAILS! check better
-
-
-REMOVE "=== bark module initialization ===" from old demos
+ !! - FFTW dct-II execution calls malloc (unfeasible in real-time thread)
+ !! - Improve latency logging

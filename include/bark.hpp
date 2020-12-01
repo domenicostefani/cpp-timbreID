@@ -194,7 +194,7 @@ public:
 
         if(channel < 0 || channel >= numChannels)
             throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
-        return perform(buffer.getReadPointer(channel), buffer.getNumSamples());
+        return storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
     /*--------------------------- Setters/getters ----------------------------*/
 
@@ -731,7 +731,7 @@ private:
         barkListeners.call([this] (Listener& l) { l.onsetDetected (this); });
     }
 
-    GrowthData perform(const SampleType* input, size_t n)
+    GrowthData storeAudioBlock(const SampleType* input, size_t n)
     {
         jassert(n ==  this->blockSize);
 

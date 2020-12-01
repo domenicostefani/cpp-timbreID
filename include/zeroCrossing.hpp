@@ -84,7 +84,7 @@ public:
 
         if(channel < 0 || channel >= numChannels)
             throw std::logic_error("Channel index has to be between 0 and " + std::to_string(numChannels-1));
-        storeBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
+        storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
     //==============================================================================
 
@@ -158,7 +158,7 @@ private:
         analysisBuffer.resize(analysisWindowSize, 0.0f);
     }
 
-    void storeBlock (const SampleType* input, size_t n) noexcept
+    void storeAudioBlock (const SampleType* input, size_t n) noexcept
     {
         jassert(n ==  this->blockSize);
 

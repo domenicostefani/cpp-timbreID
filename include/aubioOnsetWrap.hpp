@@ -168,7 +168,7 @@ public:
         if(channel < 0 || channel >= numChannels)
             throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
 
-        perform(buffer.getReadPointer(channel), buffer.getNumSamples());
+        storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
 
     unsigned int getHopSize()
@@ -272,7 +272,7 @@ private:
         signalBuffer.resize(this->hopSize, this->blockSize);
     }
 
-    void perform(const SampleType* input, size_t n)
+    void storeAudioBlock(const SampleType* input, size_t n)
     {
         char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
         // #define VERBOSE_PERFORM
