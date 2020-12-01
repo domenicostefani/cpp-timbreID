@@ -124,7 +124,7 @@ public:
      * Compute the cepstrum coefficients
      * @return cepstrum coefficients
     */
-    std::vector<float> compute()
+    std::vector<float>& compute()
     {
         std::vector<float> *windowFuncPtr;
         unsigned long int windowHalf = this->analysisWindowSize * 0.5;

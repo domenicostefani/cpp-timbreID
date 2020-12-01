@@ -177,7 +177,7 @@ public:
      * Compute the bark frequency cepstral coefficients
      * @return cepstral coefficients
     */
-    std::vector<float> compute()
+    std::vector<float>& compute()
     {
         std::vector<float> *windowFuncPtr;
 
@@ -241,7 +241,7 @@ public:
                 break;
         }
 
-       fftwf_execute(this->fftwDctPlan);
+        fftwf_execute(this->fftwDctPlan); //TODO: this calls malloc! Fix this
 
         // FFTW DCT-II multiplies every coefficient by 2.0, so multiply by 0.5 on the way out
         for (t_filterIdx i = 0; i < this->numFilters; ++i)

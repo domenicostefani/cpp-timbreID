@@ -33,30 +33,6 @@ class DemoProcessor : public AudioProcessor,
 #endif
 {
 public:
-    //=========================== Juce System Stuff ============================
-    DemoProcessor();
-    ~DemoProcessor();
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override;
-   #ifndef JucePlugin_PreferredChannelConfigurations
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
-    void processBlock (AudioBuffer<float>&, MidiBuffer&) override;
-    AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override;
-    const String getName() const override;
-    bool acceptsMidi() const override;
-    bool producesMidi() const override;
-    bool isMidiEffect() const override;
-    double getTailLengthSeconds() const override;
-    int getNumPrograms() override;
-    int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const String getProgramName (int index) override;
-    void changeProgramName (int index, const String& newName) override;
-    void getStateInformation (MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
-
     //===================== ONSET DETECTION PARAMS =============================
     const unsigned int ONSETDETECTOR_WINDOW_SIZE = 1024;
 
@@ -98,13 +74,13 @@ public:
     void onsetDetectedRoutine();
 
     //======================== FEATURE EXTRACTION ==============================
+    tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
+    tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
     // tid::AttackTime<float> attackTime;
     // tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
     //                                                   BARK_SPACING,
     //                                                   BARK_BOUNDARY};
     // tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
     // tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
     // tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
     // tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
@@ -112,12 +88,17 @@ public:
     /**    Feature Vector    **/
     const unsigned int VECTOR_SIZE = 110; // Number of features (preallocation)
     std::vector<float> featureVector;     // Vector that is preallocated
+    const int BFCC_RES_SIZE = 50;
+    std::vector<float> bfccRes;
+    const int CEPSTRUM_RES_SIZE = 513;
+    std::vector<float> cepstrumRes;
     void computeFeatureVector();          // Compose vector
 
     //========================== CLASSIFICATION ================================
     ClassifierPtr timbreClassifier; // Tensorflow interpreter
     const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
-
+    const int N_OUTPUT_CLASSES = 5;
+    std::vector<float> classificationOutputVector;
 
     //============================== OTHER =====================================
     /**    Debugging    */
@@ -176,10 +157,10 @@ public:
         int interval = 500; // Half second default polling interval
     };
 
-    // Routine that will be called at regular intervals by the timer.
+    /** POLLING ROUTINE (called at regular intervals by the timer) **/
     void logPollingRoutine()
     {
-        // Initialize the fileLogger if necessary
+        /** INITIALIZE THE FILELOGGER IF NECESSARY **/
         if (!this->fileLogger)
             this->fileLogger = std::unique_ptr<FileLogger>(FileLogger::createDateStampedLogger(LOG_PATH, LOG_FILENAME, tIDLib::LOG_EXTENSION, "Guitar Timbre Classifier"));
 
@@ -189,16 +170,13 @@ public:
             std::string moduleName = loggerpointer->getName();
             while (loggerpointer->pop(le))  // Continue if there are log entries in the rtlogger queue
             {
-                //
-                // Consume rtlogger entries and write them to file
-                //
+                /** CONSUME RTLOGGER ENTRIES AND WRITE THEM TO FILE **/
                 std::string msg = moduleName + "\t|\t";
                 msg += le.message;
                 double start,end,diff;
                 start = (le.timeAtStart * 1.0) / this->highResFrequency;
                 end = (le.timeAtEnd * 1.0) / this->highResFrequency;
                 diff = end-start;
-
                 if (start != 0)
                 {
                     msg += " | start: " + std::to_string(start);
@@ -210,12 +188,47 @@ public:
         }
     }
 
+    /** Instantiate polling timer and pass callback **/
     PollingTimer pollingTimer{[this]{logPollingRoutine();}};
-
 
 private:
     //============================== OUTPUT ====================================
     WavetableSine sinewt;   // Simple wavetable sine synth with short decay
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
+
+
+
+
+
+
+
+
+
+
+
+
+public:
+    //=========================== Juce System Stuff ============================
+    DemoProcessor();
+    ~DemoProcessor();
+    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override;
+   #ifndef JucePlugin_PreferredChannelConfigurations
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+   #endif
+    void processBlock (AudioBuffer<float>&, MidiBuffer&) override;
+    AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override;
+    const String getName() const override;
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
+    double getTailLengthSeconds() const override;
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram (int index) override;
+    const String getProgramName (int index) override;
+    void changeProgramName (int index, const String& newName) override;
+    void getStateInformation (MemoryBlock& destData) override;
+    void setStateInformation (const void* data, int sizeInBytes) override;
 };

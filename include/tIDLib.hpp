@@ -13,7 +13,7 @@ typedef unsigned int t_instanceIdx;
 #define TIDVERSION "0.8.2C"
 
 // choose either FFTW_MEASURE or FFTW_ESTIMATE here.
-#define FFTWPLANNERFLAG FFTW_ESTIMATE
+#define FFTWPLANNERFLAG (FFTW_ESTIMATE | FFTW_CONSERVE_MEMORY)
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
@@ -70,6 +70,8 @@ typedef struct filter
 	t_binIdx size;
 	t_binIdx indices[2];
 	float filterFreqs[2];
+
+    float tmpValue; // Temp value used to avoid memory allocation in real time-operations
 } t_filter;
 
 /**
@@ -176,8 +178,9 @@ t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_bin
 t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
 t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr);
 void createFilterbank(const std::vector<float> &filterFreqs, std::vector<t_filter> &filterbank, t_filterIdx newNumFilters, float window, float sr);
-void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const std::vector<t_filter> &filterbank, bool normalize);
-void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const std::vector<t_filter> &filterbank, t_filterIdx numFilters);
+/*  In the next 2 functions filterBank is not const in order to use the tmpValue field of the filters to avoid local memory allocation */
+void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, std::vector<t_filter> &filterbank, bool normalize);
+void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, std::vector<t_filter> &filterbank, t_filterIdx numFilters);
 // void tIDLib_cosineTransform(float *output, t_sample *input, t_filterIdx numFilters);
 /* ---------------- END filterbank functions ---------------------- */
 

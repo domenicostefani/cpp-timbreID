@@ -47,6 +47,7 @@ public:
 
     bool logValue(const char message[], int value, const char suffix[]=nullptr);
     bool logValue(const char message[], float value, const char suffix[]=nullptr);
+    bool logValue(const char message[], double value, const char suffix[]=nullptr);
     bool logValue(const char message[], long unsigned int value, const char suffix[]=nullptr);
     bool logValue(const char message[], unsigned int value, const char suffix[]=nullptr);
     bool logValue(const char message[], const char value[]);
@@ -103,6 +104,16 @@ inline bool RealTimeLogger::logValue(const char message[], int value, const char
 }
 
 inline bool RealTimeLogger::logValue(const char message[], float value, const char suffix[])
+{
+    char cmessage[LogEntry::MESSAGE_LENGTH+1];
+    if (suffix)
+        snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+    else
+        snprintf(cmessage,sizeof(cmessage),"%s %f", message,value);
+    return logInfo(cmessage);
+}
+
+inline bool RealTimeLogger::logValue(const char message[], double value, const char suffix[])
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
     if (suffix)

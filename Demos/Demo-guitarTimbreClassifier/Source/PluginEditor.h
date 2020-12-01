@@ -13,20 +13,13 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-
-//==============================================================================
-/**
-*/
 class DemoEditor  : public AudioProcessorEditor
 {
 public:
     DemoEditor (DemoProcessor&);
     ~DemoEditor();
-
-    //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
-
 private:
     DemoProcessor& processor;
 };

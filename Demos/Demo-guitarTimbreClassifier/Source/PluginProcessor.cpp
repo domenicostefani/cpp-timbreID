@@ -14,12 +14,11 @@
 #include "liteclassifier.h"
 
 #include <vector>
-#include <chrono>  //TODO: remove
-
+#include <chrono>
 
 #define MONO_CHANNEL 0
 #define POST_ONSET_DELAY_MS 7.33
-#define DO_DELAY_ONSET // If commented there is no delay between onset detection and feature extraction (bad)
+#define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
 //==============================================================================
 DemoProcessor::DemoProcessor()
@@ -37,7 +36,7 @@ DemoProcessor::DemoProcessor()
     rtlogger.logInfo("Initializing Onset detector");
 
    #ifdef USE_AUBIO_ONSET
-    /** ADD THE LISTENER **/
+    /** ADD ONSET DETECTOR LISTENER **/
     aubioOnset.addListener(this);
    #else
     /** SET SOME DEFAULT PARAMETERS OF THE BARK MODULE **/
@@ -46,26 +45,34 @@ DemoProcessor::DemoProcessor()
     bark.setFilterRange(0, 49);
     bark.setThresh(-1, 30);
 
-    /** ADD THE LISTENER **/
+    /** ADD ONSET DETECTOR LISTENER **/
     bark.addListener(this);
    #endif
 
+    /** ALLOCATE MEMORY FOR FEATURE VECTOR AND TMP VECTORS **/
     featureVector.resize(VECTOR_SIZE);
+    bfccRes.resize(BFCC_RES_SIZE);
+    cepstrumRes.resize(CEPSTRUM_RES_SIZE);
 
     /** SET UP CLASSIFIER **/
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
     snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH.c_str());
     rtlogger.logInfo(message);
+    classificationOutputVector.resize(N_OUTPUT_CLASSES,0.0f);
     this->timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
     rtlogger.logInfo("Classifier object istantiated");
-    // Start the polling routine that writes to file all the log entries
+
+    /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
 }
 
 DemoProcessor::~DemoProcessor(){
+    /** Free classifier memory **/
     deleteClassifier(this->timbreClassifier);
     rtlogger.logInfo("Classifier object deleted");
-    logPollingRoutine(); // Log last messages before closing
+
+    /** Log last queued messages before closing **/
+    logPollingRoutine();
 }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -73,25 +80,51 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
 
+    /** INIT ONSET DETECTOR MODULE**/
    #ifdef USE_AUBIO_ONSET
-    /** PREPARE THE BARK MODULEs **/
-    aubioOnset.prepare(sampleRate,samplesPerBlock); // Important step
+    aubioOnset.prepare(sampleRate,samplesPerBlock);
    #else
-    /** PREPARE THE BARK MODULEs **/
     bark.prepare(sampleRate, (uint32)samplesPerBlock);
    #endif
 
+    /** INIT POST ONSET TIMER **/
    #ifdef DO_DELAY_ONSET
     postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
+   
+    /*------------------------------------/
+    | Prepare feature extractors          |
+    /------------------------------------*/
+    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);      // Bark Frequency Cepstral Coefficients
+    cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);  // Cepstrum Coefficients
 
+    //
+    // Other Feature extractors available:
+    //
+
+    /*------------------------------------/
+    | Attack time                         |
+    /------------------------------------*/
     // attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Bark spectral brightness            |
+    /------------------------------------*/
     // barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Bark Spectrum                       |
+    /------------------------------------*/
     // barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     // mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     // peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     // zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
 
     sinewt.prepareToPlay(sampleRate);
@@ -104,19 +137,28 @@ void DemoProcessor::releaseResources()
     rtlogger.logInfo("+--ReleaseResources called");
 
     rtlogger.logInfo("+  Releasing Onset detector resources");
-    /** RESET THE MODULEs **/
+
+    /** FREE ONSET DETECTOR MEMORY **/
    #ifdef USE_AUBIO_ONSET
-    aubioOnset.reset(); // Important step
+    aubioOnset.reset();
    #else
     bark.reset();
    #endif
     rtlogger.logInfo("+  Releasing extractor resources");
+    
+    /*------------------------------------/
+    | Reset the feature extractors        |
+    /------------------------------------*/
+    bfcc.reset();
+    cepstrum.reset();
+
+    /*------------------------------------/
+    | Other Feature extractors available  |
+    /------------------------------------*/
 
     // attackTime.reset();
     // barkSpecBrightness.reset();
     // barkSpec.reset();
-    bfcc.reset();
-    cepstrum.reset();
     // mfcc.reset();
     // peakSample.reset();
     // zeroCrossing.reset();
@@ -129,18 +171,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     ScopedNoDenormals noDenormals;
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH]; // logger message
 
-   #ifdef DEBUG_WHICH_CHANNEL
-    if(logCounter > (48000/64)){
-        logCounter = 0;
-        for(int c = 0; c < buffer.getNumChannels(); ++c)
-        {
-            snprintf(message,sizeof(message),"DEBUG | Channel %d, first sample: %f ",c,*buffer.getReadPointer(c,0));
-            rtlogger.logInfo(message);
-        }
-    }
-    logCounter++;
-   #endif
-
+    /** LOG THE DIFFERENT TIMESTAMPS FOR LATENCY COMPUTATION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     int64 timeAtBlockStart = 0;
     if (++logProcessblock_counter >= logProcessblock_period)
@@ -149,10 +180,10 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         logProcessblock_counter = 0;
         timeAtBlockStart = Time::Time::getHighResolutionTicks();
     }
-
     int64 timeAtClassificationStart = 0;
    #endif
 
+    /** EXTRACT FEATURES AND CLASSIFY IF POST ONSET TIMER IS EXPIRED **/
     if(postOnsetTimer.isExpired())
     {
        #ifdef MEASURE_COMPUTATION_LATENCY
@@ -161,17 +192,17 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         onsetDetectedRoutine();
     }
 
-    /** STORE THE BUFFER FOR ANALYSIS **/
-    // attackTime.store(buffer,(short int)MONO_CHANNEL);
-    // barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);
-    // barkSpec.store(buffer,(short int)MONO_CHANNEL);
+    /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
     bfcc.store(buffer,(short int)MONO_CHANNEL);
     cepstrum.store(buffer,(short int)MONO_CHANNEL);
-    // mfcc.store(buffer,(short int)MONO_CHANNEL);
-    // peakSample.store(buffer,(short int)MONO_CHANNEL);
-    // zeroCrossing.store(buffer,(short int)MONO_CHANNEL);
+    // attackTime.store(buffer,(short int)MONO_CHANNEL);           // < /*-----------------------------------/
+    // barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);   // < |                                    |
+    // barkSpec.store(buffer,(short int)MONO_CHANNEL);             // < | Other Feature extractors available |
+    // mfcc.store(buffer,(short int)MONO_CHANNEL);                 // < |                                    |
+    // peakSample.store(buffer,(short int)MONO_CHANNEL);           // < |                                    |
+    // zeroCrossing.store(buffer,(short int)MONO_CHANNEL);         // < /-----------------------------------*/
 
-    /** STORE THE ONSET BUFFER **/
+    /** STORE THE ONSET DETECTOR BUFFER **/
     try
     {
        #ifdef USE_AUBIO_ONSET
@@ -180,24 +211,27 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         /** STORE THE BUFFER FOR COMPUTATION **/
         bark.store(buffer,(short int)MONO_CHANNEL);
        #endif
-    }
-    catch(std::exception& e)
-    {
-        std::cout << "An exception has occurred while buffering:" << std::endl;
-        std::cout << e.what() << '\n';
-    }
-    catch(...)
-    {
+    } catch(std::exception& e) {
+        rtlogger.logInfo("An exception has occurred while buffering: ",e.what());
+    } catch(...) {
         std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
     }
-    // buffer.clear();
+    /** CLEAR THE BUFFER (OPTIONAL) **/
+    // buffer.clear(); // Uncomment to let input pass through
+
+    /** ADD OUTPUT SOUND (TRIGGERED BY TIMBRE CLASSIFICATION) **/
     sinewt.processBlock(buffer);
 
+    /** UPDATE POST ONSET COUNTER/TIMER **/
+   #ifdef DO_DELAY_ONSET
+    postOnsetTimer.updateTimer(); // Update the block counter of the postOnsetTimer
+   #endif
+
+    /** lOG LAST TIMESTAMPS FOR LATENCY COMPUTATION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     if(timeAtClassificationStart)   // If this time a classification is happening, We are going to log it
     {
-        snprintf(message,sizeof(message),"Classification round ");
-        rtlogger.logInfo(message,timeAtClassificationStart,Time::Time::getHighResolutionTicks());
+        rtlogger.logInfo("Classification round",timeAtClassificationStart,Time::Time::getHighResolutionTicks());
         timeAtClassificationStart = 0;
     }
 
@@ -207,10 +241,6 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         rtlogger.logInfo(message,timeAtBlockStart,Time::Time::getHighResolutionTicks());
         timeAtBlockStart = 0;
     }
-   #endif
-
-   #ifdef DO_DELAY_ONSET
-    postOnsetTimer.updateTimer(); // Update the block counter of the postOnsetTimer
    #endif
 }
 
@@ -229,7 +259,7 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
        #endif
 
        #ifdef DO_DELAY_ONSET
-        rtlogger.logValue("Start waiting for ",(float)POST_ONSET_DELAY_MS,"ms"); // TODO: remove
+        rtlogger.logValue("Start waiting for ",(float)POST_ONSET_DELAY_MS,"ms");
         if(postOnsetTimer.isIdle())
             postOnsetTimer.start(POST_ONSET_DELAY_MS);
        #else
@@ -240,85 +270,159 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 
 /**
  * Onset Detected Callback
- * Remember that this is called from the audio thread so it must not update the GUI directly
+ * 
+ * TODO: Measure accurately the time required by this function along
+ *       with the buffering operations in the processBlock routine
+ *       and consider performing this on a separate RT thread
+ *       (At least classification if feature ext is not possible)
+ *       ((Check TWINE library for Elk))
 **/
 void DemoProcessor::onsetDetectedRoutine ()
 {
+    bool VERBOSERES = true; // Log info about classification result (Suggested: true)
+    bool VERBOSE = false;   // Log general verbose info (Suggested: false)
+
     rtlogger.logInfo("Onset detected");
-   #ifdef DO_DELAY_ONSET
-    rtlogger.logInfo("delay applied");
-   #endif
-
-    bool VERBOSE = false;
-    bool VERBOSERES = true;
-
-   #ifdef MEASURE_COMPUTATION_LATENCY
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
-    snprintf(message,sizeof(message),"Computation started %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
-    rtlogger.logInfo(message);
+
+    /** LOG BEGINNING OF FEATURE EXTRACTION **/
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    rtlogger.logValue("Feature extraction started",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection");
    #endif
 
+    /*--------------------/
+    | 1. EXTRACT FEATURES |
+    /--------------------*/
     this->computeFeatureVector();
 
+    /** LOG ENDING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    snprintf(message,sizeof(message),"Computation stopped %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
-    rtlogger.logInfo(message);
+    rtlogger.logValue("Feature extraction stopped",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection");
    #endif
 
 
-    std::string predictionInfo = ""; //TODO check if this is bad
-    predictionInfo.reserve(10000);   //TODO at least this should be good
+    /*-------------------/
+    | 2. CLASSIFY TIMBRE |
+    /-------------------*/
+    /** START ADDITIONAL "CHRONOMETER" JUST FOR CLASSIFICATION **/
     auto start = std::chrono::high_resolution_clock::now();
-    std::pair<int,float> result = classify(timbreClassifier,featureVector,predictionInfo);
+    /** INVOKE CLASSIFIER**/
+    std::pair<int,float> result = classify(timbreClassifier,featureVector,classificationOutputVector);
+    /** STOP CLASSIFICATION "CHRONOMETER" **/
     auto stop = std::chrono::high_resolution_clock::now();
 
-    // rtlogger.logInfo("----\n" + predictionInfo + "\n----"); //TODO fix
-    snprintf(message,sizeof(message),"Predicted class %d with confidence %f",result.first,result.second);
-    rtlogger.logInfo(message);
-    snprintf(message,sizeof(message),"It took %d us\nor %d ms", \
-        std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
-        std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
-    rtlogger.logInfo(message);
-    /*---------------------*/
-
+    /** LOG ADDITIONAL TIMESTAMP FOR LATENCY COMPUTATION
+        TODO: Improve logg clarity, precision and remove duplicates (like chrono library) **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     snprintf(message,sizeof(message),"Prediction stopped %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
     rtlogger.logInfo(message);
    #endif
 
-    int prediction = std::get<0>(result);
-    float confidence = std::get<1>(result);
+    int prediction = result.first;
+    int confidence = result.second;
 
+    /** LOG CLASSIFICATION RESULTS AND TIME **/
     if (VERBOSERES)
     {
-        snprintf(message,sizeof(message),"Match: %d\nConfidence: %f", prediction,confidence);
+        snprintf(message,sizeof(message),"Result: Predicted class %d with confidence %f",prediction,confidence);
+        rtlogger.logInfo(message);
+        snprintf(message,sizeof(message),"Classification took %d us or %d ms", \
+            std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
+            std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
         rtlogger.logInfo(message);
     }
 
-    // if(confidence > 0.90 && prediction != 4)
-    if(prediction != 4)
-        sinewt.playNote((prediction+1) * 440);
+    /** LOG ADDITIONAL INFO (CONFIDENCE VALUES FOR ALL CLASSES) **/
+    if (VERBOSE)
+    {
+        for (int j = 0; j < N_OUTPUT_CLASSES; ++j)
+        {
+            snprintf(message,sizeof(message),"Class %d confidence %f",j,classificationOutputVector[j]);
+            rtlogger.logInfo(message);
+        }
+    }
+
+    /** TRIGGER OUTPUT NOTE WHEN CONDITIONS ARE MET **/
+    if(prediction != 4) // Add (confidence > 0.90) if useful
+        sinewt.playNote( pow(440,prediction) ); // Play A4 through A7 depending on percussive timbre
 }
 
 void DemoProcessor::computeFeatureVector()
 {
-    /* Bfcc */
-    std::vector<float> bfccRes = this->bfcc.compute();
-    const int BFCC_RES_SIZE = 50;
-    jassert(bfccRes.size() == BFCC_RES_SIZE);
-    for(int i=0; i<BFCC_RES_SIZE; ++i)
-    {
-        this->featureVector[i] = bfccRes[i];
-    }
+    /*- Current best feature vector composition ------------------/
+    |                                                             |
+    |   110 Coefficients:                                         |
+    |    - 50 BFCC                                                |
+    |    - First 60 Cepstrum coefficients                         |
+    |   TODO:                                                     |
+    |    - Solve issue with FFTW dct plan execute that calls      |
+    |      malloc.                                                |
+    |      This affects the compuation of bfcc and mfcc           |
+    |                                                             |
+    /------------------------------------------------------------*/
 
-    /* First 60 Cespstrum coefficients */
-    std::vector<float> cepstrumRes = this->cepstrum.compute();
-    const int CEPSTRUM_RES_SIZE = 513;
-    jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
+    /*-------------------------------------/
+    | Bark Frequency Cepstral Coefficients |
+    /-------------------------------------*/
+    // bfccRes = this->bfcc.compute(); //TODO: solve internal error with DCT plan execute
+    if (bfccRes.size() != BFCC_RES_SIZE)
+        throw std::logic_error("Incorrect result vector size for bfcc");
+    for(int i=0; i<BFCC_RES_SIZE; ++i)
+        this->featureVector[i] = bfccRes[i];
+
+
+    /*-------------------------------------/
+    | Cepstrum Coefficients                |
+    /-------------------------------------*/
+    cepstrumRes = this->cepstrum.compute();
+    if (cepstrumRes.size() != CEPSTRUM_RES_SIZE)
+        throw std::logic_error("Incorrect result vector size for Cepstrum");
+    /* Copy only the first 60 Cespstrum coefficients */
     for(int i=0; i<60; ++i)
-    {
         this->featureVector[50 + i] = cepstrumRes[i];
-    }
+
+    //
+    //-----------------------------------------------------------------------------------
+    //
+
+    /********************************************/
+    /* Other Feature extractors                 */
+    /* can be used. The commands to perfom      */
+    /* computation are shown here:              */
+    /* Note: remember to call prepare and       */
+    /* release methods too                      */
+    /********************************************/
+
+    /*------------------------------------/
+    | Attack time                         |
+    /------------------------------------*/
+    // attackTime.compute(...);
+
+    /*------------------------------------/
+    | Bark Spectral Brightness            |
+    /------------------------------------*/
+    // barkSpecBrightness.compute();
+
+    /*------------------------------------/
+    | Bark Spectrum                       |
+    /------------------------------------*/
+    // barkSpec.compute();
+   
+    /*------------------------------------/
+    | Mel Frequency Cepstral Coefficients |
+    /------------------------------------*/
+    // mfcc.compute();  //TODO: solve internal error with DCT plan execute
+
+    /*------------------------------------/
+    | Peak sample                         |
+    /------------------------------------*/
+    // peakSample.compute();
+
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
+    // zeroCrossing.compute();
+
 }
 
 /*    JUCE stuff ahead, not relevant to the demo    */

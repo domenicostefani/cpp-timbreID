@@ -166,7 +166,7 @@ public:
      * Compute the bark spec coefficients
      * @return bark spec coefficients
     */
-    std::vector<float> compute()
+    std::vector<float>& compute()
     {
         std::vector<float> *windowFuncPtr;
 

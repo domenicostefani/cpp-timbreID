@@ -489,23 +489,21 @@ void createFilterbank(const std::vector<float> &filterFreqs,
     std::vector<float>().swap(binFreqs); // Swaps binfreqs with an empty array (btter than clear())
 }
 
-void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const std::vector<t_filter> &filterbank, bool normalize)
+void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, std::vector<t_filter> &filterbank, bool normalize)
 {
-    float totalEnergy;
-    std::vector<float> smoothedSpec(numFilters);
-
-    totalEnergy = 0;
+    float totalEnergy = 0;
 
     for(t_filterIdx i=0; i<numFilters; ++i)
     {
-        smoothedSpec[i] = 0.0;
+        float smoothedSpec = 0.0;
 
         for(t_binIdx j=filterbank[i].indices[0]; j<=filterbank[i].indices[1]; ++j)
-                smoothedSpec[i] += spectrum[j];
+                smoothedSpec += spectrum[j];
 
-        smoothedSpec[i] /= filterbank[i].size;
+        smoothedSpec /= filterbank[i].size;
+        totalEnergy += smoothedSpec;
 
-        totalEnergy += smoothedSpec[i];
+        filterbank[i].tmpValue = smoothedSpec; // tmpVal is the smoothedSpec for each filter bank
     };
 
     // Check that the spectrum window size N is larger than the number of filters, otherwise we'll be writing to invalid memory indices
@@ -513,26 +511,22 @@ void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, const 
     {
         for(t_filterIdx si=0; si<numFilters; ++si)
             if(normalize)
-                spectrum[si] = smoothedSpec[si]/totalEnergy;
+                spectrum[si] = filterbank[si].tmpValue/totalEnergy; // tmpValue is the smoothedSpec
             else
-                spectrum[si] = smoothedSpec[si];
+                spectrum[si] = filterbank[si].tmpValue; // tmpValue is the smoothedSpec
     }
     else
     {
         for(t_filterIdx si=0; si<n; ++si)
             if(normalize)
-                spectrum[si] = smoothedSpec[si]/totalEnergy;
+                spectrum[si] = filterbank[si].tmpValue/totalEnergy; // tmpValue is the smoothedSpec
             else
-                spectrum[si] = smoothedSpec[si];
+                spectrum[si] = filterbank[si].tmpValue; // tmpValue is the smoothedSpec
     }
 }
 
-void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const std::vector<t_filter> &filterbank, t_filterIdx numFilters)
+void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, std::vector<t_filter> &filterbank, t_filterIdx numFilters)
 {
-    // create local memory
-    std::vector<float> filterPower;
-    filterPower.resize(numFilters);
-
     float sumSum = 0;
     for(t_filterIdx i=0; i<numFilters; ++i)
     {
@@ -546,7 +540,7 @@ void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const s
         if(filterAvg)
             sum /= k;
 
-        filterPower[i] = sum;  // get the total power.  another weighting might be better.
+        filterbank[i].tmpValue = sum;  // get the total power.  another weighting might be better.
 
         sumSum += sum;  // normalize so power in all bands sums to 1
     };
@@ -563,7 +557,7 @@ void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, const s
         sumSum=1.0;
 
     for(t_binIdx si=0; si<numFilters; ++si)
-        spectrum[si] = filterPower[si] * sumSum;
+        spectrum[si] = filterbank[si].tmpValue * sumSum;
 }
 
 /* ---------------- END filterbank functions ---------------------- */
