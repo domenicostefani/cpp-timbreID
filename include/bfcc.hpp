@@ -134,18 +134,7 @@ public:
 
         tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
 
-        this->bfccVector.resize(this->numFilters);
-
-        // destroy old DCT plan, which depended on this->numFilters
-        fftwf_destroy_plan(this->fftwDctPlan);
-
-        // create a new DCT plan
-        float* fftwIn = &(fftwInputVector[0]);
-        float* bfcc = &(bfccVector[0]);
-        this->fftwDctPlan = fftwf_plan_r2r_1d(this->numFilters, fftwIn, bfcc, FFTW_REDFT10, FFTWPLANNERFLAG);
-
-        // resize listOut memory
-        this->listOut.resize(this->numFilters);
+        this->coefficientsVector.resize(this->numFilters);
     }
 
     /**
@@ -222,32 +211,35 @@ public:
         fftwf_execute(this->fftwPlan);
 
         // put the result of power calc back in fftwIn
-        float* fftwIn = &fftwInputVector[0];
-        tIDLib::power(windowHalf+1, this->fftwOut, fftwIn);
+        tIDLib::power(windowHalf+1, this->fftwOut, &fftwInputVector[0]);
 
         if (this->spectrumTypeUsed != tIDLib::SpectrumType::powerSpectrum)
-            tIDLib::mag(windowHalf+1, fftwIn);
+            tIDLib::mag(windowHalf+1, &fftwInputVector[0]);
 
         switch(this->filterState)
         {
             case tIDLib::FilterState::filterDisabled: // like the old x_specBandAvg == true
-                tIDLib::specFilterBands(windowHalf+1, this->numFilters, fftwIn, this->filterbank, this->normalize);
+                tIDLib::specFilterBands(windowHalf+1, this->numFilters, &fftwInputVector[0], this->filterbank, this->normalize);
                 break;
             case tIDLib::FilterState::filterEnabled:
-                tIDLib::filterbankMultiply(fftwIn, this->normalize, this->filterOperation, this->filterbank, this->numFilters);
+                tIDLib::filterbankMultiply(&fftwInputVector[0], this->normalize, this->filterOperation, this->filterbank, this->numFilters);
                 break;
             default:
                 throw std::logic_error("Filter option not available");
                 break;
         }
 
-        fftwf_execute(this->fftwDctPlan); //TODO: this calls malloc! Fix this
+        //______________________________________________________________________________________//
+        // TODO:
+        // Optimize with precomputation
 
-        // FFTW DCT-II multiplies every coefficient by 2.0, so multiply by 0.5 on the way out
-        for (t_filterIdx i = 0; i < this->numFilters; ++i)
-            this->listOut[i] = this->bfccVector[i] * 0.5;
+        // FFTW DCT-II
+        tIDLib::unoptimized_discreteCosineTransform(coefficientsVector, // Output vector
+                                                    fftwInputVector,    // Input vector
+                                                    this->numFilters);  // Size
+        //______________________________________________________________________________________//
 
-        return this->listOut;
+        return this->coefficientsVector;
     }
 
     /*--------------------------- Setters/getters ----------------------------*/
@@ -323,19 +315,11 @@ public:
         // destroy old DFT plan, which depended on this->analysisWindowSize
         fftwf_destroy_plan(this->fftwPlan);
 
-        // destroy old DCT plan, which involved this->fftwInputVector
-        fftwf_destroy_plan(this->fftwDctPlan);
-
         // allocate new fftwf_complex memory for the plan based on new window size
         this->fftwOut = (fftwf_complex *) fftwf_alloc_complex(windowHalf + 1);
 
         // create a new DFT plan based on new window size
-        float* fftwIn = &(fftwInputVector[0]);
-        this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, fftwIn, this->fftwOut, FFTWPLANNERFLAG);
-
-        // create a new DCT plan
-        float* bfcc = &(bfccVector[0]);
-        this->fftwDctPlan = fftwf_plan_r2r_1d(this->numFilters, fftwIn, bfcc, FFTW_REDFT10, FFTWPLANNERFLAG);
+        this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, &(fftwInputVector[0]), this->fftwOut, FFTWPLANNERFLAG);
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i = 0; i < this->analysisWindowSize; ++i)
@@ -489,8 +473,7 @@ private:
         this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize * 0.5 + 1);
 
         // DFT plan
-        float* fftwIn = &(fftwInputVector[0]);
-        this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, fftwIn, this->fftwOut, FFTWPLANNERFLAG);
+        this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, &(fftwInputVector[0]), this->fftwOut, FFTWPLANNERFLAG);
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i=0; i<this->analysisWindowSize; ++i)
@@ -504,14 +487,7 @@ private:
 
         tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
 
-        this->bfccVector.resize(this->numFilters);
-
-        // DCT plan. FFTW_REDFT10 is the DCT-II
-        float* bfcc = &(bfccVector[0]);
-        this->fftwDctPlan = fftwf_plan_r2r_1d(this->numFilters, fftwIn, bfcc, FFTW_REDFT10, FFTWPLANNERFLAG);
-
-        // create listOut memory
-        this->listOut.resize(this->numFilters);
+        this->coefficientsVector.resize(this->numFilters);
     }
 
     /**
@@ -540,7 +516,6 @@ private:
         // free FFTW stuff
         fftwf_free(this->fftwOut);
         fftwf_destroy_plan(this->fftwPlan);
-        fftwf_destroy_plan(this->fftwDctPlan);
     }
 
     //==========================================================================
@@ -560,7 +535,6 @@ private:
     std::vector<float> fftwInputVector;
     fftwf_complex *fftwOut;
     fftwf_plan fftwPlan;
-    fftwf_plan fftwDctPlan;
 
     std::vector<float> blackman;
     std::vector<float> cosine;
@@ -578,8 +552,7 @@ private:
     tIDLib::FilterOperation filterOperation; // replaces x_filterAvg
     bool normalize;
 
-    std::vector<float> bfccVector;
-    std::vector<float> listOut;
+    std::vector<float> coefficientsVector;
 };
 
 } // namespace tid

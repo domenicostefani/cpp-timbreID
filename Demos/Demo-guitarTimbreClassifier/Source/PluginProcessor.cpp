@@ -364,7 +364,7 @@ void DemoProcessor::computeFeatureVector()
     /*-------------------------------------/
     | Bark Frequency Cepstral Coefficients |
     /-------------------------------------*/
-    // bfccRes = this->bfcc.compute(); //TODO: solve internal error with DCT plan execute
+    bfccRes = this->bfcc.compute(); //TODO: solve internal error with DCT plan execute
     if (bfccRes.size() != BFCC_RES_SIZE)
         throw std::logic_error("Incorrect result vector size for bfcc");
     for(int i=0; i<BFCC_RES_SIZE; ++i)

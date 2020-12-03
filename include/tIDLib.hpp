@@ -212,4 +212,24 @@ void veclog(t_binIdx n, float *input);
 void veclog(t_binIdx n, std::vector<float> &input);
 /* ---------------- END dsp utility functions ---------------------- */
 
+
+// DCT-II
+// Same as tIDLib_cosineTransform in original TimbreID (only with constant in pointer)
+void unoptimized_discreteCosineTransform(float *output, const float *input, int numFilters)
+{
+    float piOverNfilters = M_PI/numFilters; // save multiple divides below
+    for(int i=0; i<numFilters; i++)
+    {
+        output[i] = 0;
+        for(int k=0; k<numFilters; k++)
+            output[i] += input[k] * cos(i * (k+0.5) * piOverNfilters);
+    }
+}
+
+void unoptimized_discreteCosineTransform(std::vector<float> &output, const std::vector<float> &input, int numFilters)
+{
+    unoptimized_discreteCosineTransform(&(output[0]), &input[0], numFilters);
+}
+
+
 }
