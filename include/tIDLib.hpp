@@ -181,7 +181,6 @@ void createFilterbank(const std::vector<float> &filterFreqs, std::vector<t_filte
 /*  In the next 2 functions filterBank is not const in order to use the tmpValue field of the filters to avoid local memory allocation */
 void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, std::vector<t_filter> &filterbank, bool normalize);
 void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, std::vector<t_filter> &filterbank, t_filterIdx numFilters);
-// void tIDLib_cosineTransform(float *output, t_sample *input, t_filterIdx numFilters);
 /* ---------------- END filterbank functions ---------------------- */
 
 
@@ -213,8 +212,9 @@ void veclog(t_binIdx n, std::vector<float> &input);
 /* ---------------- END dsp utility functions ---------------------- */
 
 
-// DCT-II
-// Same as tIDLib_cosineTransform in original TimbreID (only with constant in pointer)
+/** DCT-II Computation without any optimization
+ * Its the same function as the original tIDLib_cosineTransform of TimbreID
+ */
 void unoptimized_discreteCosineTransform(float *output, const float *input, int numFilters)
 {
     float piOverNfilters = M_PI/numFilters; // save multiple divides below
@@ -226,10 +226,98 @@ void unoptimized_discreteCosineTransform(float *output, const float *input, int 
     }
 }
 
+/** DCT-II Computation without any optimization
+ * Its the same function as the original tIDLib_cosineTransform of TimbreID.
+ * This wrapper accepts std::vectors
+ */
 void unoptimized_discreteCosineTransform(std::vector<float> &output, const std::vector<float> &input, int numFilters)
 {
     unoptimized_discreteCosineTransform(&(output[0]), &input[0], numFilters);
 }
+
+/** DCT-II Computation module with optimized precomputation
+ * This module can precompute the Basis for the dct transform of a specific size
+ * precomputeBasis() allocates memory, while compute()
+*/
+template <typename FloatType>
+class DiscreteCosineTransform
+{
+public:
+    DiscreteCosineTransform(){}
+    ~DiscreteCosineTransform(){}
+
+    /** Precompute DCT basis to optimize computation
+     * Do not call this function from a real-time thread.
+    */
+    void precomputeBasis(int transformSize)
+    {
+        if (transformSize < 1)
+            throw std::logic_error("DCT size has to be >= 1");
+        basis.resize(transformSize);
+
+        float piOverNfilters = M_PI/transformSize;
+        for(int i=0; i<transformSize; ++i)
+            for(int k=0; k<transformSize; ++k)
+                basis.at(i,k) = cos(i * (k+0.5) * piOverNfilters);
+    }
+
+    /** Compute the dct transform (DCT-II)
+     * This is optimized and safe to be called from a real-time thread
+    */
+    void compute(const std::vector<FloatType>& input, std::vector<FloatType>& output)
+    {
+        if (output.size() != basis.size())
+            throw std::logic_error("Output vector size must match the size of the basis");
+        if (input.size() != basis.size())
+            throw std::logic_error("Input vector size must match the size of the basis");
+
+        compute(input,output,output.size());
+    }
+
+
+    /** Compute the dct transform (DCT-II)
+     * This is optimized and safe to be called from a real-time thread
+     * In case that only a portion of the vectors has to be considered,
+     * transformSize determines how many elements to consider.
+     * It should still match the size specified during precomputation
+    */
+    void compute(const std::vector<FloatType>& input, std::vector<FloatType>& output, size_t transformSize)
+    {
+        if (transformSize != basis.size())
+            throw std::logic_error("transformSize vector size must match the size of the basis");
+
+        for(int i=0; i<transformSize; i++)
+        {
+            output[i] = 0;
+            for(int k=0; k<transformSize; k++)
+                output[i] += input[k] * basis.at(i,k);
+        }
+    }
+private:
+    /** Matrix for the dct basis */
+    class Basis
+    {
+    public:
+        /**
+         * Resize the matrix, allowing to fill the cells and use them without
+         * unexpected reallocation
+        */
+        void resize(size_t newSize)
+        {
+            values.resize(newSize);
+            for(std::vector<FloatType>& subvec : values)
+                subvec.resize(newSize);
+        }
+        /** Access a cell of the basis matrix */
+        FloatType& at(size_t i, size_t k) { return values[i][k]; }
+        /** Return the size of the square matrix */
+        size_t size() { return values.size(); }
+    private:
+        std::vector<std::vector<FloatType>> values;
+    };
+
+    Basis basis; // basis of the DCT transform
+};
 
 
 }

@@ -91,7 +91,7 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
    #ifdef DO_DELAY_ONSET
     postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
-   
+
     /*------------------------------------/
     | Prepare feature extractors          |
     /------------------------------------*/
@@ -145,7 +145,7 @@ void DemoProcessor::releaseResources()
     bark.reset();
    #endif
     rtlogger.logInfo("+  Releasing extractor resources");
-    
+
     /*------------------------------------/
     | Reset the feature extractors        |
     /------------------------------------*/
@@ -270,7 +270,7 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 
 /**
  * Onset Detected Callback
- * 
+ *
  * TODO: Measure accurately the time required by this function along
  *       with the buffering operations in the processBlock routine
  *       and consider performing this on a separate RT thread
@@ -354,17 +354,13 @@ void DemoProcessor::computeFeatureVector()
     |   110 Coefficients:                                         |
     |    - 50 BFCC                                                |
     |    - First 60 Cepstrum coefficients                         |
-    |   TODO:                                                     |
-    |    - Solve issue with FFTW dct plan execute that calls      |
-    |      malloc.                                                |
-    |      This affects the compuation of bfcc and mfcc           |
     |                                                             |
     /------------------------------------------------------------*/
 
     /*-------------------------------------/
     | Bark Frequency Cepstral Coefficients |
     /-------------------------------------*/
-    bfccRes = this->bfcc.compute(); //TODO: solve internal error with DCT plan execute
+    bfccRes = this->bfcc.compute();
     if (bfccRes.size() != BFCC_RES_SIZE)
         throw std::logic_error("Incorrect result vector size for bfcc");
     for(int i=0; i<BFCC_RES_SIZE; ++i)
@@ -407,11 +403,11 @@ void DemoProcessor::computeFeatureVector()
     | Bark Spectrum                       |
     /------------------------------------*/
     // barkSpec.compute();
-   
+
     /*------------------------------------/
     | Mel Frequency Cepstral Coefficients |
     /------------------------------------*/
-    // mfcc.compute();  //TODO: solve internal error with DCT plan execute
+    // mfcc.compute();
 
     /*------------------------------------/
     | Peak sample                         |

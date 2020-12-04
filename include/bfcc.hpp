@@ -135,6 +135,7 @@ public:
         tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
 
         this->coefficientsVector.resize(this->numFilters);
+        this->dctPlan.precomputeBasis(this->numFilters);
     }
 
     /**
@@ -229,15 +230,8 @@ public:
                 break;
         }
 
-        //______________________________________________________________________________________//
-        // TODO:
-        // Optimize with precomputation
-
         // FFTW DCT-II
-        tIDLib::unoptimized_discreteCosineTransform(coefficientsVector, // Output vector
-                                                    fftwInputVector,    // Input vector
-                                                    this->numFilters);  // Size
-        //______________________________________________________________________________________//
+        dctPlan.compute(fftwInputVector,coefficientsVector,this->numFilters);
 
         return this->coefficientsVector;
     }
@@ -488,6 +482,7 @@ private:
         tIDLib::createFilterbank(this->filterFreqs, this->filterbank, this->numFilters, this->analysisWindowSize, this->sampleRate);
 
         this->coefficientsVector.resize(this->numFilters);
+        this->dctPlan.precomputeBasis(this->numFilters);
     }
 
     /**
@@ -535,6 +530,7 @@ private:
     std::vector<float> fftwInputVector;
     fftwf_complex *fftwOut;
     fftwf_plan fftwPlan;
+    tIDLib::DiscreteCosineTransform<SampleType> dctPlan;
 
     std::vector<float> blackman;
     std::vector<float> cosine;
