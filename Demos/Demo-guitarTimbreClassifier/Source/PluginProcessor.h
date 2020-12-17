@@ -20,7 +20,7 @@
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
-//#define DEBUG_WHICH_CHANNEL
+// #define DEBUG_WHICH_CHANNEL
 
 //==============================================================================
 /**
@@ -34,14 +34,26 @@ class DemoProcessor : public AudioProcessor,
 {
 public:
     //===================== ONSET DETECTION PARAMS =============================
-    const unsigned int ONSETDETECTOR_WINDOW_SIZE = 1024;
 
    #ifdef USE_AUBIO_ONSET
-    const unsigned int AUBIO_HOP_SIZE = 128;
-    const float ONSET_THRESHOLD = 0.0f;
-    const float ONSET_MINIOI = 0.1f;  //200 ms debounce
+    // OLD VALUES (BAD results)
+    // const unsigned int AUBIO_WINDOW_SIZE = 1024;
+    // const unsigned int AUBIO_HOP_SIZE = 128;
+    // const float ONSET_THRESHOLD = 0.0f;
+    // const float ONSET_MINIOI = 0.1f;  //200 ms debounce
+    // const float SILENCE_THRESHOLD = -48.0f;
+    
+    //
+    // More about the parameter choice at
+    // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report-aubioonset-perfomanceanalysis.pdf
+    //
+    const unsigned int AUBIO_WINDOW_SIZE = 512;
+    const unsigned int AUBIO_HOP_SIZE = 64;
+    const float ONSET_THRESHOLD = 1.6f;
+    const float ONSET_MINIOI = 0.02f;  //20 ms debounce
     const float SILENCE_THRESHOLD = -48.0f;
    #else
+    const unsigned int BARK_WINDOW_SIZE = 1024;
     const unsigned int BARK_HOP_SIZE = 128;
    #endif
 
@@ -55,7 +67,7 @@ public:
     //========================= ONSET DETECTION ================================
    #ifdef USE_AUBIO_ONSET
     const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::defaultMethod;
-    tid::aubio::Onset<float> aubioOnset{ONSETDETECTOR_WINDOW_SIZE,
+    tid::aubio::Onset<float> aubioOnset{AUBIO_WINDOW_SIZE,
                                         AUBIO_HOP_SIZE,
                                         ONSET_THRESHOLD,
                                         ONSET_MINIOI,
@@ -64,7 +76,7 @@ public:
     void onsetDetected (tid::aubio::Onset<float> *);
    #else
     /**    Initialize the onset detector      **/
-    tid::Bark<float> bark{ONSETDETECTOR_WINDOW_SIZE,
+    tid::Bark<float> bark{BARK_WINDOW_SIZE,
                           BARK_HOP_SIZE,
                           BARK_SPACING};
     void onsetDetected (tid::Bark<float>* bark);
