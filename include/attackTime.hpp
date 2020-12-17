@@ -64,7 +64,9 @@ public:
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
         std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
         std::fill(searchBuffer.begin(), searchBuffer.end(), 0.0f);
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
     }
 
     template <typename OtherSampleType>
@@ -85,6 +87,7 @@ public:
 
     void compute(unsigned long int* rPeakSampIdx, unsigned long int* rAttackStartIdx, float *rAttackTime)
     {
+       #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
@@ -95,8 +98,11 @@ public:
         if(bangSample >= this->blockSize)
             bangSample = this->blockSize - 1;
 
-        // took a while to get this calculation right, but it seems correct now. remember that bangSample is always between 0 and 63 (or x_n-1), and finding startSample within x_signalBuffer involves a few other steps. (wbrent original comment)
+        // took a while to get this calculation right, but it seems correct now. remember that bangSample is always between 0 and 63 (or blockSize-1), and finding startSample within x_signalBuffer involves a few other steps. (wbrent original comment)
         unsigned long int startSample = (this->maxSearchRange + this->blockSize) - bangSample - analysisWindowSize - 1;
+       #else
+        unsigned long int startSample = 0;
+       #endif
 
         // construct analysis window
         for(unsigned long int i = 0, j = startSample; i < analysisWindowSize; ++i, ++j)
@@ -262,7 +268,9 @@ private:
     	for(size_t i=0; i<n; ++i)
     		signalBuffer[maxSearchRange+i] = input[i];
 
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
     }
 
     //==============================================================================
@@ -283,7 +291,9 @@ private:
     std::vector<float> analysisBuffer;
     std::vector<float> searchBuffer;
 
+   #if ASYNC_FEATURE_EXTRACTION
     uint32 lastStoreTime = juce::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
+   #endif
 
     //==============================================================================
     JUCE_LEAK_DETECTOR (AttackTime)

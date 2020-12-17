@@ -71,7 +71,9 @@ public:
     {
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
         std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
     }
 
     template <typename OtherSampleType>
@@ -92,6 +94,7 @@ public:
 
     std::pair<float, unsigned long int> compute()
     {
+       #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
@@ -101,6 +104,9 @@ public:
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
         if(bangSample >= this->blockSize)
             bangSample = this->blockSize - 1;
+       #else
+        uint32 bangSample = 0;
+       #endif
 
     	// construct analysis window using bangSample as the end of the window
         for(uint64 i = 0, j = bangSample; i < this->analysisWindowSize; ++i, ++j)
@@ -177,7 +183,9 @@ private:
     	for(size_t i=0; i<n; ++i)
     		signalBuffer[analysisWindowSize+i] = input[i];
 
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
     }
 
     //==============================================================================
@@ -188,7 +196,9 @@ private:
     std::vector<SampleType> signalBuffer;
     std::vector<float> analysisBuffer;
 
+   #if ASYNC_FEATURE_EXTRACTION
     uint32 lastStoreTime = juce::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
+   #endif
 
     //==============================================================================
     JUCE_LEAK_DETECTOR (PeakSample)

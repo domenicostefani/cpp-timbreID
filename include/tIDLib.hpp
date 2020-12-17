@@ -12,6 +12,16 @@ typedef unsigned int t_instanceIdx;
 
 #define TIDVERSION "0.8.2C"
 
+/** ASYNC_FEATURE_EXTRACTION
+ * If true, this enables the computation of the time interval between the last
+ * buffering operation and  any feature exraction method call, to assess where
+ * this async call falls (inside the current audio block)
+ * Since this currently uses system time IT SHOULD NOT WORK with offline use
+ * of the plugin (calling audio callback faster than real time)
+ * For this reason the default value is false
+ */
+#define ASYNC_FEATURE_EXTRACTION false
+
 // choose either FFTW_MEASURE or FFTW_ESTIMATE here.
 #define FFTWPLANNERFLAG (FFTW_ESTIMATE | FFTW_CONSERVE_MEMORY)
 

@@ -206,11 +206,14 @@ public:
 
         unsigned long int windowHalf = this->analysisWindowSize * 0.5;
 
+       #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         uint32 bangSample = roundf((currentTime/1000.0)*this->sampleRate);
-
         if(bangSample >= this->blockSize)
             bangSample = this->blockSize - 1;
+       #else
+        uint32 bangSample = 0;
+       #endif
 
         // construct analysis window using bangSample as the end of the window
         for(unsigned long int i=0, j=bangSample; i<this->analysisWindowSize; ++i, ++j)
@@ -500,7 +503,9 @@ private:
         this->blockSize = tIDLib::BLOCKSIZEDEFAULT;
         this->windowFunction = tIDLib::WindowFunctionType::blackman;
         this->spectrumTypeUsed = tIDLib::SpectrumType::magnitudeSpectrum;
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
         this->sizeFilterFreqs = 0;
         this->numFilters = 0; // this is just an init size that will be updated in createFilterbank anyway.
         this->filterState = tIDLib::FilterState::filterEnabled;
@@ -570,7 +575,9 @@ private:
         for(unsigned long int i = 0; i < n; ++i)
             this->signalBuffer[this->analysisWindowSize+i] = input[i];
 
+       #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = juce::Time::currentTimeMillis();
+       #endif
     }
 
     /**
@@ -593,7 +600,9 @@ private:
     tIDLib::WindowFunctionType windowFunction;
     tIDLib::SpectrumType spectrumTypeUsed;
 
+   #if ASYNC_FEATURE_EXTRACTION
     uint32 lastStoreTime; // lastDspTime in Original PD library
+   #endif
 
     std::vector<SampleType> signalBuffer;
 
