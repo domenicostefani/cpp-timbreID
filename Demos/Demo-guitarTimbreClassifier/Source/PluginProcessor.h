@@ -42,7 +42,7 @@ public:
     // const float ONSET_THRESHOLD = 0.0f;
     // const float ONSET_MINIOI = 0.1f;  //200 ms debounce
     // const float SILENCE_THRESHOLD = -48.0f;
-    
+
     //
     // More about the parameter choice at
     // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report-aubioonset-perfomanceanalysis.pdf

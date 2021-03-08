@@ -40,14 +40,9 @@ public:
 
     LED onsetLed;
 
-   #ifdef USE_AUBIO_ONSET
     setParamBox boxIoI;
     setParamBox boxThresh;
     setParamBox boxSilenceThresh;
-   #else
-    setParamBox boxDebounce;
-    setDualParamBox boxThresh;
-   #endif
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -87,7 +82,7 @@ private:
         }
     private:
         TimerEventCallback cb;
-        int interval = 33;
+        int interval = 3;
     };
 
     void pollingRoutine()
@@ -96,30 +91,24 @@ private:
             onsetLed.switchOn();
         updateDataLabels();
 
-        int match = -1;
-        do {
-            match = processor.matchAtomic.load(std::memory_order_relaxed);  // get value atomically
-        } while (match==-1);
+        int onsetCounter = -1;
+        // do { //TODO: figure out why I did this
+            onsetCounter = processor.onsetCounterAtomic.load(std::memory_order_relaxed);  // get value atomically
+        // } while (onsetCounter==-1);
 
-        float distance = -2;
-        do {
-            distance = processor.matchAtomic.load(std::memory_order_relaxed);  // get value atomically
-        } while (distance==-2);
-
-        updateKnnLabel(match,distance);
+        updateOnsetCounter(onsetCounter);
     }
 
     PollingTimer pollingTimer{[this]{pollingRoutine();}};
 
 
     //
-    // KNN (TimbreID) section
+    // Storage section
     //
-    Label classifierTitle;
-    ComboBox classifierState;
-    TextButton uncluster,clearAll;
-    setParamBox cluster,write,read, writeText, readText,manualCluster;
-    Label dispTimbre;
-    Label dispDist;
-    void updateKnnLabel(unsigned int match, float distance);
+    Label storageTitle;
+    ComboBox storageStateBox;
+    TextButton clearAll;
+    setParamBox write;
+    Label dispInfo;
+    void updateOnsetCounter(unsigned int onsetCounter);
 };

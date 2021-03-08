@@ -39,6 +39,14 @@ public:
     /** Creates a AttackTime module with default parameters. */
     AttackTime(){ resizeAllBuffers(); reset(); }
 
+    /** Creates a AttackTime module with custom analysis window size. */
+    AttackTime(unsigned long int windowSize)
+    {
+        this->analysisWindowSize = windowSize;
+        resizeAllBuffers();
+        reset();
+    }
+
     /** Creates a copy of another AttackTime module. */
     AttackTime (const AttackTime&) = default;
 
@@ -89,8 +97,8 @@ public:
     {
        #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        if(currentTime > blockSize*sampleRate)
-            throw std::logic_error("Clock measure may have overflowed");
+        // if(currentTime > blockSize*sampleRate)
+        //     throw std::logic_error("Clock measure may have overflowed");
 
         uint32 bangSample = roundf((currentTime / 1000.0) * this->sampleRate);
 

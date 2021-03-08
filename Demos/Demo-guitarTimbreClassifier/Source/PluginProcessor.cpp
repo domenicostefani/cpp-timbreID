@@ -214,7 +214,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     } catch(std::exception& e) {
         rtlogger.logInfo("An exception has occurred while buffering: ",e.what());
     } catch(...) {
-        std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
+        rtlogger.logInfo("An unknwn exception has occurred while buffering: ");
     }
     /** CLEAR THE BUFFER (OPTIONAL) **/
     // buffer.clear(); // Uncomment to let input pass through

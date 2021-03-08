@@ -24,12 +24,9 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-#include <iostream>
-
 #define MONO_CHANNEL 0
-#define MAXIMUM_LATENCY_MSEC 10
-#define DO_DELAY_ONSET // If commented there is no delay between onset detection and feature extraction (bad)
-
+#define POST_ONSET_DELAY_MS 1.33
+#define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
 //==============================================================================
 DemoProcessor::DemoProcessor()
@@ -37,295 +34,277 @@ DemoProcessor::DemoProcessor()
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  AudioChannelSet::stereo(), true)
+                       .withInput  ("Input",  AudioChannelSet::mono(), true)
                       #endif
-                       .withOutput ("Output", AudioChannelSet::stereo(), true)
+                       .withOutput ("Output", AudioChannelSet::mono(), true)
                      #endif
                        )
 #endif
 {
-    logger.logInfo("Initializing Onset detector");
+    rtlogger.logInfo("Initializing Onset detector");
 
-   #ifdef USE_AUBIO_ONSET
-    /** ADD THE LISTENER **/
+    /** ADD ONSET DETECTOR LISTENER **/
     aubioOnset.addListener(this);
-   #else
-    /** SET SOME DEFAULT PARAMETERS OF THE BARK MODULE **/
-    bark.setDebounce(200);
-    bark.setMask(4, 0.75);
-    bark.setFilterRange(0, 49);
-    bark.setThresh(-1, 30);
 
-    /** ADD THE LISTENER **/
-    bark.addListener(this);
-   #endif
+    barkSpecRes.resize(BARKSPEC_SIZE);
+    bfccRes.resize(BFCC_RES_SIZE);
+    cepstrumRes.resize(CEPSTRUM_RES_SIZE);
+    mfccRes.resize(MFCC_RES_SIZE);
 
-    featureVector.resize(VECTOR_SIZE);
+    attackTime.setMaxSearchRange(20);
+
+    /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
+    pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
 }
 
-DemoProcessor::~DemoProcessor(){    /*DESTRUCTOR*/        }
+DemoProcessor::~DemoProcessor(){
+    /** Log last queued messages before closing **/
+    logPollingRoutine();
+}
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    logger.logInfo("+--Prepare to play called");
-    logger.logInfo("+  Setting up onset detector");
+    rtlogger.logInfo("+--Prepare to play called");
+    rtlogger.logInfo("+  Setting up onset detector");
 
-   #ifdef USE_AUBIO_ONSET
-    /** PREPARE THE BARK MODULEs **/
-    aubioOnset.prepare(sampleRate,samplesPerBlock); // Important step
-   #else
-    /** PREPARE THE BARK MODULEs **/
-    bark.prepare(sampleRate, (uint32)samplesPerBlock);
+    /** INIT ONSET DETECTOR MODULE**/
+    aubioOnset.prepare(sampleRate,samplesPerBlock);
+
+    /** INIT POST ONSET TIMER **/
+   #ifdef DO_DELAY_ONSET
+    postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
 
-    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
-    barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
-    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
+    /** Prepare feature extractors **/
+
+    /*-------------------------------------/
+    | Bark Frequency Cepstral Coefficients |
+    /-------------------------------------*/
     bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Cepstrum Coefficients               |
+    /------------------------------------*/
     cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Attack time                         |
+    /------------------------------------*/
+    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Bark spectral brightness            |
+    /------------------------------------*/
+    barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Bark Spectrum                       |
+    /------------------------------------*/
+    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
+    /*------------------------------------/
+    | Zero Crossings                      |
+    /------------------------------------*/
     zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
 
-    logger.logInfo("+--Prepare to play completed");
+    rtlogger.logInfo("+--Prepare to play completed");
 }
 
 void DemoProcessor::releaseResources()
 {
-    logger.logInfo("+--ReleaseResources called");
+    rtlogger.logInfo("+--ReleaseResources called");
+    rtlogger.logInfo("+  Releasing Onset detector resources");
 
+    /** FREE ONSET DETECTOR MEMORY **/
+    aubioOnset.reset();
 
-    logger.logInfo("+  Releasing Onset detector resources");
-    /** RESET THE MODULEs **/
-   #ifdef USE_AUBIO_ONSET
-    aubioOnset.reset(); // Important step
-   #else
-    bark.reset();
-   #endif
-    logger.logInfo("+  Releasing BFCC extractor resources");
+    rtlogger.logInfo("+  Releasing extractor resources");
 
+    /*------------------------------------/
+    | Reset the feature extractors        |
+    /------------------------------------*/
+    bfcc.reset();
+    cepstrum.reset();
     attackTime.reset();
     barkSpecBrightness.reset();
     barkSpec.reset();
-    bfcc.reset();
-    cepstrum.reset();
     mfcc.reset();
     peakSample.reset();
     zeroCrossing.reset();
 
-    logger.logInfo("+--ReleaseResources completed");
+    rtlogger.logInfo("+--ReleaseResources completed");
 }
 
 void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
-
-    if(this->onsetWasDetected.exchange(false))
+   #ifdef LOG_LATENCY
+    int64 timeAtProcessStart = 0;
+    if (++latencyCounter >= latencyLogPeriod)
+    {
+        timeAtProcessStart = Time::Time::getHighResolutionTicks();
+        latencyCounter = 0;
+    }
+    int64 computeRoundStart = 0;
+   #endif
+    /** EXTRACT FEATURES AND CLASSIFY IF POST ONSET TIMER IS EXPIRED **/
+    if(postOnsetTimer.isExpired())
+    {
+       #ifdef LOG_LATENCY
+        computeRoundStart = Time::Time::getHighResolutionTicks();
+       #endif
         onsetDetectedRoutine();
+    }
 
-    /** STORE THE BUFFER FOR ANALYSIS **/
+    /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
+    bfcc.store(buffer,(short int)MONO_CHANNEL);
+    cepstrum.store(buffer,(short int)MONO_CHANNEL);
     attackTime.store(buffer,(short int)MONO_CHANNEL);
     barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);
     barkSpec.store(buffer,(short int)MONO_CHANNEL);
-    bfcc.store(buffer,(short int)MONO_CHANNEL);
-    cepstrum.store(buffer,(short int)MONO_CHANNEL);
     mfcc.store(buffer,(short int)MONO_CHANNEL);
     peakSample.store(buffer,(short int)MONO_CHANNEL);
     zeroCrossing.store(buffer,(short int)MONO_CHANNEL);
-    //
-    /** STORE THE ONSET BUFFER **/
+
+    /** STORE THE ONSET DETECTOR BUFFER **/
     try
     {
-       #ifdef USE_AUBIO_ONSET
-           aubioOnset.store(buffer,MONO_CHANNEL);
-       #else
-        /** STORE THE BUFFER FOR COMPUTATION **/
-        bark.store(buffer,(short int)MONO_CHANNEL);
-       #endif
+        aubioOnset.store(buffer,MONO_CHANNEL);
+    } catch(std::exception& e) {
+        rtlogger.logInfo("An exception has occurred while buffering: ",e.what());
+    } catch(...) {
+        rtlogger.logInfo("An unknwn exception has occurred while buffering: ");
     }
-    catch(std::exception& e)
+    /** CLEAR THE BUFFER (OPTIONAL) **/
+    // buffer.clear(); // Uncomment to let input pass through
+
+    /** UPDATE POST ONSET COUNTER/TIMER **/
+   #ifdef DO_DELAY_ONSET
+    postOnsetTimer.updateTimer(); // Update the block counter of the postOnsetTimer
+   #endif
+
+   #ifdef LOG_LATENCY
+    if (timeAtProcessStart)
     {
-        std::cout << "An exception has occurred while buffering:" << std::endl;
-        std::cout << e.what() << '\n';
+        int64 timeAtProcessEnd = Time::Time::getHighResolutionTicks();
+        rtlogger.logInfo("ProcessedBlock",timeAtProcessStart,timeAtProcessEnd);
     }
-    catch(...)
+    if (computeRoundStart)
     {
-        std::cout << "An UNKNOWN exception has occurred while buffering" << std::endl;
+        int64 computeRoundFinish = Time::Time::getHighResolutionTicks();
+        rtlogger.logInfo("Compute Round",computeRoundStart,computeRoundFinish);
     }
-    // buffer.clear();
+   #endif
 }
 
-#ifdef USE_AUBIO_ONSET
 void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
     if(aubioOnset == &this->aubioOnset)
     {
-       #ifdef MEASURE_COMPUTATION_LATENCY
-        latencytime = juce::Time::getMillisecondCounterHiRes();
-       #endif
-
+        this->onsetMonitorState.exchange(true);
        #ifdef DO_DELAY_ONSET
-        /* We assume that there could be a delay of one entire Hop window */
-        const unsigned int SAMPLES_FROM_PEAK = this->aubioOnset.getHopSize();
-        float delayMsec = (bfcc.getWindowSize()-SAMPLES_FROM_PEAK) / this->getSampleRate() * 1000;
-        /* Check that the timer does not interfere with successive onsets */
-        float minIoiMsec = this->aubioOnset.getOnsetMinInterOnsetInterval()*1000.0;
-        /* Check that complessive delay does not go over MAXIMUM_LATENCY_MSEC milliseconds */
-        float ms_remaining_to_maxlatency = MAXIMUM_LATENCY_MSEC - (SAMPLES_FROM_PEAK / this->getSampleRate() * 1000);
-        ms_remaining_to_maxlatency = ms_remaining_to_maxlatency < 0 ? 0 : ms_remaining_to_maxlatency;
-
-        float realtimeThresh = ms_remaining_to_maxlatency < minIoiMsec ? ms_remaining_to_maxlatency : minIoiMsec;
-
-       #ifdef MEASURE_COMPUTATION_LATENCY
-        logger.logInfo("Set timer for " + std::to_string(delayMsec < realtimeThresh ? delayMsec : realtimeThresh) + "ms");
-       #endif
-        HighResolutionTimer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
+        rtlogger.logValue("Start waiting for ",(float)POST_ONSET_DELAY_MS,"ms");
+        if(postOnsetTimer.isIdle())
+            postOnsetTimer.start(POST_ONSET_DELAY_MS);
        #else
         onsetDetectedRoutine();
        #endif
     }
-}
-#else
-void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
-{
-    if(bark == &this->bark)
-    {
-       #ifdef DO_DELAY_ONSET
-        //This is an assumption on the magnitude of the samplesFromPeak
-        unsigned int samplesFromPeak = this->bark.getHop() * 2; //TODO: fix as soon as the bark mods are confirmed
-
-        float delayMsec = (bfcc.getWindowSize()-samplesFromPeak) / this->getSampleRate() * 1000;
-        float realtimeThresh = MAXIMUM_LATENCY_MSEC - (samplesFromPeak/this->getSampleRate() * 1000);
-        HighResolutionTimer::startTimer(delayMsec < realtimeThresh ? delayMsec : realtimeThresh);
-       #else
-        onsetDetectedRoutine();
-       #endif
-    }
-}
-#endif
-
-void DemoProcessor::hiResTimerCallback(){
-    HighResolutionTimer::stopTimer();
-    this->onsetWasDetected.exchange(true);
-   #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Timer stopped after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencytime));
-   #endif
 }
 
 /**
  * Onset Detected Callback
- * Remember that this is called from the audio thread so it must not update the GUI directly
+ *
 **/
 void DemoProcessor::onsetDetectedRoutine ()
 {
-    logger.logInfo("Onset detected");
-   #ifdef DO_DELAY_ONSET
-    logger.logInfo("delay applied");
-   #endif
+    bool VERBOSERES = true; // Log info about classification result (Suggested: true)
+    bool VERBOSE = false;   // Log general verbose info (Suggested: false)
 
-    this->onsetMonitorState.exchange(true);
+    rtlogger.logInfo("Onset detected");
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
 
-    bool VERBOSE = true;
-    bool VERBOSERES = true;
+    Entry<VECTOR_SIZE>* currentFV = csvsaver.entryToWrite();
 
-   #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Computation started after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencytime));
-   #endif
-
-    this->computeFeatureVector();
-
-   #ifdef MEASURE_COMPUTATION_LATENCY
-    logger.logInfo("Computation stopped after " + std::to_string(juce::Time::getMillisecondCounterHiRes() - latencytime));
-   #endif
-
-
-    switch (classifierState)
+    if (storageState.load() == StorageState::store)
     {
-        case CState::idle:
-            if (VERBOSERES) logger.logInfo("detected onset but classifier is idling");
-            break;
-        case CState::train:
-            {
-                unsigned int idAssigned = knn.trainModel(featureVector);
-                matchAtomic.exchange(idAssigned);
-                if (VERBOSERES)
-                {
-                    logger.logInfo("Trained model");
-                }
-            }
-            break;
-        case CState::classify:
-            {
-                auto res = knn.classifySample(featureVector);
-                unsigned int prediction = std::get<0>(res[0]);
-                float confidence = std::get<1>(res[0]);
-                float distance = std::get<2>(res[0]);
-                if (VERBOSERES)
-                {
-                    logger.logInfo("Match: " + std::to_string(prediction));
-                    logger.logInfo("Confidence: " + std::to_string(confidence));
-                    logger.logInfo("Distance: " + std::to_string(distance));
-                }
-                matchAtomic.exchange(prediction);
-                distAtomic.exchange(distance);
-            }
-            break;
+        if (!currentFV)
+            rtlogger.logInfo("ERROR: buffer full");
+        else
+        {
+            /*--------------------/
+            | 1. EXTRACT FEATURES |
+            /--------------------*/
+            this->computeFeatureVector(currentFV->features);
+
+            /*-------------------/
+            | 2. STORE FEATURES  |
+            /-------------------*/
+            size_t oc = csvsaver.confirmEntry();
+            onsetCounterAtomic.exchange(oc);
+        }
+    }
+    else
+    {
+        rtlogger.logInfo("Extractor idling");
     }
 }
 
-void DemoProcessor::computeFeatureVector()
+void DemoProcessor::computeFeatureVector(float featureVector[])
 {
-    // #define LOG_SIZES
-   #ifdef LOG_SIZES
-    std::string info = "";
-   #endif
-
     int last = -1;
     int newLast = 0;
-    /* 01 - AttackTime */
+    /*-----------------------------------------/
+    | 01 - Attack time                         |
+    /-----------------------------------------*/
     unsigned long int peakSampIdx = 0;
     unsigned long int attackStartIdx = 0;
     float attackTimeValue = 0.0f;
     this->attackTime.compute(&peakSampIdx, &attackStartIdx, &attackTimeValue);
 
-    this->featureVector[0] = (float)peakSampIdx;
-    this->featureVector[1] = (float)attackStartIdx;
-    this->featureVector[2] = attackTimeValue;
+    featureVector[0] = (float)peakSampIdx;
+    featureVector[1] = (float)attackStartIdx;
+    featureVector[2] = attackTimeValue;
     newLast = 2;
    #ifdef LOG_SIZES
     info += ("attackTime [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
    #endif
     last = newLast;
 
-    /* 02 - BarkSpecBrightness */
+    /*-----------------------------------------/
+    | 02 - Bark Spectral Brightness            |
+    /-----------------------------------------*/
     float bsb = this->barkSpecBrightness.compute();
 
-    this->featureVector[3] = bsb;
+    featureVector[3] = bsb;
     newLast = 3;
    #ifdef LOG_SIZES
     info += ("barkSpecBrightness [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
    #endif
     last = newLast;
 
+    /*-----------------------------------------/
+    | 03 - Bark Spectrum                       |
+    /-----------------------------------------*/
+    barkSpecRes = this->barkSpec.compute();
 
-    /* 03 - BarkSpec */
-    std::vector<float> barkSpecRes = this->barkSpec.compute();
-
-    const int BARK_SPEC_RES_SIZE = 50;
-    jassert(barkSpecRes.size() == BARK_SPEC_RES_SIZE);
-    for(int i=0; i<BARK_SPEC_RES_SIZE; ++i)
+    jassert(barkSpecRes.size() == BARKSPEC_SIZE);
+    for(int i=0; i<BARKSPEC_SIZE; ++i)
     {
         featureVector[(last+1) + i] = barkSpecRes[i];
     }
-    newLast = last + BARK_SPEC_RES_SIZE;
+    newLast = last + BARKSPEC_SIZE;
    #ifdef LOG_SIZES
     info += ("barkSpec [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
    #endif
     last = newLast;
 
-
-    /* 04 - Bfcc */
-    std::vector<float> bfccRes = this->bfcc.compute();
-    const int BFCC_RES_SIZE = 50;
+    /*------------------------------------------/
+    | 04 - Bark Frequency Cepstral Coefficients |
+    /------------------------------------------*/
+    bfccRes = this->bfcc.compute();
     jassert(bfccRes.size() == BFCC_RES_SIZE);
     for(int i=0; i<BFCC_RES_SIZE; ++i)
     {
@@ -337,9 +316,10 @@ void DemoProcessor::computeFeatureVector()
    #endif
     last = newLast;
 
-    /* 05 - Cespstrum */
-    std::vector<float> cepstrumRes = this->cepstrum.compute();
-    const int CEPSTRUM_RES_SIZE = 513;
+    /*------------------------------------------/
+    | 05 - Cepstrum Coefficients                |
+    /------------------------------------------*/
+    cepstrumRes = this->cepstrum.compute();
     jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
     for(int i=0; i<CEPSTRUM_RES_SIZE; ++i)
     {
@@ -351,9 +331,10 @@ void DemoProcessor::computeFeatureVector()
    #endif
     last = newLast;
 
-    /* 06 - Mfcc */
-    std::vector<float> mfccRes = this->mfcc.compute();
-    const int MFCC_RES_SIZE = 38;
+    /*-----------------------------------------/
+    | 06 - Mel Frequency Cepstral Coefficients |
+    /-----------------------------------------*/
+    mfccRes = this->mfcc.compute();
     jassert(mfccRes.size() == MFCC_RES_SIZE);
     for(int i=0; i<MFCC_RES_SIZE; ++i)
     {
@@ -365,7 +346,9 @@ void DemoProcessor::computeFeatureVector()
    #endif
     last = newLast;
 
-    /* 07 - PeakSample */
+    /*-----------------------------------------/
+    | 07 - Peak sample                         |
+    /-----------------------------------------*/
     std::pair<float, unsigned long int> peakSample = this->peakSample.compute();
     float peakSampleRes = peakSample.first;
     unsigned long int peakSampleIndex = peakSample.second;
@@ -377,7 +360,9 @@ void DemoProcessor::computeFeatureVector()
    #endif
     last = newLast;
 
-    /* 08 - ZeroCrossing */
+    /*-----------------------------------------/
+    | 08 - Zero Crossings                      |
+    /-----------------------------------------*/
     uint32 crossings = this->zeroCrossing.compute();
     featureVector[last+1] = crossings;
     newLast = last +1;
@@ -386,13 +371,6 @@ void DemoProcessor::computeFeatureVector()
    #endif
     last = newLast;
 
-   #ifdef LOG_SIZES
-    logger.logInfo("vector size:" + std::to_string(featureVector.size()));
-    for(int i=0; i < 658; ++i)
-        info += (std::to_string(featureVector[i]) + " ");
-    info += "\n";
-    logger.logInfo(info);
-   #endif
 }
 
 /*    JUCE stuff ahead, not relevant to the demo    */

@@ -97,9 +97,9 @@ inline bool RealTimeLogger::logValue(const char message[], int value, const char
 {
     char cmessage[LogEntry::MESSAGE_LENGTH+1];
     if (suffix)
-        snprintf(cmessage,sizeof(cmessage),"%s %f %s", message,value,suffix);
+        snprintf(cmessage,sizeof(cmessage),"%s %d %s", message,value,suffix);
     else
-        snprintf(cmessage,sizeof(cmessage),"%s %f", message,value);
+        snprintf(cmessage,sizeof(cmessage),"%s %d", message,value);
     return logInfo(cmessage);
 }
 

@@ -9,7 +9,7 @@
   Date: 10th September 2020
 
   ==============================================================================
-*/
+ */
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
@@ -21,7 +21,7 @@
 DemoEditor::DemoEditor (DemoProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
-    setSize (1200, 900);
+    setSize (1200, 750);
 
     addAndMakeVisible(titleLabel);
     titleLabel.setText("Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
@@ -32,8 +32,6 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     updateDataLabels();
 
     addAndMakeVisible(onsetLed);
-
-   #ifdef USE_AUBIO_ONSET
 
     addAndMakeVisible(boxIoI);
     boxIoI.setLabelText("Min Inter Onset Interval (millis) [0-inf]: ");
@@ -46,15 +44,6 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     addAndMakeVisible(boxSilenceThresh);
     boxSilenceThresh.setLabelText("Silence Threshold: ");
     boxSilenceThresh.addListener(this);
-   #else
-    addAndMakeVisible(boxDebounce);
-    boxDebounce.setLabelText("Debounce time (millis) [0-inf]: ");
-    boxDebounce.addListener(this);
-
-    addAndMakeVisible(boxThresh);
-    boxThresh.setLabelText("Thresholds (low,high): ");
-    boxThresh.addListener(this);
-   #endif
 
     pollingTimer.startPolling();
 
@@ -64,62 +53,28 @@ DemoEditor::DemoEditor (DemoProcessor& p)
         extractor.setJustificationType(Justification::topLeft);
     }
 
-    addAndMakeVisible(classifierTitle);
-    classifierTitle.setText("Classifier Section", NotificationType::dontSendNotification);
-    classifierTitle.setJustificationType(Justification::centred);
+    addAndMakeVisible(storageTitle);
+    storageTitle.setText("Storage Section", NotificationType::dontSendNotification);
+    storageTitle.setJustificationType(Justification::centred);
 
-    addAndMakeVisible(classifierState);
-    classifierState.addItem("Idle",3);
-    classifierState.addItem("Train",1);
-    classifierState.addItem("Classify",2);
-    classifierState.setSelectedId(3);
-    classifierState.setJustificationType(Justification::centred);
-    classifierState.addListener(this);
-
-
-    addAndMakeVisible(uncluster);  //TextButton
-    uncluster.addListener(this);
-    uncluster.setButtonText("uncluster");
+    addAndMakeVisible(storageStateBox);
+    storageStateBox.addItem("Idle",2);
+    storageStateBox.addItem("Store",1);
+    storageStateBox.setSelectedId(2);
+    storageStateBox.setJustificationType(Justification::centred);
+    storageStateBox.addListener(this);
 
     addAndMakeVisible(clearAll);  //TextButton
     clearAll.addListener(this);
     clearAll.setButtonText("clear");
 
-    addAndMakeVisible(cluster);  //SetParamBox
-    cluster.addListener(this);
-    cluster.setLabelText("cluster");
-
     addAndMakeVisible(write);  //SetParamBox
     write.addListener(this);
     write.setLabelText("write");
-    write.setDefaultText("./data/feature-db.timid");
+    write.setDefaultText("./data/feature-db.csv");
 
-    addAndMakeVisible(read);  //SetParamBox
-    read.addListener(this);
-    read.setLabelText("read");
-    read.setDefaultText("./data/feature-db.timid");
-
-    addAndMakeVisible(writeText);  //SetParamBox
-    writeText.addListener(this);
-    writeText.setLabelText("write Text");
-    writeText.setDefaultText("./data/feature-db.csv");
-
-    addAndMakeVisible(readText);  //SetParamBox
-    readText.addListener(this);
-    readText.setLabelText("read Text");
-    readText.setDefaultText("./data/feature-db.csv");
-
-    addAndMakeVisible(manualCluster);  //SetParamBox
-    manualCluster.addListener(this);
-    manualCluster.setLabelText("ManCluster");
-    manualCluster.setDefaultText("0,20,40,60,80");
-
-
-    addAndMakeVisible(dispTimbre);  //Label
-    dispTimbre.setText("dispTimbre", NotificationType::dontSendNotification);
-
-    addAndMakeVisible(dispDist);  //Label
-    dispDist.setText("dispDist", NotificationType::dontSendNotification);
+    addAndMakeVisible(dispInfo);  //Label
+    dispInfo.setText("dispInfo", NotificationType::dontSendNotification);
 }
 
 DemoEditor::~DemoEditor()
@@ -143,43 +98,29 @@ void DemoEditor::resized()
     Rectangle<int> usable = area.reduced(10);
 
     titleLabel.setBounds(usable.removeFromTop(boxHeight*2));
-    Rectangle<int> data = usable.removeFromTop(usable.getHeight()*0.5);
+    Rectangle<int> data = usable.removeFromTop(usable.getHeight()*0.4);
     Rectangle<int> bottom = usable;
 
     onsetLed.setBounds(data.removeFromLeft(100));
-    Rectangle<int> onsetdata = data.removeFromLeft(data.getWidth()*0.5);
-    dataLabel.setBounds(onsetdata.removeFromTop(onsetdata.getHeight()*0.7));
+    Rectangle<int> onsetdata = data.removeFromLeft(data.getWidth()*0.7);
+    dataLabel.setBounds(onsetdata.removeFromTop(onsetdata.getHeight()*0.5));
     Rectangle<int> classifierBox = data;
 
-   #ifdef USE_AUBIO_ONSET
     boxIoI.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxIoI.getHeight()));
     boxThresh.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxThresh.getHeight()));
     boxSilenceThresh.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxSilenceThresh.getHeight()));
-   #else
-    boxDebounce.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
-    boxThresh.setBounds(bottom.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxDebounce.getHeight()));
-    bottom.removeFromTop(boxHeight*1.5);
-   #endif
 
     // Knn classifier (timbreID on the right)
-    classifierTitle.setBounds(classifierBox.removeFromTop(boxHeight*2));
-    Rectangle<int> knnCommands = classifierBox.removeFromTop(classifierBox.getHeight()*0.8);
+    storageTitle.setBounds(classifierBox.removeFromTop(boxHeight*2));
+    Rectangle<int> storageCommands = classifierBox.removeFromTop(classifierBox.getHeight()*0.8);
     Rectangle<int> knnDisplay = classifierBox;
 
-    classifierState.setBounds(knnCommands.removeFromTop(boxHeight));
-    cluster.setBounds(knnCommands.removeFromTop(boxHeight));
-    manualCluster.setBounds(knnCommands.removeFromTop(boxHeight));
-    uncluster.setBounds(knnCommands.removeFromTop(boxHeight));
-    clearAll.setBounds(knnCommands.removeFromTop(boxHeight));
-    knnCommands.removeFromTop(boxHeight*0.5);
-    write.setBounds(knnCommands.removeFromTop(boxHeight));
-    read.setBounds(knnCommands.removeFromTop(boxHeight));
+    storageStateBox.setBounds(storageCommands.removeFromTop(boxHeight));
+    clearAll.setBounds(storageCommands.removeFromTop(boxHeight));
+    storageCommands.removeFromTop(boxHeight*0.5);
+    write.setBounds(storageCommands.removeFromTop(boxHeight));
 
-    writeText.setBounds(knnCommands.removeFromTop(boxHeight));
-    readText.setBounds(knnCommands.removeFromTop(boxHeight));
-
-    dispTimbre.setBounds(knnDisplay.removeFromTop(boxHeight));
-    dispDist.setBounds(knnDisplay.removeFromTop(boxHeight));
+    dispInfo.setBounds(knnDisplay.removeFromTop(boxHeight));
 
     //bottom
     int dataWidth = bottom.getWidth()/EXTRACTOR_DATA_SIZE;
@@ -211,7 +152,6 @@ std::vector<std::string> splitString(const std::string& s, char seperator)
 
 void DemoEditor::buttonClicked (Button * button)
 {
-   #ifdef USE_AUBIO_ONSET
     if(boxIoI.hasButton(button))
     {
         unsigned int millis = boxIoI.getText().getIntValue();
@@ -230,111 +170,23 @@ void DemoEditor::buttonClicked (Button * button)
         std::cout << "Setting Silence Threshold to " << val << " at next memory release/alloc" << std::endl;
         this->processor.aubioOnset.setSilenceThreshold(val);
     }
-   #else
-    if(boxDebounce.hasButton(button))
-    {
-        unsigned int millis = boxDebounce.getText().getIntValue();
-        std::cout << "Setting debounce time to " << millis << " milliseconds" << std::endl;
-
-        processor.bark.setDebounce(millis);
-    }
-    else if(boxThresh.hasButton(button))
-    {
-        float lo = boxThresh.getText1().getFloatValue();
-        float hi = boxThresh.getText2().getFloatValue();
-        std::cout << "Setting thresholds to " << lo << ", " << hi << std::endl;
-
-        processor.bark.setThresh(lo,hi);
-    }
-   #endif
-    else if(cluster.hasButton(button))
-    {
-        std::cout << "cluster pressed" << std::endl;
-        unsigned int numClusters = cluster.getText().getIntValue();
-        processor.knn.autoCluster(numClusters);
-    }
-    else if(&uncluster == button)
-    {
-        std::cout << "uncluster pressed" << std::endl;
-        processor.knn.uncluster();
-    }
     else if(&clearAll == button)
     {
         std::cout << "clearAll pressed" << std::endl;
-        processor.knn.clearAll();
+        this->processor.csvsaver.clearEntries();
+        this->processor.onsetCounterAtomic.store(0);
     }
     else if(write.hasButton(button))
     {
         std::cout << "write pressed" << std::endl;
         std::string path = write.getText().toStdString();
         std::cout << "path " << path << std::endl;
-        processor.knn.writeData(path);
-    }
-    else if(read.hasButton(button))
-    {
-        std::cout << "read pressed" << std::endl;
-        std::string path = read.getText().toStdString();
-        std::cout << "path " << path << std::endl;
-        processor.knn.readData(path);
-    }
-    else if(writeText.hasButton(button))
-    {
-        std::cout << "write Text pressed" << std::endl;
-        std::string path = writeText.getText().toStdString();
-        std::cout << "path " << path << std::endl;
-        processor.knn.writeTextData(path);
-    }
-    else if(readText.hasButton(button))
-    {
-        std::cout << "read Text pressed" << std::endl;
-        std::string path = readText.getText().toStdString();
-        std::cout << "path " << path << std::endl;
-        processor.knn.readTextData(path);
-    }
-    else if(manualCluster.hasButton(button))
-    {
-        /******/
-        /* How it works*/
-        /*
-         * When a string like "0,20,40,60,80" is read, it means that
-         * the number of clusters is 4 (size -1).
-         * Cluster 0 elements go from record 0 to record 19 (next number -1)
-         * Cluster 1 elements go from record 20 to record 39 (next number -1)
-         * Cluster 2 elements go from record 40 to record 59 (next number -1)
-         * Cluster 3 elements go from record 60 to record 79 (next number -1)
-        */
-        /******/
-
-        std::string indexes = manualCluster.getText().toStdString();
-        std::cout << "read the string '" << indexes << "'\n";
-
-        std::vector<std::string> indexesVec = splitString(indexes,',');
-        std::cout << "done the split" << "\n";
-
-        uint32 numClusters = indexesVec.size() -1;
-
-        uint32 clusterIdx = 0;
-        uint32 lowIdx = std::stoi(indexesVec[0]);
-
-        for(size_t i = 1; i < indexesVec.size(); ++i)
-        {
-            std::string s = indexesVec[i];
-            std::cout << "> '" << s << "'\n";
-            uint32 highIdx = std::stoi(s);
-
-
-            std::cout << "> manualCluster(" << numClusters << "," << clusterIdx << "," << lowIdx << "," << highIdx-1 << ")\n";
-            processor.knn.manualCluster(numClusters,clusterIdx,lowIdx,highIdx-1);
-
-            clusterIdx++;
-            lowIdx = highIdx;
-        }
+        this->processor.csvsaver.writeToFile(path,processor.header);
     }
 }
 
 void DemoEditor::updateDataLabels(){
     std::string text = "";
-   #ifdef USE_AUBIO_ONSET
     text += "Using AUBIO ONSET DETECTOR";
     text+=("\nWindow Size: " + std::to_string(processor.aubioOnset.getWindowSize()));
     text+=("\nHopSize: " + std::to_string(processor.aubioOnset.getHopSize()));
@@ -342,30 +194,7 @@ void DemoEditor::updateDataLabels(){
     text+=("\nOnset Method: " + processor.aubioOnset.getStringOnsetMethod());
     text+=("\nOnset Threshold: " + std::to_string(processor.aubioOnset.getOnsetThreshold()));
     text+=("\nOnset Min Inter-Onset Interval: " + std::to_string(processor.aubioOnset.getOnsetMinInterOnsetInterval()));
-   #else
-    std::string sampleRate_s = std::to_string((int)this->mSampleRate);
-    std::string blockSize_s = std::to_string((int)this->mBlockSize);
-    std::string windowSize_s = std::to_string((int)this->processor.bark.getWindowSize());
 
-    text += "Using BARK ONSET DETECTOR\n";
-    text += "Sample rate:  "+sampleRate_s+"\nBlock size:  "+blockSize_s+"\nWindow size:  " +windowSize_s;
-    text += "\nDebug mode: ";
-    text += processor.bark.getDebugMode()?"True":"False";
-    text += "\nSpew mode: ";
-    text += processor.bark.getSpewMode()?"True":"False";
-    text += "\nUse Weights: ";
-    text += processor.bark.getUseWeights()?"True":"False";
-
-    text += "\nDebounce time: ";
-    text += std::to_string(processor.bark.getDebounceTime());
-    text += " millis";
-
-    text += "\nThresholds: ";
-    auto threshs = processor.bark.getThresh();
-    text += std::to_string(threshs.first);
-    text += ", ";
-    text += std::to_string(threshs.second);
-   #endif
     this->dataLabel.setText(text,NotificationType::dontSendNotification);
 
     this->extractorData[0].setText("attackTime\n" + processor.attackTime.getInfoString(),NotificationType::dontSendNotification);
@@ -379,26 +208,28 @@ void DemoEditor::updateDataLabels(){
 
 }
 
+/**
+ * Activate storage module when box entry is selected
+ */
 void DemoEditor::comboBoxChanged(ComboBox* cb)
 {
-    if(cb == &classifierState)
+    if(cb == &storageStateBox)
     {
         switch (cb->getSelectedId()) {
             case 1:
-                processor.classifierState = DemoProcessor::CState::train;
+                processor.storageState.store(DemoProcessor::StorageState::store);
                 break;
             case 2:
-                processor.classifierState = DemoProcessor::CState::classify;
-                break;
-            case 3:
-                processor.classifierState = DemoProcessor::CState::idle;
+                processor.storageState.store(DemoProcessor::StorageState::idle);
                 break;
         }
     }
 }
 
-void DemoEditor::updateKnnLabel(unsigned int match, float distance)
+/**
+ * 
+ */
+void DemoEditor::updateOnsetCounter(unsigned int onsetCounter)
 {
-    this->dispTimbre.setText("Timbre: " + std::to_string(match), NotificationType::dontSendNotification);
-    this->dispDist.setText("Distance: " + std::to_string(distance), NotificationType::dontSendNotification);
+    this->dispInfo.setText("Instances: " + std::to_string(onsetCounter), NotificationType::dontSendNotification);
 }

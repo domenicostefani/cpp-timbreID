@@ -4,6 +4,7 @@
 #include "fftw3.h"
 #include <cmath>
 #include <string>
+#include <stdexcept>
 
 typedef unsigned long int t_binIdx; // 0 to 18,446,744,073,709,551,615
 typedef unsigned short int t_filterIdx;
@@ -225,7 +226,7 @@ void veclog(t_binIdx n, std::vector<float> &input);
 /** DCT-II Computation without any optimization
  * Its the same function as the original tIDLib_cosineTransform of TimbreID
  */
-void unoptimized_discreteCosineTransform(float *output, const float *input, int numFilters)
+inline void unoptimized_discreteCosineTransform(float *output, const float *input, int numFilters)
 {
     float piOverNfilters = M_PI/numFilters; // save multiple divides below
     for(int i=0; i<numFilters; i++)
@@ -240,7 +241,7 @@ void unoptimized_discreteCosineTransform(float *output, const float *input, int 
  * Its the same function as the original tIDLib_cosineTransform of TimbreID.
  * This wrapper accepts std::vectors
  */
-void unoptimized_discreteCosineTransform(std::vector<float> &output, const std::vector<float> &input, int numFilters)
+inline void unoptimized_discreteCosineTransform(std::vector<float> &output, const std::vector<float> &input, int numFilters)
 {
     unoptimized_discreteCosineTransform(&(output[0]), &input[0], numFilters);
 }
