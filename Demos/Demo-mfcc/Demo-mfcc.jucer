@@ -1,42 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="lSTPws" name="Demo-mfcc" projectType="audioplug" jucerVersion="5.4.7"
-              pluginFormats="buildStandalone,buildVST" headerPath="../../../../include&#10;../../../../src&#10;../../../../">
+<JUCERPROJECT id="lSTPws" name="Demo-mfcc" projectType="audioplug" pluginFormats="buildStandalone,buildVST"
+              headerPath="../../../../include&#10;../../../../src&#10;../../../../&#10;~/Develop/aubio/src"
+              displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="erEpC8" name="Demo-mfcc">
     <GROUP id="{B60A5625-0D4C-11B0-A36E-D067C2D64D9E}" name="Source">
-      <GROUP id="{0005FBCA-292B-3938-6AEF-3CE6EED9B456}" name="cpp-timbreID">
-        <GROUP id="{D6709E91-A3A3-7CDF-B4FA-231E5AB1BBE0}" name="include">
-          <FILE id="nyCbRT" name="attackTime.hpp" compile="0" resource="0" file="../../include/attackTime.hpp"/>
-          <FILE id="VihPFO" name="bark.hpp" compile="0" resource="0" file="../../include/bark.hpp"/>
-          <FILE id="BbW9OI" name="bark2freq.hpp" compile="0" resource="0" file="../../include/bark2freq.hpp"/>
-          <FILE id="lsxyDf" name="barkSpec.hpp" compile="0" resource="0" file="../../include/barkSpec.hpp"/>
-          <FILE id="DV8Hye" name="barkSpecBrightness.hpp" compile="0" resource="0"
-                file="../../include/barkSpecBrightness.hpp"/>
-          <FILE id="kYBRBW" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
-          <FILE id="ySH9Cm" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
-          <FILE id="cxs8ky" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
-          <FILE id="OBQHmt" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
-          <FILE id="Mn5kvH" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
-          <FILE id="hcLfAo" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>
-          <FILE id="uRjofh" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
-          <FILE id="qFKLWi" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
-          <FILE id="AnMO1o" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
-          <FILE id="TI00NY" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
-          <FILE id="mttLOm" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
-          <FILE id="gmI4Kg" name="zeroCrossing.hpp" compile="0" resource="0"
-                file="../../include/zeroCrossing.hpp"/>
-        </GROUP>
-        <GROUP id="{1329617A-034C-F879-DEEC-B7699AF8C211}" name="src">
-          <FILE id="jlbzqT" name="bark2freq.cpp" compile="1" resource="0" file="../../src/bark2freq.cpp"/>
-          <FILE id="DvFEUD" name="bin2freq.cpp" compile="1" resource="0" file="../../src/bin2freq.cpp"/>
-          <FILE id="nXOL3m" name="freq2bark.cpp" compile="1" resource="0" file="../../src/freq2bark.cpp"/>
-          <FILE id="X9RGGS" name="freq2bin.cpp" compile="1" resource="0" file="../../src/freq2bin.cpp"/>
-          <FILE id="zZiBDx" name="freq2mel.cpp" compile="1" resource="0" file="../../src/freq2mel.cpp"/>
-          <FILE id="V6EPS9" name="mel2freq.cpp" compile="1" resource="0" file="../../src/mel2freq.cpp"/>
-          <FILE id="lCrhnc" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
-        </GROUP>
-        <FILE id="dubHLh" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
-      </GROUP>
       <FILE id="PqlMJa" name="setParamBox.cpp" compile="1" resource="0" file="Source/setParamBox.cpp"/>
       <FILE id="F92z3x" name="setParamBox.h" compile="0" resource="0" file="Source/setParamBox.h"/>
       <FILE id="iQh2pk" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -47,9 +15,44 @@
             file="Source/PluginEditor.cpp"/>
       <FILE id="e0Moee" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
+    <GROUP id="{7A69805C-E917-6551-E0F0-9B2A21306C57}" name="include">
+      <FILE id="VNA3bJ" name="attackTime.hpp" compile="0" resource="0" file="../../include/attackTime.hpp"/>
+      <FILE id="tZbvSg" name="aubioOnsetWrap.hpp" compile="0" resource="0"
+            file="../../include/aubioOnsetWrap.hpp"/>
+      <FILE id="a6P72M" name="bark.hpp" compile="0" resource="0" file="../../include/bark.hpp"/>
+      <FILE id="Sr0GgH" name="bark2freq.hpp" compile="0" resource="0" file="../../include/bark2freq.hpp"/>
+      <FILE id="NiuHMs" name="barkSpec.hpp" compile="0" resource="0" file="../../include/barkSpec.hpp"/>
+      <FILE id="LrLhBo" name="barkSpecBrightness.hpp" compile="0" resource="0"
+            file="../../include/barkSpecBrightness.hpp"/>
+      <FILE id="epJ1Zy" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
+      <FILE id="QZdaoq" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
+      <FILE id="x7cnbz" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
+      <FILE id="hNa47h" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
+            file="../../include/choc_FIFOReadWritePosition.h"/>
+      <FILE id="MAHkeZ" name="choc_SingleReaderSingleWriterFIFO.h" compile="0"
+            resource="0" file="../../include/choc_SingleReaderSingleWriterFIFO.h"/>
+      <FILE id="qFwf90" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
+      <FILE id="vGGoTT" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
+      <FILE id="AouvCx" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>
+      <FILE id="RkFjyZ" name="knn.hpp" compile="0" resource="0" file="../../include/knn.hpp"/>
+      <FILE id="VXh94z" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
+      <FILE id="bncYNP" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
+      <FILE id="K3otOu" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
+      <FILE id="iKQ1Db" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
+      <FILE id="HQ3A6F" name="tidRTLog.hpp" compile="0" resource="0" file="../../include/tidRTLog.hpp"/>
+      <FILE id="YmXQyI" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
+      <FILE id="iQgJ3y" name="zeroCrossing.hpp" compile="0" resource="0"
+            file="../../include/zeroCrossing.hpp"/>
+    </GROUP>
+    <GROUP id="{860AEDEF-FF24-B644-4686-2504DE823325}" name="src">
+      <FILE id="t6GCup" name="bin2freq.cpp" compile="1" resource="0" file="../../src/bin2freq.cpp"/>
+      <FILE id="lc0cI6" name="freq2bin.cpp" compile="1" resource="0" file="../../src/freq2bin.cpp"/>
+      <FILE id="LG23RC" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
+    </GROUP>
+    <FILE id="fMnta7" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <CODEBLOCKS_LINUX targetFolder="Builds/CodeBlocksLinux" externalLibraries="/usr/local/lib/libfftw3f.a">
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>
@@ -70,7 +73,7 @@
         <MODULEPATH id="juce_audio_devices" path="../../juce"/>
         <MODULEPATH id="juce_audio_basics" path="../../juce"/>
       </MODULEPATHS>
-    </CODEBLOCKS_LINUX>
+    </LINUX_MAKE>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>

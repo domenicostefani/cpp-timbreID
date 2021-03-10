@@ -1,3 +1,3 @@
 #!/bin/sh
-scp $1 root@elk-pi.local:/home/mind/$2/
+scp $1 root@dom-elk-pi.local:/home/mind/$2/
 

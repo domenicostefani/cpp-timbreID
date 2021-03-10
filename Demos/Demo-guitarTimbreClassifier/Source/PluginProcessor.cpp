@@ -237,7 +237,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 
     if (timeAtBlockStart)   // If timeAtBlockStart was initialized this round, we are computing and logging processBlock Duration
     {
-        snprintf(message,sizeof(message),"block nr %d processed",logProcessblock_fixedCounter);
+        snprintf(message,sizeof(message),"block nr %lld processed",logProcessblock_fixedCounter);
         rtlogger.logInfo(message,timeAtBlockStart,Time::Time::getHighResolutionTicks());
         timeAtBlockStart = 0;
     }
@@ -319,14 +319,14 @@ void DemoProcessor::onsetDetectedRoutine ()
    #endif
 
     int prediction = result.first;
-    int confidence = result.second;
+    float confidence = result.second;
 
     /** LOG CLASSIFICATION RESULTS AND TIME **/
     if (VERBOSERES)
     {
         snprintf(message,sizeof(message),"Result: Predicted class %d with confidence %f",prediction,confidence);
         rtlogger.logInfo(message);
-        snprintf(message,sizeof(message),"Classification took %d us or %d ms", \
+        snprintf(message,sizeof(message),"Classification took %ld us or %ld ms", \
             std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
             std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
         rtlogger.logInfo(message);

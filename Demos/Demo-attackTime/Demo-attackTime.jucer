@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="fuFZpk" name="Demo-attackTime" projectType="audioplug" jucerVersion="5.4.7"
-              headerPath="../../../../include&#10;../../../../src&#10;../../../../"
-              postExportShellCommandPosix="codeblocks ~/Develop/cpp-timbreID/Demos/Demo-attackTime/Builds/CodeBlocksLinux/Demo-attackTime.cbp &amp;">
+<JUCERPROJECT id="fuFZpk" name="Demo-attackTime" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
+              postExportShellCommandPosix="codeblocks ~/Develop/cpp-timbreID/Demos/Demo-attackTime/Builds/CodeBlocksLinux/Demo-attackTime.cbp &amp;"
+              displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="MSjfPV" name="Demo-attackTime">
     <GROUP id="{5EF5CBA5-A743-D893-9A9B-D07428584B57}" name="Source">
-      <FILE id="CUzod5" name="SetParamBox.cpp" compile="1" resource="0" file="../../../../../Develop/cpp-timbreID/Demos/Demo-attackTime/Source/SetParamBox.cpp"/>
-      <FILE id="LImQ4K" name="SetParamBox.h" compile="0" resource="0" file="../../../../../Develop/cpp-timbreID/Demos/Demo-attackTime/Source/SetParamBox.h"/>
+      <FILE id="vG7BQv" name="SetParamBox.h" compile="0" resource="0" file="Source/SetParamBox.h"/>
+      <FILE id="RDnx0d" name="SetParamBox.cpp" compile="1" resource="0" file="Source/SetParamBox.cpp"/>
       <FILE id="VMIqAw" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="mCGW4Y" name="PluginProcessor.h" compile="0" resource="0"
@@ -15,30 +15,65 @@
             file="Source/PluginEditor.cpp"/>
       <FILE id="CRVKiu" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
+    <GROUP id="{3A9CD56C-28B0-F3C5-9E6A-42FDFEC3E071}" name="include">
+      <FILE id="Kcr65C" name="attackTime.hpp" compile="0" resource="0" file="../../include/attackTime.hpp"/>
+      <FILE id="ToiQ1O" name="aubioOnsetWrap.hpp" compile="0" resource="0"
+            file="../../include/aubioOnsetWrap.hpp"/>
+      <FILE id="eHpTJI" name="bark.hpp" compile="0" resource="0" file="../../include/bark.hpp"/>
+      <FILE id="bO1fCu" name="bark2freq.hpp" compile="0" resource="0" file="../../include/bark2freq.hpp"/>
+      <FILE id="wprH2J" name="barkSpec.hpp" compile="0" resource="0" file="../../include/barkSpec.hpp"/>
+      <FILE id="HmTJMf" name="barkSpecBrightness.hpp" compile="0" resource="0"
+            file="../../include/barkSpecBrightness.hpp"/>
+      <FILE id="yBVtMw" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
+      <FILE id="sdz0yr" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
+      <FILE id="XlHC0d" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
+      <FILE id="bWQ7Qd" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
+            file="../../include/choc_FIFOReadWritePosition.h"/>
+      <FILE id="ArfyNH" name="choc_SingleReaderSingleWriterFIFO.h" compile="0"
+            resource="0" file="../../include/choc_SingleReaderSingleWriterFIFO.h"/>
+      <FILE id="umv3F1" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
+      <FILE id="NTTmlJ" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
+      <FILE id="DvHqrc" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>
+      <FILE id="F26YAn" name="knn.hpp" compile="0" resource="0" file="../../include/knn.hpp"/>
+      <FILE id="YFwEIx" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
+      <FILE id="BtdAGr" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
+      <FILE id="TvsQpX" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
+      <FILE id="cYPYMH" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
+      <FILE id="umC8z6" name="tidRTLog.hpp" compile="0" resource="0" file="../../include/tidRTLog.hpp"/>
+      <FILE id="weKPIY" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
+      <FILE id="qNnmjC" name="zeroCrossing.hpp" compile="0" resource="0"
+            file="../../include/zeroCrossing.hpp"/>
+    </GROUP>
+    <GROUP id="{9DDD07CF-2F16-3C58-B72E-79C780531998}" name="src">
+      <FILE id="t3R0uf" name="bin2freq.cpp" compile="1" resource="0" file="../../src/bin2freq.cpp"/>
+      <FILE id="wFu26A" name="freq2bin.cpp" compile="1" resource="0" file="../../src/freq2bin.cpp"/>
+      <FILE id="lHExUQ" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
+    </GROUP>
+    <FILE id="JGME1k" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <CODEBLOCKS_LINUX targetFolder="Builds/CodeBlocksLinux">
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_audio_basics" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../../../../JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../juce"/>
+        <MODULEPATH id="juce_gui_extra" path="../../juce"/>
+        <MODULEPATH id="juce_gui_basics" path="../../juce"/>
+        <MODULEPATH id="juce_graphics" path="../../juce"/>
+        <MODULEPATH id="juce_events" path="../../juce"/>
+        <MODULEPATH id="juce_data_structures" path="../../juce"/>
+        <MODULEPATH id="juce_cryptography" path="../../juce"/>
+        <MODULEPATH id="juce_core" path="../../juce"/>
+        <MODULEPATH id="juce_audio_utils" path="../../juce"/>
+        <MODULEPATH id="juce_audio_processors" path="../../juce"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../juce"/>
+        <MODULEPATH id="juce_audio_formats" path="../../juce"/>
+        <MODULEPATH id="juce_audio_devices" path="../../juce"/>
+        <MODULEPATH id="juce_audio_basics" path="../../juce"/>
       </MODULEPATHS>
-    </CODEBLOCKS_LINUX>
+    </LINUX_MAKE>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
