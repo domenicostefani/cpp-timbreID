@@ -104,17 +104,18 @@ public:
         this->sampleRate = sampleRate;
         resizeBuffer();
         rtlogger.logInfo("Preparing onset detector");
-        const bool VERBOSE = false;
+        const bool VERBOSE = true;
 
         o = new_aubio_onset (this->getStringMethod().c_str(), (uint_t)this->analysisWindowSize, this->hopSize, (uint_t)sampleRate);
         if (o == NULL)
-        {
             throw std::logic_error("Aubio Onset initialization failed");
-        }
 
         if (onset_threshold != 0.) { aubio_onset_set_threshold (o, onset_threshold); }
         if (silence_threshold != -90.) { aubio_onset_set_silence (o, silence_threshold); }
         if (onset_minioi != 0.) { aubio_onset_set_minioi_s (o, onset_minioi); }
+
+        if (this->doSetAdaptiveWhitening)
+            aubio_onset_set_awhitening(o, this->adaptiveWhitening);
 
         if(VERBOSE)
         {
@@ -128,6 +129,7 @@ public:
             rtlogger.logValue("threshold: ",aubio_onset_get_threshold(o));
             rtlogger.logValue("awhitening: ",aubio_onset_get_awhitening(o));
             rtlogger.logValue("compression ",aubio_onset_get_compression(o));
+            rtlogger.logValue("minioi: ",aubio_onset_get_minioi_s(o));
         }
 
         onset_fvec = new_fvec (1);
@@ -171,40 +173,15 @@ public:
         storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
 
-    unsigned int getHopSize()
-    {
-        return this->hopSize;
-    }
-
-    SampleType getSilenceThreshold()
-    {
-        return this->silence_threshold;
-    }
-
-    OnsetMethod getOnsetMethod()
-    {
-        return this->getOnsetMethod;
-    }
-
-    std::string getStringOnsetMethod()
-    {
-        return getStringMethod();
-    }
-
-    SampleType getOnsetThreshold()
-    {
-        return this->onset_threshold;
-    }
-
-    SampleType getOnsetMinInterOnsetInterval()
-    {
-        return this->onset_minioi;
-    }
-
-    unsigned long int getWindowSize()
-    {
-        return this->analysisWindowSize;
-    }
+    unsigned long int getWindowSize()          { return this->analysisWindowSize;                          }
+    unsigned int getHopSize()                  { return this->hopSize;                                     }
+    SampleType getSilenceThreshold()           { return (SampleType) aubio_onset_get_silence(o);           }
+    OnsetMethod getOnsetMethod()               { return this->getOnsetMethod;                              }
+    std::string getStringOnsetMethod()         { return getStringMethod();                                 }
+    SampleType getOnsetThreshold()             { return (SampleType) aubio_onset_get_threshold(o);         }
+    SampleType getOnsetMinInterOnsetInterval() { return (SampleType) aubio_onset_get_minioi_s(o);            }
+    bool getAdaptiveWhitening()                { return aubio_onset_get_awhitening(o) == 1 ? true : false; }
+    SampleType getCompression()                { return (SampleType) aubio_onset_get_compression(o);       }
 
     /**
      * Return a pointer to the tid::RealTimeLogger used, so that log Messages
@@ -264,6 +241,11 @@ public:
     void setOnsetMinioi(float onset_minioi)
     {
         this->onset_minioi = onset_minioi;
+    }
+    void setAdaptiveWhitening(bool useAdaptiveWhitening)
+    {
+        this->adaptiveWhitening = useAdaptiveWhitening ? 1 : 0;
+        this->doSetAdaptiveWhitening = true;
     }
 
 private:
@@ -400,6 +382,8 @@ private:
     OnsetMethod onsetMethod = OnsetMethod::defaultMethod;
     smpl_t onset_threshold = 0.0; // will be set if != 0.
     smpl_t onset_minioi = 0.0; // will be set if != 0.
+    bool doSetAdaptiveWhitening = false;
+    uint_t adaptiveWhitening = 0;
 
     std::vector<SampleType> signalBuffer;
 

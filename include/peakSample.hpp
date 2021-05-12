@@ -92,7 +92,7 @@ public:
     }
     //==============================================================================
 
-    std::pair<float, unsigned long int> compute()
+    void compute(float &_peak, unsigned long int &_peakIdx)
     {
        #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
@@ -114,19 +114,30 @@ public:
 
         jassert(this->analysisBuffer.size() == this->analysisWindowSize);
 
-    	float peak = -FLT_MAX;
-    	unsigned long int peakIdx = ULONG_MAX;
+    	_peak = -FLT_MAX;
+    	_peakIdx = ULONG_MAX;
 
         for(int i = 0; i < analysisWindowSize; ++i)
     	{
     		float thisSample = fabs(this->analysisBuffer[i]);
-    		if(thisSample > peak)
+    		if(thisSample > _peak)
     		{
-    			peak = thisSample;
-    			peakIdx = i;
+    			_peak = thisSample;
+    			_peakIdx = i;
     		}
     	}
+    }
 
+    /**
+     * \deprecated
+     * Kept for compatibility, probably bad in RT context
+     * TODO: check
+    */
+    std::pair<float, unsigned long int> compute()
+    {
+        float peak;
+        unsigned long int peakIdx;
+        this->compute(peak,peakIdx);
         return std::make_pair(peak,peakIdx);
     }
 
