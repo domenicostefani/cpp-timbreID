@@ -194,6 +194,8 @@ void DemoEditor::updateDataLabels(){
     text+=("\nOnset Method: " + processor.aubioOnset.getStringOnsetMethod());
     text+=("\nOnset Threshold: " + std::to_string(processor.aubioOnset.getOnsetThreshold()));
     text+=("\nOnset Min Inter-Onset Interval: " + std::to_string(processor.aubioOnset.getOnsetMinInterOnsetInterval()));
+    std::string awstate = processor.aubioOnset.getAdaptiveWhitening() ? "enabled" : "disabled";
+    text+=("\nAdaptive Whitening: " + awstate);
 
     this->dataLabel.setText(text,NotificationType::dontSendNotification);
 

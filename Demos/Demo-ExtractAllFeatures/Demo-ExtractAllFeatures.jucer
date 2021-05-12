@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="JyViEW" name="Demo-ExtractAllFeatures" projectType="audioplug"
-              jucerVersion="5.4.7" headerPath="../../../../include&#10;../../../../src&#10;../../../../&#10;/home/domenico/Develop/aubio/src"
-              pluginFormats="buildStandalone,buildVST">
+              headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
+              pluginFormats="buildStandalone,buildVST" displaySplashScreen="1"
+              jucerFormatVersion="1">
   <MAINGROUP id="tzTZDm" name="Demo-ExtractAllFeatures">
     <GROUP id="{7996365D-684C-B708-4EB3-AA2C261B0620}" name="Source">
       <GROUP id="{1426EEFF-98BF-22C2-B04D-C72A58DBF2E2}" name="cpp-timbreID">
@@ -58,7 +59,7 @@
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f&#10;aubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/aubio/build/src/&#10;~/Develop/aubio/build/src-aarch64/"/>
-        <CONFIGURATION isDebug="1" name="Release" libraryPath="~/Develop/aubio/build/src/&#10;~/Develop/aubio/build/src-aarch64/"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/aubio/build/src/&#10;~/Develop/aubio/build/src-aarch64/"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../JUCE/modules"/>

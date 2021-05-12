@@ -36,29 +36,24 @@ public:
     //===================== ONSET DETECTION PARAMS =============================
 
    #ifdef USE_AUBIO_ONSET
-    // OLD VALUES (BAD results)
-    // const unsigned int AUBIO_WINDOW_SIZE = 1024;
-    // const unsigned int AUBIO_HOP_SIZE = 128;
-    // const float ONSET_THRESHOLD = 0.0f;
-    // const float ONSET_MINIOI = 0.1f;  //200 ms debounce
-    // const float SILENCE_THRESHOLD = -48.0f;
-
     //
     // More about the parameter choice at
-    // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report-aubioonset-perfomanceanalysis.pdf
+    // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report/complessive/Aubio_Study.pdf
     //
-    const unsigned int AUBIO_WINDOW_SIZE = 512;
+    const unsigned int AUBIO_WINDOW_SIZE = 256;
     const unsigned int AUBIO_HOP_SIZE = 64;
-    const float ONSET_THRESHOLD = 1.6f;
+    const float ONSET_THRESHOLD = 1.21f;
     const float ONSET_MINIOI = 0.02f;  //20 ms debounce
-    const float SILENCE_THRESHOLD = -48.0f;
+    const float SILENCE_THRESHOLD = -53.0f;
+    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::mkl;
+    const bool DISABLE_ADAPTIVE_WHITENING = true; // remember to implement in initialization module
    #else
     const unsigned int BARK_WINDOW_SIZE = 1024;
     const unsigned int BARK_HOP_SIZE = 128;
    #endif
 
     //==================== FEATURE EXTRACTION PARAMS ===========================
-    const unsigned int FEATUREEXT_WINDOW_SIZE = 1024;
+    const unsigned int FEATUREEXT_WINDOW_SIZE = 704; // 11 Blocks of 64samples, 14.66ms
     const float BARK_SPACING = 0.5;
     const float BARK_BOUNDARY = 8.5;
     const float MEL_SPACING = 100;
@@ -66,7 +61,6 @@ public:
 
     //========================= ONSET DETECTION ================================
    #ifdef USE_AUBIO_ONSET
-    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::defaultMethod;
     tid::aubio::Onset<float> aubioOnset{AUBIO_WINDOW_SIZE,
                                         AUBIO_HOP_SIZE,
                                         ONSET_THRESHOLD,
@@ -88,28 +82,43 @@ public:
     //======================== FEATURE EXTRACTION ==============================
     tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
     tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
-    // tid::AttackTime<float> attackTime;
-    // tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
-    //                                                   BARK_SPACING,
-    //                                                   BARK_BOUNDARY};
-    // tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    // tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
-    // tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
-    // tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
+    tid::AttackTime<float> attackTime;
+    tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
+                                                      BARK_SPACING,
+                                                      BARK_BOUNDARY};
+    tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
+    tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
+    tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
+    tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
 
     /**    Feature Vector    **/
-    const unsigned int VECTOR_SIZE = 110; // Number of features (preallocation)
+    const unsigned int VECTOR_SIZE = 190; // Number of features (preallocation)
     std::vector<float> featureVector;     // Vector that is preallocated
+    // attack time
+    unsigned long int rPeakSampIdx, rAttackStartIdx; 
+    float rAttackTime;
+    // barkSpec
+    const int BARKSPEC_RES_SIZE = 50;
+    std::vector<float> barkSpecRes;
+    // bfcc
     const int BFCC_RES_SIZE = 50;
     std::vector<float> bfccRes;
-    const int CEPSTRUM_RES_SIZE = 513;
+    // cepstum
+    const int CEPSTRUM_RES_SIZE = 353; // WindowSize/2+1 (It would be 513 with 1025
     std::vector<float> cepstrumRes;
-    void computeFeatureVector();          // Compose vector
+    // mfcc
+    const int MFCC_RES_SIZE = 38;
+    std::vector<float> mfccRes;
+    // peak sample    
+    float peak;
+    unsigned long int peakIdx;
+    // Compose vector
+    void computeFeatureVector();
 
     //========================== CLASSIFICATION ================================
     ClassifierPtr timbreClassifier; // Tensorflow interpreter
     const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
-    const int N_OUTPUT_CLASSES = 5;
+    const int N_OUTPUT_CLASSES = 8;
     std::vector<float> classificationOutputVector;
 
     //============================== OTHER =====================================

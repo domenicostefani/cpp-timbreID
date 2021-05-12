@@ -16,7 +16,7 @@ public:
     /** Prepare the timer to start by setting it to a prepare state */
     void prepare(int sampleRate, int blockSize);
     /** Start the timer */
-    void start(double delay_ms);
+    float start(double delay_ms);
     /** Return true if the timer is counting */
     bool isStarted() { return state == TimerState::STARTED; }
     /** Return true if the timer is not started or in prepare state */
@@ -28,7 +28,8 @@ public:
 private:
     TimerState state;
     int64 timerCounter = 0,deadline = 0;
-    int sampleRate = 0, blockSize = 0;
+    int blockSize = 0;
+    double sampleRate = 0.0f;
 };
 
 inline void PostOnsetTimer::reset()
@@ -48,7 +49,7 @@ inline void PostOnsetTimer::prepare(int sampleRate, int blockSize)
     this->sampleRate = sampleRate;
 }
 
-inline void PostOnsetTimer::start(double delay_ms)
+inline float PostOnsetTimer::start(double delay_ms)
 {
     if ((sampleRate <= 0) || (blockSize <= 0))
         throw std::logic_error("call the prepare function with positive parameters before using the timer");
@@ -61,6 +62,7 @@ inline void PostOnsetTimer::start(double delay_ms)
     // Compute deadline in number of blocks
     deadline = (delay_ms / 1000.0) * sampleRate / blockSize;
     state = TimerState::STARTED;
+    return deadline * blockSize / sampleRate *1000;
 }
 
 inline bool PostOnsetTimer::isExpired()

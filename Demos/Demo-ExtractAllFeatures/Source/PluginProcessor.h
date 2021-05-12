@@ -20,7 +20,7 @@
 #include "csv_saver.h"
 
 #define LOG_LATENCY
-
+#define DO_LOG_TO_FILE
 /**
 */
 class DemoProcessor : public AudioProcessor,
@@ -32,13 +32,15 @@ public:
     //===================== ONSET DETECTION PARAMS =============================
 
     // More about the parameter choice at
-    // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report-aubioonset-perfomanceanalysis.pdf
+    // https://github.com/domenicostefani/aubioonset-performanceanalysis/blob/main/report/complessive/Aubio_Study.pdf
     //
-    const unsigned int AUBIO_WINDOW_SIZE = 512;
+    const unsigned int AUBIO_WINDOW_SIZE = 256;
     const unsigned int AUBIO_HOP_SIZE = 64;
-    const float ONSET_THRESHOLD = 1.6f;
+    const float ONSET_THRESHOLD = 1.21f;
     const float ONSET_MINIOI = 0.02f;  //20 ms debounce
-    const float SILENCE_THRESHOLD = -45.0f;
+    const float SILENCE_THRESHOLD = -53.0f;
+    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::mkl;
+    const bool DISABLE_ADAPTIVE_WHITENING = true; // remember to implement in initialization module
 
     //==================== FEATURE EXTRACTION PARAMS ===========================
     const unsigned int FEATUREEXT_WINDOW_SIZE = 704; // 11 Blocks of 64samples, 14.66ms
@@ -47,7 +49,6 @@ public:
     const float MEL_SPACING = 100;
 
     //========================= ONSET DETECTION ================================
-    const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::specdiff;
     tid::aubio::Onset<float> aubioOnset{AUBIO_WINDOW_SIZE,
                                         AUBIO_HOP_SIZE,
                                         ONSET_THRESHOLD,
@@ -117,6 +118,7 @@ public:
 
     std::vector<tid::RealTimeLogger*> loggerList = {&rtlogger, aubioOnset.getLoggerPtr()};
 
+   #ifdef DO_LOG_TO_FILE
     std::unique_ptr<FileLogger> fileLogger; // Logger that writes RT entries to file SAFELY (Outside rt thread
     std::string LOG_PATH = "/tmp/";
     std::string LOG_FILENAME = "featureExtractor";
@@ -172,7 +174,7 @@ public:
 
     /** Instantiate polling timer and pass callback **/
     PollingTimer pollingTimer{[this]{logPollingRoutine();}};
-
+   #endif
 
 
 

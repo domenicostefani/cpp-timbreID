@@ -25,7 +25,9 @@
 #include "PluginEditor.h"
 
 #define MONO_CHANNEL 0
-#define POST_ONSET_DELAY_MS 1.33
+#define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
+                                 // In the case of 6.96ms at 48000Hz and 64 samples blocksizes, the closes delay is 
+                                 // 6.66ms, corresponding to 5 audio block periods
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
 //==============================================================================
@@ -52,14 +54,17 @@ DemoProcessor::DemoProcessor()
     mfccRes.resize(MFCC_RES_SIZE);
 
     attackTime.setMaxSearchRange(20);
-
+   #ifdef DO_LOG_TO_FILE
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
+   #endif
 }
 
 DemoProcessor::~DemoProcessor(){
+   #ifdef DO_LOG_TO_FILE
     /** Log last queued messages before closing **/
     logPollingRoutine();
+   #endif
 }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -68,6 +73,8 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     rtlogger.logInfo("+  Setting up onset detector");
 
     /** INIT ONSET DETECTOR MODULE**/
+    if (DISABLE_ADAPTIVE_WHITENING)
+        aubioOnset.setAdaptiveWhitening(false);
     aubioOnset.prepare(sampleRate,samplesPerBlock);
 
     /** INIT POST ONSET TIMER **/
@@ -205,9 +212,12 @@ void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
     {
         this->onsetMonitorState.exchange(true);
        #ifdef DO_DELAY_ONSET
-        rtlogger.logValue("Start waiting for ",(float)POST_ONSET_DELAY_MS,"ms");
         if(postOnsetTimer.isIdle())
-            postOnsetTimer.start(POST_ONSET_DELAY_MS);
+        {
+            float actualDelayMs = postOnsetTimer.start(POST_ONSET_DELAY_MS);
+            rtlogger.logValue("Start waiting for ",actualDelayMs,"ms");
+            rtlogger.logValue("(Closes approximation to ",(float)POST_ONSET_DELAY_MS,"ms in block sizes)");
+        }
        #else
         onsetDetectedRoutine();
        #endif
