@@ -131,15 +131,16 @@ public:
 
        #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        uint32 bangSample = roundf((currentTime / 1000.0) * this->sampleRate);
-        if (bangSample >= this->blockSize)
-            bangSample = this->blockSize - 1;
+        uint32 offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+        if (offsetSample >= this->blockSize)
+            offsetSample = this->blockSize - 1;
        #else
-        uint32 bangSample = 0;
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
-        // construct analysis window using bangSample as the end of the window
-        for (unsigned long int i = 0, j = bangSample; i < this->analysisWindowSize; ++i, ++j)
+        // construct analysis window using offsetSample as the end of the window
+        for (unsigned long int i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
             this->fftwInputVector[i] = this->signalBuffer[j];
 
         switch(this->windowFunction)

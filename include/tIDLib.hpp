@@ -35,6 +35,31 @@ typedef unsigned int t_instanceIdx;
  */
 #define ASYNC_FEATURE_EXTRACTION false
 
+#if !ASYNC_FEATURE_EXTRACTION
+/**
+ * MANUAL SYNC OFFSET for FEATURE EXTRACTION VECTOR
+ * If the block offset computation for precise computation interval is disabled,
+ * here the fixed offset can be specified.
+ * 
+ * |<------------------- Signal buffer ------------------->|
+ * 
+ *                                                      /----> audio_block size (This is the last block stored)
+ *  <------------- analyis window size -------------> <-*->    
+ * |-------------------------------------------------|-----|  *  |
+ *                                                            \--> Here computation is called (somewhere inside the new audio block)
+ * 
+ * Different feature computation vectors used, depending on manual offset:
+ * 
+ * |<------ computation buff. with offset 0.0 ------>|
+ *       |<------ computation buff. with offset 1.0 ------>|
+ *    |<------ computation buff. with offset 0.5 ------>|
+*/
+namespace tIDLib
+{
+    static const double FEATURE_EXTRACTION_OFFSET = 1.0;
+}
+#endif
+
 // choose either FFTW_MEASURE or FFTW_ESTIMATE here.
 #define FFTWPLANNERFLAG (FFTW_ESTIMATE | FFTW_CONSERVE_MEMORY)
 

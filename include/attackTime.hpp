@@ -100,17 +100,18 @@ public:
         // if(currentTime > blockSize*sampleRate)
         //     throw std::logic_error("Clock measure may have overflowed");
 
-        uint32 bangSample = roundf((currentTime / 1000.0) * this->sampleRate);
+        uint32 offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
 
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
-        if(bangSample >= this->blockSize)
-            bangSample = this->blockSize - 1;
-
-        // took a while to get this calculation right, but it seems correct now. remember that bangSample is always between 0 and 63 (or blockSize-1), and finding startSample within x_signalBuffer involves a few other steps. (wbrent original comment)
-        unsigned long int startSample = (this->maxSearchRange + this->blockSize) - bangSample - analysisWindowSize - 1;
+        if(offsetSample >= this->blockSize)
+            offsetSample = this->blockSize - 1;
        #else
-        unsigned long int startSample = 0;
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        uint32 offsetSample = (unsigned long int)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
+
+        // took a while to get this calculation right, but it seems correct now. remember that offsetSample is always between 0 and 63 (or blockSize-1), and finding startSample within x_signalBuffer involves a few other steps. (wbrent original comment)
+        unsigned long int startSample = (this->maxSearchRange + this->blockSize) - offsetSample - analysisWindowSize - 1;
 
         // construct analysis window
         for(unsigned long int i = 0, j = startSample; i < analysisWindowSize; ++i, ++j)
