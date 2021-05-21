@@ -15,11 +15,23 @@ typedef unsigned int t_instanceIdx;
 
 /** ASYNC_FEATURE_EXTRACTION
  * If true, this enables the computation of the time interval between the last
- * buffering operation and  any feature exraction method call, to assess where
- * this async call falls (inside the current audio block)
- * Since this currently uses system time IT SHOULD NOT WORK with offline use
- * of the plugin (calling audio callback faster than real time)
- * For this reason the default value is false
+ * buffering operation and  any feature exraction method call.
+ * This allows each module to compute where the call to the compute metods falls,
+ * inside the current audio block (in samples)
+ * 
+ * This value in samples is used to offset the beginning of the signal buffer 
+ * slice on which the features are computed.
+ * The final computaton slice obtained finishes exacly one audio_block_size before
+ * the current time, which causes the beginning to be always at the same time in 
+ * relation to the time of computation.
+ * 
+ * This should remain disabled (FALSE) for the following reasons:
+ *  - Modules currently use juce::Time::currentTimeMillis() which IS NOT A STEADY CLOCK (https://forum.juce.com/t/time-currenttimemillis-goes-back-in-time-sometimes/16440/6)
+ *    Time::getMillisecondCounter() or Time::getMillisecondCounterHiRes() should be used instead (AT LEAST, check next bullet point).
+ *  - IT IS ONLY FOR REAL TIME : If it is needed to run the modules quicker than real time (render in DAW), even JUCE's steady timers 
+ *                               should be avoided since time intervals lose their relationship with samples in offline contexts.
+ *  - Small block sizes and high samplerates reduce the relevance of this nuance (64samples at 48kHz is ~1.33ms), rendering this less useful.
+ *  * More: juce::Time::currentTimeMillis() causes catastrophic failure on the real-time OS Xenomai (Elk Audio OS).
  */
 #define ASYNC_FEATURE_EXTRACTION false
 
