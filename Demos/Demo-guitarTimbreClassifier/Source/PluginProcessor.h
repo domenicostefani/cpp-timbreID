@@ -17,14 +17,82 @@
 
 #include "liteclassifier.h"
 #include "postOnsetTimer.h"
+#include "ClassifierFifoQueue.h"    // Lock-free queue that can store whole std::array elements
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
 // #define DEBUG_WHICH_CHANNEL
 
-//==============================================================================
-/**
-*/
+#define PARALLEL_CLASSIFICATION // If defined, classification is performed on a separate thread
+
+
+namespace CData{
+
+const std::size_t N_FEATURES = 190;       // Number of audio features
+const int N_CLASSES = 8;                  // Number of classes for the neural network
+const int CLASSIFICATION_FIFO_BUFFER = 5; // Size of the ring buffers
+
+#ifdef PARALLEL_CLASSIFICATION
+
+struct ClassificationData{
+    // In and Out buffers for parallel classification
+    ClassifierQueue<N_FEATURES,CLASSIFICATION_FIFO_BUFFER> featureBuffer;   // Audio thread --(featurevector)-> Classification thread
+    ClassifierQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER> predictionBuffer;  // Audio thread <--(predictions)--- Classification thread
+    // Element types for both queues
+    using features_t = ClassifierQueue<N_FEATURES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
+    using predictions_t = ClassifierQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
+    // Run flag, to start and stop the classification thread
+    std::atomic<bool> run;
+    std::atomic<int> i;
+};
+
+class ClassificationThread : public juce::Thread
+{
+public:
+
+    ClassificationThread (ClassificationData* cdata, ClassifierPtr* tclassifier)
+        : Thread ("ClassificationThread")
+    {
+        this->cdata = cdata;
+        this->tclassifier = tclassifier;
+        startThread (6);
+    }
+
+    ~ClassificationThread() override
+    {
+        stopThread (2000); // allow the thread 2 seconds to stop cleanly - should be plenty of time.
+    }
+
+    void run() override
+    {
+        while (! threadShouldExit())
+        {
+            if(cdata == nullptr) throw std::logic_error("Invalid ClassificationData pointer;");
+            if(tclassifier == nullptr) throw std::logic_error("Invalid timbreClassifier pointer;");
+
+
+            static ClassificationData::features_t readFeatures;
+            if (cdata->featureBuffer.read(readFeatures)) // Read from feature queue
+            {
+                static ClassificationData::predictions_t towritePredictions;
+                classify(*tclassifier,readFeatures,towritePredictions);
+                cdata->predictionBuffer.write(towritePredictions);
+            }
+            
+            wait(1); // Wait to avoid starving (Busy waiting)
+        }
+    }
+private:
+    ClassificationData* cdata = nullptr;
+    ClassifierPtr* tclassifier = nullptr;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ClassificationThread)
+};
+
+#endif
+
+}
+
+
 class DemoProcessor : public AudioProcessor,
 #ifdef USE_AUBIO_ONSET
                       public tid::aubio::Onset<float>::Listener
@@ -92,8 +160,7 @@ public:
     tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
 
     /**    Feature Vector    **/
-    const unsigned int VECTOR_SIZE = 190; // Number of features (preallocation)
-    std::vector<float> featureVector;     // Vector that is preallocated
+    std::array<float, CData::N_FEATURES> featureVector;
     // attack time
     unsigned long int rPeakSampIdx, rAttackStartIdx; 
     float rAttackTime;
@@ -116,10 +183,24 @@ public:
     void computeFeatureVector();
 
     //========================== CLASSIFICATION ================================
-    ClassifierPtr timbreClassifier; // Tensorflow interpreter
+    static ClassifierPtr timbreClassifier; // Tensorflow interpreter
     const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
-    const int N_OUTPUT_CLASSES = 8;
-    std::vector<float> classificationOutputVector;
+    std::array<float, CData::N_CLASSES> classificationOutputVector;
+
+
+   #ifdef PARALLEL_CLASSIFICATION
+    // Classification is performed on a separate thread
+    // Feature vectors are fed to the classifier through a lock-free queue
+    // Classification result vectors are fed back to the audio thread through a second lock-free queue
+
+    CData::ClassificationThread classificationThread;
+    static CData::ClassificationData classificationData;
+
+    void startClassifierThread();
+    void stopClassifierThread();
+   #endif
+    void classificationFinished();
+
 
     //============================== OTHER =====================================
     /**    Debugging    */
@@ -216,17 +297,6 @@ private:
     //============================== OUTPUT ====================================
     WavetableSine sinewt;   // Simple wavetable sine synth with short decay
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
-
-
-
-
-
-
-
-
-
-
-
 
 public:
     //=========================== Juce System Stuff ============================

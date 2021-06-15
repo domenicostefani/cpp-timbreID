@@ -22,6 +22,11 @@
                                  // 6.66ms, corresponding to 5 audio block periods
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
+#ifdef PARALLEL_CLASSIFICATION
+ CData::ClassificationData DemoProcessor::classificationData;
+#endif
+ClassifierPtr DemoProcessor::timbreClassifier = nullptr;
+
 //==============================================================================
 DemoProcessor::DemoProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -33,6 +38,10 @@ DemoProcessor::DemoProcessor()
                        .withOutput ("Output", AudioChannelSet::mono(), true)
                      #endif
                        )
+#endif
+#ifdef PARALLEL_CLASSIFICATION
+    ,
+    classificationThread(&DemoProcessor::classificationData,&DemoProcessor::timbreClassifier)
 #endif
 {
     rtlogger.logInfo("Initializing Onset detector");
@@ -51,8 +60,7 @@ DemoProcessor::DemoProcessor()
     bark.addListener(this);
    #endif
 
-    /** ALLOCATE MEMORY FOR FEATURE VECTOR AND TMP VECTORS **/
-    featureVector.resize(VECTOR_SIZE);
+    /** ALLOCATE MEMORY FOR TMP VECTORS **/
     bfccRes.resize(BFCC_RES_SIZE);
     cepstrumRes.resize(CEPSTRUM_RES_SIZE);
 
@@ -60,17 +68,15 @@ DemoProcessor::DemoProcessor()
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
     snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH.c_str());
     rtlogger.logInfo(message);
-    classificationOutputVector.resize(N_OUTPUT_CLASSES,0.0f);
-    this->timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
+    DemoProcessor::timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
     rtlogger.logInfo("Classifier object istantiated");
-
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
 }
 
 DemoProcessor::~DemoProcessor(){
-    /** Free classifier memory **/
-    deleteClassifier(this->timbreClassifier);
+    // /** Free classifier memory **/
+    deleteClassifier(DemoProcessor::timbreClassifier);
     rtlogger.logInfo("Classifier object deleted");
 
     /** Log last queued messages before closing **/
@@ -184,17 +190,11 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         logProcessblock_counter = 0;
         timeAtBlockStart = Time::Time::getHighResolutionTicks();
     }
-    int64 timeAtClassificationStart = 0;
    #endif
 
     /** EXTRACT FEATURES AND CLASSIFY IF POST ONSET TIMER IS EXPIRED **/
     if(postOnsetTimer.isExpired())
-    {
-       #ifdef MEASURE_COMPUTATION_LATENCY
-        timeAtClassificationStart = Time::Time::getHighResolutionTicks();
-       #endif
         onsetDetectedRoutine();
-    }
 
     /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
     bfcc.store(buffer,(short int)MONO_CHANNEL);
@@ -218,10 +218,20 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     } catch(std::exception& e) {
         rtlogger.logInfo("An exception has occurred while buffering: ",e.what());
     } catch(...) {
-        rtlogger.logInfo("An unknwn exception has occurred while buffering: ");
+        rtlogger.logInfo("An unknwn exception has occurred while buffering");
     }
     /** CLEAR THE BUFFER (OPTIONAL) **/
     buffer.clear(); // Uncomment to let input pass through
+
+   #ifdef PARALLEL_CLASSIFICATION
+    /** CHECK IF THE CLASSIFIER HAS FINIHED **/
+    bool readPred = DemoProcessor::classificationData.predictionBuffer.read(classificationOutputVector); // read predictions from rt thread when available
+    if (readPred) // if a value was read
+    {
+        rtlogger.logInfo("Classification Finished");
+        classificationFinished();
+    }
+   #endif
 
     /** ADD OUTPUT SOUND (TRIGGERED BY TIMBRE CLASSIFICATION) **/
     sinewt.processBlock(buffer);
@@ -233,12 +243,6 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 
     /** lOG LAST TIMESTAMPS FOR LATENCY COMPUTATION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    if(timeAtClassificationStart)   // If this time a classification is happening, We are going to log it
-    {
-        rtlogger.logInfo("Classification round",timeAtClassificationStart,Time::Time::getHighResolutionTicks());
-        timeAtClassificationStart = 0;
-    }
-
     if (timeAtBlockStart)   // If timeAtBlockStart was initialized this round, we are computing and logging processBlock Duration
     {
         snprintf(message,sizeof(message),"block nr %lld processed",logProcessblock_fixedCounter);
@@ -278,11 +282,6 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 /**
  * Onset Detected Callback
  *
- * TODO: Measure accurately the time required by this function along
- *       with the buffering operations in the processBlock routine
- *       and consider performing this on a separate RT thread
- *       (At least classification if feature ext is not possible)
- *       ((Check TWINE library for Elk))
 **/
 void DemoProcessor::onsetDetectedRoutine ()
 {
@@ -294,7 +293,8 @@ void DemoProcessor::onsetDetectedRoutine ()
 
     /** LOG BEGINNING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("Feature extraction started",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection");
+    rtlogger.logValue("Feature extraction started at ",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
 
     /*--------------------/
@@ -304,44 +304,64 @@ void DemoProcessor::onsetDetectedRoutine ()
 
     /** LOG ENDING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("Feature extraction stopped",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection");
+    rtlogger.logValue("Feature extraction stopped at ",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(Feature extraction stopped ",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
 
-
-    /*-------------------/
-    | 2. CLASSIFY TIMBRE | (Aka running inference)
-    /-------------------*/
-    /** START ADDITIONAL "CHRONOMETER" JUST FOR CLASSIFICATION **/
-    auto start = std::chrono::high_resolution_clock::now();
-    /** INVOKE CLASSIFIER**/
-    int prediction = classify(timbreClassifier,featureVector,classificationOutputVector);
-    /** STOP CLASSIFICATION "CHRONOMETER" **/
-    auto stop = std::chrono::high_resolution_clock::now();
-
-    /** LOG ADDITIONAL TIMESTAMP FOR LATENCY COMPUTATION
-        TODO: Improve logg clarity, precision and remove duplicates (like chrono library) **/
+    /*----------------------------------/
+    | 2. TRIGGER TIMBRE CLASSIFICATION  |
+    /----------------------------------*/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    snprintf(message,sizeof(message),"Prediction stopped %f ms after onset detection",(juce::Time::getMillisecondCounterHiRes() - latencyTime));
-    rtlogger.logInfo(message);
+    rtlogger.logValue("Classification started at ",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
    #endif
 
+   
+   #ifdef PARALLEL_CLASSIFICATION
+    DemoProcessor::classificationData.featureBuffer.write(featureVector);    // Write the feature vector to a ring buffer, for parallel classification
+    // Note to self:
+    // Here I tried to use juce::Thread::notify() to wake up the classification thread
+    // This meant having a wait(-1) in a loop inside the classifier callback (instead of the successive wait)
+    // Contrary to what was hinted in the JUCE forum, this causes mode switches in Xenomai so it is not rt safe. 
+    // Old line: classificationThread.notify();
+   #else
+    classify(DemoProcessor::timbreClassifier,featureVector,classificationOutputVector); // Execute inference with the Tensorflow Lite Interpreter
+    classificationFinished();
+   #endif
+}
+
+void DemoProcessor::classificationFinished()
+{
+    bool VERBOSERES = true,
+         VERBOSE = true;
+
+    char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
+
+     /** LOG ADDITIONAL TIMESTAMP FOR LATENCY COMPUTATION **/
+   #ifdef MEASURE_COMPUTATION_LATENCY
+    rtlogger.logValue("Classification stopped at ",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(Classification stopped ",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
+   #endif
+
+    // Simple argmax
+    int prediction = 0;
+    for(int i=0; i<classificationOutputVector.size(); ++i)
+        if(classificationOutputVector[i] > classificationOutputVector[prediction])
+            prediction = i;
     float confidence = classificationOutputVector[prediction];
+
 
     /** LOG CLASSIFICATION RESULTS AND TIME **/
     if (VERBOSERES)
     {
         snprintf(message,sizeof(message),"Result: Predicted class %d with confidence %f",prediction,confidence);
         rtlogger.logInfo(message);
-        snprintf(message,sizeof(message),"(std::chrono) Classification took %ld us or %ld ms", \
-            std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count(),\
-            std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
-        rtlogger.logInfo(message);
     }
 
     /** LOG ADDITIONAL INFO (CONFIDENCE VALUES FOR ALL CLASSES) **/
     if (VERBOSE)
     {
-        for (int j = 0; j < N_OUTPUT_CLASSES; ++j)
+        for (int j = 0; j < classificationOutputVector.size(); ++j)
         {
             snprintf(message,sizeof(message),"Class %d confidence %f",j,classificationOutputVector[j]);
             rtlogger.logInfo(message);
