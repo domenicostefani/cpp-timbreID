@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="RCqnRw" name="Demo-aubioonset" projectType="audioplug" jucerVersion="5.4.7"
-              pluginFormats="buildStandalone,buildVST" headerPath="/home/domenico/Develop/aubio/src&#10;../../../../include&#10;../../../../src&#10;../../../../">
+<JUCERPROJECT id="RCqnRw" name="Demo-aubioonset" projectType="audioplug" pluginFormats="buildStandalone,buildVST"
+              headerPath="~/Develop/aubio/src&#10;../../../../include&#10;../../../../"
+              displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="HAX1LC" name="Demo-aubioonset">
     <GROUP id="{F845E1C3-07B2-354A-B3B1-946093F4BA8A}" name="Source">
       <GROUP id="{E50BF29A-A8D5-8BD0-442A-702BA4207613}" name="cpp-timbreID">
@@ -25,7 +26,6 @@
           <FILE id="eaj1TB" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
           <FILE id="HCNPxP" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
           <FILE id="Hbgwpv" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
-          <FILE id="rwbYGS" name="tidLog.hpp" compile="0" resource="0" file="../../include/tidLog.hpp"/>
           <FILE id="qM5ErA" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
           <FILE id="EpW1Ks" name="zeroCrossing.hpp" compile="0" resource="0"
                 file="../../include/zeroCrossing.hpp"/>

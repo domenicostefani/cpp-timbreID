@@ -64,7 +64,7 @@ DemoEditor::DemoEditor (DemoProcessor& p)
 
     addAndMakeVisible(featureNumber);
     featureNumber.setLabelText("# Features Used:");
-    featureNumber.setDefaultText("25");
+    // featureNumber.setDefaultText("25"); TODO this seems to cause issues
     featureNumber.addListener(this);
 
     addAndMakeVisible(bfccInfo);
@@ -103,27 +103,27 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     addAndMakeVisible(write);  //SetParamBox
     write.addListener(this);
     write.setLabelText("write");
-    write.setDefaultText("./data/feature-db.timid");
+    // write.setDefaultText("./data/feature-db.timid");
 
     addAndMakeVisible(read);  //SetParamBox
     read.addListener(this);
     read.setLabelText("read");
-    read.setDefaultText("./data/feature-db.timid");
+    // read.setDefaultText("./data/feature-db.timid");
 
     addAndMakeVisible(writeText);  //SetParamBox
     writeText.addListener(this);
     writeText.setLabelText("write Text");
-    writeText.setDefaultText("./data/feature-db.csv");
+    // writeText.setDefaultText("./data/feature-db.csv");
 
     addAndMakeVisible(readText);  //SetParamBox
     readText.addListener(this);
     readText.setLabelText("read Text");
-    readText.setDefaultText("./data/feature-db.csv");
+    // readText.setDefaultText("./data/feature-db.csv");
 
     addAndMakeVisible(manualCluster);  //SetParamBox
     manualCluster.addListener(this);
     manualCluster.setLabelText("ManCluster");
-    manualCluster.setDefaultText("0,20,40,60,80");
+    // manualCluster.setDefaultText("0,20,40,60,80");
 
 
     addAndMakeVisible(dispTimbre);  //Label
