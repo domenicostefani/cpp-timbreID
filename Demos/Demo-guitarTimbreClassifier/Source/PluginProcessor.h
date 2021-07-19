@@ -18,17 +18,17 @@
 #include "liteclassifier.h"
 #include "postOnsetTimer.h"
 #include "ClassifierFifoQueue.h"    // Lock-free queue that can store whole std::array elements
+#include <thread>
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
 // #define DEBUG_WHICH_CHANNEL
-
 #define PARALLEL_CLASSIFICATION // If defined, classification is performed on a separate thread
-
+// #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
 
 namespace CData{
 
-const std::size_t N_FEATURES = 190;       // Number of audio features
+const std::size_t N_FEATURES = 180;       // Number of audio features
 const int N_CLASSES = 8;                  // Number of classes for the neural network
 const int CLASSIFICATION_FIFO_BUFFER = 5; // Size of the ring buffers
 
@@ -79,7 +79,11 @@ public:
                 cdata->predictionBuffer.write(towritePredictions);
             }
             
-            wait(1); // Wait to avoid starving (Busy waiting)
+            // wait(1); // Wait to avoid starving (Busy waiting)
+
+            // Possible alternative for quicker polling
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(500us);
         }
     }
 private:
@@ -184,7 +188,7 @@ public:
 
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
-    const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/model.tflite";
+    const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/c_acc9533_CrossValidatedRun_20210507-121549_model.tflite";
     std::array<float, CData::N_CLASSES> classificationOutputVector;
 
 
@@ -203,6 +207,7 @@ public:
 
 
     //============================== OTHER =====================================
+  #ifndef FAST_MODE_1
     /**    Debugging    */
    #ifdef DEBUG_WHICH_CHANNEL
     uint32 logCounter = 0;  //To debug which channel to use
@@ -231,6 +236,7 @@ public:
      * low priority thread (timer callback), hence why a FileLogger is used.
     */
     tid::RealTimeLogger rtlogger{"main-app"}; // Real time logger that queues messages
+
 
    #ifdef USE_AUBIO_ONSET
     std::vector<tid::RealTimeLogger*> loggerList = {&rtlogger, aubioOnset.getLoggerPtr()};
@@ -292,7 +298,7 @@ public:
 
     /** Instantiate polling timer and pass callback **/
     PollingTimer pollingTimer{[this]{logPollingRoutine();}};
-
+  #endif
 private:
     //============================== OUTPUT ====================================
     WavetableSine sinewt;   // Simple wavetable sine synth with short decay

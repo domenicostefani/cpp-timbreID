@@ -44,7 +44,9 @@ DemoProcessor::DemoProcessor()
     classificationThread(&DemoProcessor::classificationData,&DemoProcessor::timbreClassifier)
 #endif
 {
-    rtlogger.logInfo("Initializing Onset detector");
+  #ifndef FAST_MODE_1
+   rtlogger.logInfo("Initializing Onset detector");
+  #endif
 
    #ifdef USE_AUBIO_ONSET
     /** ADD ONSET DETECTOR LISTENER **/
@@ -65,28 +67,35 @@ DemoProcessor::DemoProcessor()
     cepstrumRes.resize(CEPSTRUM_RES_SIZE);
 
     /** SET UP CLASSIFIER **/
+   #ifndef FAST_MODE_1
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
     snprintf(message,sizeof(message),"Model path set to '%s'",TFLITE_MODEL_PATH.c_str());
     rtlogger.logInfo(message);
+   #endif
     DemoProcessor::timbreClassifier = createClassifier(TFLITE_MODEL_PATH);
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("Classifier object istantiated");
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
+   #endif
 }
 
 DemoProcessor::~DemoProcessor(){
     // /** Free classifier memory **/
     deleteClassifier(DemoProcessor::timbreClassifier);
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("Classifier object deleted");
-
     /** Log last queued messages before closing **/
     logPollingRoutine();
+   #endif
 }
 
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
+   #endif
 
     /** INIT ONSET DETECTOR MODULE**/
    #ifdef USE_AUBIO_ONSET
@@ -139,14 +148,17 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     sinewt.prepareToPlay(sampleRate);
 
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("+--Prepare to play completed");
+   #endif
 }
 
 void DemoProcessor::releaseResources()
 {
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("+--ReleaseResources called");
-
     rtlogger.logInfo("+  Releasing Onset detector resources");
+   #endif
 
     /** FREE ONSET DETECTOR MEMORY **/
    #ifdef USE_AUBIO_ONSET
@@ -154,7 +166,9 @@ void DemoProcessor::releaseResources()
    #else
     bark.reset();
    #endif
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("+  Releasing extractor resources");
+   #endif
 
     /*------------------------------------/
     | Reset the feature extractors        |
@@ -173,7 +187,9 @@ void DemoProcessor::releaseResources()
     peakSample.reset();
     zeroCrossing.reset();
 
+   #ifndef FAST_MODE_1
     rtlogger.logInfo("+--ReleaseResources completed");
+   #endif
 }
 
 void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
@@ -182,6 +198,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH]; // logger message
 
     /** LOG THE DIFFERENT TIMESTAMPS FOR LATENCY COMPUTATION **/
+  #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
     int64 timeAtBlockStart = 0;
     if (++logProcessblock_counter >= logProcessblock_period)
@@ -191,6 +208,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         timeAtBlockStart = Time::Time::getHighResolutionTicks();
     }
    #endif
+  #endif
 
     /** EXTRACT FEATURES AND CLASSIFY IF POST ONSET TIMER IS EXPIRED **/
     if(postOnsetTimer.isExpired())
@@ -216,9 +234,13 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         bark.store(buffer,(short int)MONO_CHANNEL);
        #endif
     } catch(std::exception& e) {
+       #ifndef FAST_MODE_1
         rtlogger.logInfo("An exception has occurred while buffering: ",e.what());
+       #endif
     } catch(...) {
+       #ifndef FAST_MODE_1
         rtlogger.logInfo("An unknwn exception has occurred while buffering");
+       #endif
     }
     /** CLEAR THE BUFFER (OPTIONAL) **/
     buffer.clear(); // Uncomment to let input pass through
@@ -228,7 +250,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     bool readPred = DemoProcessor::classificationData.predictionBuffer.read(classificationOutputVector); // read predictions from rt thread when available
     if (readPred) // if a value was read
     {
+       #ifndef FAST_MODE_1
         rtlogger.logInfo("Classification Finished");
+       #endif
         classificationFinished();
     }
    #endif
@@ -241,6 +265,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     postOnsetTimer.updateTimer(); // Update the block counter of the postOnsetTimer
    #endif
 
+  #ifndef FAST_MODE_1
     /** lOG LAST TIMESTAMPS FOR LATENCY COMPUTATION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     if (timeAtBlockStart)   // If timeAtBlockStart was initialized this round, we are computing and logging processBlock Duration
@@ -250,6 +275,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         timeAtBlockStart = 0;
     }
    #endif
+  #endif
 }
 
 #ifdef USE_AUBIO_ONSET
@@ -262,16 +288,20 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
     if(bark == &this->bark)
     {
 #endif
+      #ifndef FAST_MODE_1
        #ifdef MEASURE_COMPUTATION_LATENCY
         latencyTime = juce::Time::getMillisecondCounterHiRes();
        #endif
+      #endif
 
        #ifdef DO_DELAY_ONSET
         if(postOnsetTimer.isIdle())
         {
             float actualDelayMs = postOnsetTimer.start(POST_ONSET_DELAY_MS);
+           #ifndef FAST_MODE_1
             rtlogger.logValue("Start waiting for ",actualDelayMs,"ms");
             rtlogger.logValue("(Closes approximation to ",(float)POST_ONSET_DELAY_MS,"ms in block sizes)");
+           #endif
         }
        #else
         onsetDetectedRoutine();
@@ -288,6 +318,8 @@ void DemoProcessor::onsetDetectedRoutine ()
     bool VERBOSERES = true; // Log info about classification result (Suggested: true)
     bool VERBOSE = false;   // Log general verbose info (Suggested: false)
 
+    
+  #ifndef FAST_MODE_1
     rtlogger.logInfo("Onset detected");
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
 
@@ -296,25 +328,30 @@ void DemoProcessor::onsetDetectedRoutine ()
     rtlogger.logValue("Feature extraction started at ",juce::Time::getMillisecondCounterHiRes());
     rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
+  #endif
 
     /*--------------------/
     | 1. EXTRACT FEATURES |
     /--------------------*/
     this->computeFeatureVector();
 
+  #ifndef FAST_MODE_1
     /** LOG ENDING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
     rtlogger.logValue("Feature extraction stopped at ",juce::Time::getMillisecondCounterHiRes());
     rtlogger.logValue("(Feature extraction stopped ",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
+  #endif
 
     /*----------------------------------/
     | 2. TRIGGER TIMBRE CLASSIFICATION  |
     /----------------------------------*/
+  #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
     rtlogger.logValue("Classification started at ",juce::Time::getMillisecondCounterHiRes());
     rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
    #endif
+  #endif
 
    
    #ifdef PARALLEL_CLASSIFICATION
@@ -338,10 +375,12 @@ void DemoProcessor::classificationFinished()
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
 
      /** LOG ADDITIONAL TIMESTAMP FOR LATENCY COMPUTATION **/
+  #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
     rtlogger.logValue("Classification stopped at ",juce::Time::getMillisecondCounterHiRes());
     rtlogger.logValue("(Classification stopped ",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
    #endif
+  #endif
 
     // Simple argmax
     int prediction = 0;
@@ -350,7 +389,7 @@ void DemoProcessor::classificationFinished()
             prediction = i;
     float confidence = classificationOutputVector[prediction];
 
-
+   #ifndef FAST_MODE_1
     /** LOG CLASSIFICATION RESULTS AND TIME **/
     if (VERBOSERES)
     {
@@ -367,6 +406,7 @@ void DemoProcessor::classificationFinished()
             rtlogger.logInfo(message);
         }
     }
+   #endif
 
     /** TRIGGER OUTPUT NOTE WHEN CONDITIONS ARE MET **/
 
@@ -449,10 +489,7 @@ void DemoProcessor::computeFeatureVector()
 
     /* Manual selection before, automated script-generated code after*/
 
-    jassert(featureVector.size() == 190);
-
-    if (featureVector.size() != 190)
-        throw std::logic_error("Feature vector has size"+std::to_string(featureVector.size())+" instead of 190");
+    jassert(featureVector.size() == 180);
 
     // Generated with computeFeatureCopier.py script
     /*------------------------------------/
@@ -578,104 +615,92 @@ void DemoProcessor::computeFeatureVector()
     this->featureVector[76] = bfccRes[30];
     this->featureVector[77] = bfccRes[31];
     this->featureVector[77] = bfccRes[31];
-    this->featureVector[78] = bfccRes[34];
-    this->featureVector[78] = bfccRes[34];
-    this->featureVector[79] = bfccRes[35];
-    this->featureVector[79] = bfccRes[35];
-    this->featureVector[80] = bfccRes[36];
-    this->featureVector[80] = bfccRes[36];
-    this->featureVector[81] = bfccRes[37];
-    this->featureVector[81] = bfccRes[37];
-    this->featureVector[82] = bfccRes[38];
-    this->featureVector[82] = bfccRes[38];
-    this->featureVector[83] = bfccRes[39];
-    this->featureVector[83] = bfccRes[39];
-    this->featureVector[84] = bfccRes[40];
-    this->featureVector[84] = bfccRes[40];
-    this->featureVector[85] = bfccRes[42];
-    this->featureVector[85] = bfccRes[42];
-    this->featureVector[86] = bfccRes[43];
-    this->featureVector[86] = bfccRes[43];
-    this->featureVector[87] = bfccRes[44];
-    this->featureVector[87] = bfccRes[44];
-    this->featureVector[88] = bfccRes[45];
-    this->featureVector[88] = bfccRes[45];
-    this->featureVector[89] = bfccRes[46];
-    this->featureVector[89] = bfccRes[46];
-    this->featureVector[90] = bfccRes[47];
-    this->featureVector[90] = bfccRes[47];
-    this->featureVector[91] = bfccRes[48];
-    this->featureVector[91] = bfccRes[48];
+    this->featureVector[78] = bfccRes[35];
+    this->featureVector[78] = bfccRes[35];
+    this->featureVector[79] = bfccRes[36];
+    this->featureVector[79] = bfccRes[36];
+    this->featureVector[80] = bfccRes[37];
+    this->featureVector[80] = bfccRes[37];
+    this->featureVector[81] = bfccRes[39];
+    this->featureVector[81] = bfccRes[39];
+    this->featureVector[82] = bfccRes[40];
+    this->featureVector[82] = bfccRes[40];
+    this->featureVector[83] = bfccRes[42];
+    this->featureVector[83] = bfccRes[42];
+    this->featureVector[84] = bfccRes[43];
+    this->featureVector[84] = bfccRes[43];
+    this->featureVector[85] = bfccRes[44];
+    this->featureVector[85] = bfccRes[44];
+    this->featureVector[86] = bfccRes[45];
+    this->featureVector[86] = bfccRes[45];
+    this->featureVector[87] = bfccRes[46];
+    this->featureVector[87] = bfccRes[46];
+    this->featureVector[88] = bfccRes[48];
+    this->featureVector[88] = bfccRes[48];
     /*-------------------------------------/
     | Cepstrum Coefficients                |
     /-------------------------------------*/
     cepstrumRes = this->cepstrum.compute();
     if (cepstrumRes.size() != CEPSTRUM_RES_SIZE)
         throw std::logic_error("Incorrect result vector size for Cepstrum");
-    this->featureVector[92] = cepstrumRes[1];
-    this->featureVector[93] = cepstrumRes[2];
-    this->featureVector[94] = cepstrumRes[3];
-    this->featureVector[95] = cepstrumRes[4];
-    this->featureVector[96] = cepstrumRes[5];
-    this->featureVector[97] = cepstrumRes[6];
-    this->featureVector[98] = cepstrumRes[7];
-    this->featureVector[99] = cepstrumRes[8];
-    this->featureVector[100] = cepstrumRes[9];
-    this->featureVector[101] = cepstrumRes[10];
-    this->featureVector[102] = cepstrumRes[11];
-    this->featureVector[103] = cepstrumRes[12];
-    this->featureVector[104] = cepstrumRes[13];
-    this->featureVector[105] = cepstrumRes[14];
-    this->featureVector[106] = cepstrumRes[15];
-    this->featureVector[107] = cepstrumRes[16];
-    this->featureVector[108] = cepstrumRes[17];
-    this->featureVector[109] = cepstrumRes[18];
-    this->featureVector[110] = cepstrumRes[19];
-    this->featureVector[111] = cepstrumRes[20];
-    this->featureVector[112] = cepstrumRes[21];
-    this->featureVector[113] = cepstrumRes[22];
-    this->featureVector[114] = cepstrumRes[23];
-    this->featureVector[115] = cepstrumRes[24];
-    this->featureVector[116] = cepstrumRes[25];
-    this->featureVector[117] = cepstrumRes[26];
-    this->featureVector[118] = cepstrumRes[27];
-    this->featureVector[119] = cepstrumRes[28];
-    this->featureVector[120] = cepstrumRes[29];
-    this->featureVector[121] = cepstrumRes[30];
-    this->featureVector[122] = cepstrumRes[31];
-    this->featureVector[123] = cepstrumRes[32];
-    this->featureVector[124] = cepstrumRes[33];
-    this->featureVector[125] = cepstrumRes[34];
-    this->featureVector[126] = cepstrumRes[35];
-    this->featureVector[127] = cepstrumRes[36];
-    this->featureVector[128] = cepstrumRes[37];
-    this->featureVector[129] = cepstrumRes[38];
-    this->featureVector[130] = cepstrumRes[39];
-    this->featureVector[131] = cepstrumRes[41];
-    this->featureVector[132] = cepstrumRes[42];
-    this->featureVector[133] = cepstrumRes[43];
-    this->featureVector[134] = cepstrumRes[44];
-    this->featureVector[135] = cepstrumRes[45];
-    this->featureVector[136] = cepstrumRes[46];
-    this->featureVector[137] = cepstrumRes[47];
-    this->featureVector[138] = cepstrumRes[48];
-    this->featureVector[139] = cepstrumRes[49];
-    this->featureVector[140] = cepstrumRes[51];
-    this->featureVector[141] = cepstrumRes[53];
-    this->featureVector[142] = cepstrumRes[54];
-    this->featureVector[143] = cepstrumRes[56];
-    this->featureVector[144] = cepstrumRes[59];
-    this->featureVector[145] = cepstrumRes[60];
-    this->featureVector[146] = cepstrumRes[67];
-    this->featureVector[147] = cepstrumRes[70];
-    this->featureVector[148] = cepstrumRes[72];
-    this->featureVector[149] = cepstrumRes[86];
-    this->featureVector[150] = cepstrumRes[87];
-    this->featureVector[151] = cepstrumRes[108];
-    this->featureVector[152] = cepstrumRes[129];
-    this->featureVector[153] = cepstrumRes[164];
-    this->featureVector[154] = cepstrumRes[205];
-    this->featureVector[155] = cepstrumRes[206];
+    this->featureVector[89] = cepstrumRes[1];
+    this->featureVector[90] = cepstrumRes[2];
+    this->featureVector[91] = cepstrumRes[3];
+    this->featureVector[92] = cepstrumRes[4];
+    this->featureVector[93] = cepstrumRes[5];
+    this->featureVector[94] = cepstrumRes[6];
+    this->featureVector[95] = cepstrumRes[7];
+    this->featureVector[96] = cepstrumRes[8];
+    this->featureVector[97] = cepstrumRes[9];
+    this->featureVector[98] = cepstrumRes[10];
+    this->featureVector[99] = cepstrumRes[11];
+    this->featureVector[100] = cepstrumRes[12];
+    this->featureVector[101] = cepstrumRes[13];
+    this->featureVector[102] = cepstrumRes[14];
+    this->featureVector[103] = cepstrumRes[15];
+    this->featureVector[104] = cepstrumRes[16];
+    this->featureVector[105] = cepstrumRes[17];
+    this->featureVector[106] = cepstrumRes[18];
+    this->featureVector[107] = cepstrumRes[19];
+    this->featureVector[108] = cepstrumRes[20];
+    this->featureVector[109] = cepstrumRes[21];
+    this->featureVector[110] = cepstrumRes[22];
+    this->featureVector[111] = cepstrumRes[23];
+    this->featureVector[112] = cepstrumRes[24];
+    this->featureVector[113] = cepstrumRes[25];
+    this->featureVector[114] = cepstrumRes[26];
+    this->featureVector[115] = cepstrumRes[27];
+    this->featureVector[116] = cepstrumRes[28];
+    this->featureVector[117] = cepstrumRes[29];
+    this->featureVector[118] = cepstrumRes[30];
+    this->featureVector[119] = cepstrumRes[31];
+    this->featureVector[120] = cepstrumRes[32];
+    this->featureVector[121] = cepstrumRes[33];
+    this->featureVector[122] = cepstrumRes[34];
+    this->featureVector[123] = cepstrumRes[35];
+    this->featureVector[124] = cepstrumRes[36];
+    this->featureVector[125] = cepstrumRes[37];
+    this->featureVector[126] = cepstrumRes[41];
+    this->featureVector[127] = cepstrumRes[42];
+    this->featureVector[128] = cepstrumRes[43];
+    this->featureVector[129] = cepstrumRes[44];
+    this->featureVector[130] = cepstrumRes[45];
+    this->featureVector[131] = cepstrumRes[46];
+    this->featureVector[132] = cepstrumRes[47];
+    this->featureVector[133] = cepstrumRes[48];
+    this->featureVector[134] = cepstrumRes[49];
+    this->featureVector[135] = cepstrumRes[54];
+    this->featureVector[136] = cepstrumRes[56];
+    this->featureVector[137] = cepstrumRes[59];
+    this->featureVector[138] = cepstrumRes[60];
+    this->featureVector[139] = cepstrumRes[67];
+    this->featureVector[140] = cepstrumRes[72];
+    this->featureVector[141] = cepstrumRes[86];
+    this->featureVector[142] = cepstrumRes[87];
+    this->featureVector[143] = cepstrumRes[108];
+    this->featureVector[144] = cepstrumRes[164];
+    this->featureVector[145] = cepstrumRes[205];
+    this->featureVector[146] = cepstrumRes[206];
     /*------------------------------------/
     | Mel Frequency Cepstral Coefficients |
     /------------------------------------*/
@@ -683,47 +708,46 @@ void DemoProcessor::computeFeatureVector()
     mfccRes = this->mfcc.compute();
     if (mfccRes.size() != MFCC_RES_SIZE)
         throw std::logic_error("Incorrect result vector size for mfcc");
-    this->featureVector[156] = mfccRes[1];
-    this->featureVector[157] = mfccRes[2];
-    this->featureVector[158] = mfccRes[3];
-    this->featureVector[159] = mfccRes[4];
-    this->featureVector[160] = mfccRes[5];
-    this->featureVector[161] = mfccRes[6];
-    this->featureVector[162] = mfccRes[7];
-    this->featureVector[163] = mfccRes[8];
-    this->featureVector[164] = mfccRes[9];
-    this->featureVector[165] = mfccRes[10];
-    this->featureVector[166] = mfccRes[11];
-    this->featureVector[167] = mfccRes[12];
-    this->featureVector[168] = mfccRes[13];
-    this->featureVector[169] = mfccRes[14];
-    this->featureVector[170] = mfccRes[15];
-    this->featureVector[171] = mfccRes[16];
-    this->featureVector[172] = mfccRes[17];
-    this->featureVector[173] = mfccRes[18];
-    this->featureVector[174] = mfccRes[19];
-    this->featureVector[175] = mfccRes[20];
-    this->featureVector[176] = mfccRes[21];
-    this->featureVector[177] = mfccRes[22];
-    this->featureVector[178] = mfccRes[23];
-    this->featureVector[179] = mfccRes[24];
-    this->featureVector[180] = mfccRes[25];
-    this->featureVector[181] = mfccRes[26];
-    this->featureVector[182] = mfccRes[28];
-    this->featureVector[183] = mfccRes[32];
-    this->featureVector[184] = mfccRes[33];
-    this->featureVector[185] = mfccRes[34];
-    this->featureVector[186] = mfccRes[35];
-    this->featureVector[187] = mfccRes[36];
+    this->featureVector[147] = mfccRes[1];
+    this->featureVector[148] = mfccRes[2];
+    this->featureVector[149] = mfccRes[3];
+    this->featureVector[150] = mfccRes[4];
+    this->featureVector[151] = mfccRes[5];
+    this->featureVector[152] = mfccRes[6];
+    this->featureVector[153] = mfccRes[7];
+    this->featureVector[154] = mfccRes[8];
+    this->featureVector[155] = mfccRes[9];
+    this->featureVector[156] = mfccRes[10];
+    this->featureVector[157] = mfccRes[11];
+    this->featureVector[158] = mfccRes[12];
+    this->featureVector[159] = mfccRes[13];
+    this->featureVector[160] = mfccRes[14];
+    this->featureVector[161] = mfccRes[15];
+    this->featureVector[162] = mfccRes[16];
+    this->featureVector[163] = mfccRes[17];
+    this->featureVector[164] = mfccRes[18];
+    this->featureVector[165] = mfccRes[19];
+    this->featureVector[166] = mfccRes[20];
+    this->featureVector[167] = mfccRes[21];
+    this->featureVector[168] = mfccRes[22];
+    this->featureVector[169] = mfccRes[23];
+    this->featureVector[170] = mfccRes[24];
+    this->featureVector[171] = mfccRes[25];
+    this->featureVector[172] = mfccRes[26];
+    this->featureVector[173] = mfccRes[32];
+    this->featureVector[174] = mfccRes[33];
+    this->featureVector[175] = mfccRes[34];
+    this->featureVector[176] = mfccRes[35];
+    this->featureVector[177] = mfccRes[36];
     /*------------------------------------/
     | Peak sample                         |
     /------------------------------------*/
     peakSample.compute(peak,peakIdx);
-    this->featureVector[188] = peak;
+    this->featureVector[178] = peak;
     /*------------------------------------/
     | Zero Crossings                      |
     /------------------------------------*/
-    this->featureVector[189] = zeroCrossing.compute();
+    this->featureVector[179] = zeroCrossing.compute();
 
 }
 
