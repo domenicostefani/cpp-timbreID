@@ -37,7 +37,7 @@ public:
 
         this->envelope.setSampleRate(sampleRate);
 
-        envelopeParameters.attack = 0.1f;
+        envelopeParameters.attack = 0.01f;
         envelopeParameters.decay = 0.5f;
         envelopeParameters.sustain = 0.0f;
         envelopeParameters.release = 0.0f;
@@ -51,8 +51,9 @@ public:
             updateFrequency();
             for (int channel = 0; channel < buffer.getNumChannels();++channel) {
                 float* const bufferPtr = buffer.getWritePointer(channel, startSample);
+                const float* bufferReadPtr = buffer.getReadPointer(channel, startSample);
 
-                bufferPtr[sample] = wavetable[(int)phase] * amplitude * envelope.getNextSample();
+                bufferPtr[sample] = bufferReadPtr[sample] + (wavetable[(int)phase] * amplitude * envelope.getNextSample());
 
             }
             phase = fmod(phase + increment, wavetableSize);
