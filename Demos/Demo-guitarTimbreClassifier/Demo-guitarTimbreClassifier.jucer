@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="l7Y3nX" name="Demo-guitarTimbreClassifier" projectType="audioplug"
-              pluginFormats="buildVST" headerPath="../../../../include&#10;../../../../&#10;~/Develop/timbreInference/the_compiled_library&#10;~/Develop/aubio/src/&#10;/opt/elk/1.0/sysroots/aarch64-elk-linux/usr/include/twine/"
-              displaySplashScreen="1" jucerFormatVersion="1">
+              pluginFormats="buildVST" displaySplashScreen="1" jucerFormatVersion="1"
+              companyName="DomenicoStefani" pluginVST3Category="Analyzer">
   <MAINGROUP id="c9iv8T" name="Demo-guitarTimbreClassifier">
     <GROUP id="{57C43C6D-AB21-5E5C-5B21-4EF023F7F83D}" name="Source">
       <GROUP id="{C28C1F71-0C72-F1AC-3D78-B12A8990DE09}" name="cpp-timbreID">
@@ -55,10 +55,12 @@
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f&#10;liteclassifier&#10;tensorflow-lite&#10;aubio&#10;twine">
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/timbreInference/the_compiled_library&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib&#10;~/Develop/aubio/build/src/&#10;~/Develop/aubio/build/src-aarch64/&#10;/opt/elk/1.0/sysroots/aarch64-elk-linux/usr/lib"/>
-        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/timbreInference/the_compiled_library&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib&#10;~/Develop/aubio/build/src/&#10;~/Develop/aubio/build/src-aarch64/&#10;/opt/elk/1.0/sysroots/aarch64-elk-linux/usr/lib"/>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/lib"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Desktop/StudentProjects/tflite-interpreter-wrapper/build/ruy&#10;~/Desktop/StudentProjects/tflite-interpreter-wrapper/build/tensorflow-lite&#10;&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/lib&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../elkJUCE/modules"/>
@@ -74,6 +76,132 @@
         <MODULEPATH id="juce_graphics" path="../../../../elkJUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="../../../../elkJUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../../../elkJUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile-RTNeuralCtime" extraDefs="USE_RTNEURAL_CTIME"
+                externalLibraries="fftw3f&#10;rtneuralwrapperctime&#10;aubio&#10;">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_osc" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile-RTNeuralRtime" extraDefs="USE_RTNEURAL_RTIME"
+                externalLibraries="fftw3f&#10;rtneuralwrapperrtime&#10;aubio&#10;">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_osc" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile-Onnx" extraDefs="USE_ONNX"
+                externalLibraries="fftw3f&#10;onnxruntime&#10;onnxwrapper&#10;aubio&#10;">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_osc" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile-Torchscript" extraDefs="USE_TORCHSCRIPT"
+                externalLibraries="fftw3f&#10;c10&#10;torch_cpu&#10;torchscriptwrapper&#10;aubio&#10;">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_osc" path="../../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile-LegacyTFlite" extraDefs="USE_TFLITE"
+                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
       </MODULEPATHS>
     </LINUX_MAKE>
   </EXPORTFORMATS>
@@ -92,6 +220,7 @@
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
   </MODULES>
   <LIVE_SETTINGS>
     <LINUX/>

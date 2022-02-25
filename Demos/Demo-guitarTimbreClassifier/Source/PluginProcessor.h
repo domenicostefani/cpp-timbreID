@@ -14,8 +14,29 @@
 #include <JuceHeader.h>
 #include "juce_timbreID.h"
 #include "wavetableSine.h"
+#include "squaredSineWavetable.h"
 
-#include "liteclassifier.h"
+#ifdef USE_TFLITE
+ #include "tflitewrapper.h"
+#endif
+
+#ifdef USE_RTNEURAL_CTIME
+ #include "rtneuralwrapper.h"
+#endif
+#ifdef USE_RTNEURAL_RTIME
+ #include "rtneuralwrapper.h"
+#endif
+
+#ifdef USE_ONNX
+ #include "onnxwrapper.h"
+#endif
+
+#ifdef USE_TORCHSCRIPT
+ #include "torch-classifier-lib.h"
+#endif
+
+
+
 #include "postOnsetTimer.h"
 #include "ClassifierFifoQueue.h"    // Lock-free queue that can store whole std::array elements
 #include <thread>
@@ -25,6 +46,14 @@
 // #define DEBUG_WHICH_CHANNEL
 #define PARALLEL_CLASSIFICATION // If defined, classification is performed on a separate thread
 // #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
+#define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
+
+#define SEND_OSC
+#ifdef SEND_OSC
+ #define OSC_TARGET_IP "192.168.42.38"
+//  #define OSC_TARGET_IP "192.168.42.38"
+ #define OSC_TARGET_PORT 9001
+#endif
 
 namespace CData{
 
@@ -43,18 +72,23 @@ struct ClassificationData{
     using predictions_t = ClassifierQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
     // Run flag, to start and stop the classification thread
     std::atomic<bool> run;
-    std::atomic<int> i;
+    std::atomic<int> i;    
 };
 
 class ClassificationThread : public juce::Thread
 {
 public:
-
     ClassificationThread (ClassificationData* cdata, ClassifierPtr* tclassifier)
         : Thread ("ClassificationThread")
     {
         this->cdata = cdata;
         this->tclassifier = tclassifier;
+
+       #ifdef SEND_OSC
+        if (! this->sender.connect (OSC_TARGET_IP, OSC_TARGET_PORT))
+            showConnectionErrorMessage ("Error: could not connect to UDP port.");
+       #endif
+
         startThread (6);
     }
 
@@ -76,6 +110,17 @@ public:
             {
                 static ClassificationData::predictions_t towritePredictions;
                 classify(*tclassifier,readFeatures,towritePredictions);
+               #ifdef SEND_OSC
+                if (! this->sender.send ("/techclassifier/class", (float) towritePredictions[0],
+                                                                  (float) towritePredictions[1],
+                                                                  (float) towritePredictions[2],
+                                                                  (float) towritePredictions[3],
+                                                                  (float) towritePredictions[4],
+                                                                  (float) towritePredictions[5],
+                                                                  (float) towritePredictions[6],
+                                                                  (float) towritePredictions[7]))
+                    showConnectionErrorMessage ("Error: could not send OSC message.");
+               #endif
                 cdata->predictionBuffer.write(towritePredictions);
             }
             
@@ -87,6 +132,13 @@ public:
         }
     }
 private:
+   #ifdef SEND_OSC
+    void showConnectionErrorMessage (const juce::String& messageText)
+    {
+        std::cerr << messageText.toStdString() << std::endl;
+    }
+    juce::OSCSender sender;
+   #endif
     ClassificationData* cdata = nullptr;
     ClassifierPtr* tclassifier = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ClassificationThread)
@@ -188,7 +240,33 @@ public:
 
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
-    const std::string TFLITE_MODEL_PATH =  "/udata/tensorflow/c_acc9533_CrossValidatedRun_20210507-121549_model.tflite";
+
+    const std::string MODEL_NAME = "model1-best";
+    // const std::string MODEL_NAME = "model2-nobatchnorm";
+    
+   #ifdef USE_TFLITE
+    const std::string MODEL_SUBFOLDER = "tflite";
+    const std::string MODEL_EXTENSION = "tflite";
+   #endif
+
+   #if defined(USE_RTNEURAL_CTIME) ||  defined(USE_RTNEURAL_RTIME)
+    const std::string MODEL_SUBFOLDER = "rtneural";
+    const std::string MODEL_EXTENSION = "json";
+   #endif
+
+   #ifdef USE_ONNX
+    const std::string MODEL_SUBFOLDER = "onnx";
+    const std::string MODEL_EXTENSION = "onnx";
+   #endif
+
+   #ifdef USE_TORCHSCRIPT
+    const std::string MODEL_SUBFOLDER = "torchscript";
+    const std::string MODEL_EXTENSION = "pt";
+   #endif
+
+
+    const std::string MODEL_PATH =  "/udata/neural_net_models/"+MODEL_SUBFOLDER+"/"+MODEL_NAME+"."+MODEL_EXTENSION+"";
+
     std::array<float, CData::N_CLASSES> classificationOutputVector;
 
 
@@ -299,9 +377,11 @@ public:
     /** Instantiate polling timer and pass callback **/
     PollingTimer pollingTimer{[this]{logPollingRoutine();}};
   #endif
+
 private:
     //============================== OUTPUT ====================================
     WavetableSine sinewt;   // Simple wavetable sine synth with short decay
+    SquaredSine squaredsinewt;   // Simple wavetable sine synth with short decay
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DemoProcessor)
 
 public:
