@@ -10,6 +10,9 @@ BASE=$(realpath $(pwd))
 COPY_TO_REMOTE="true"
 # COPY_TO_REMOTE="false"
 
+# CONFIG="Debug"
+CONFIG="Release"
+
 get_bname () {
     echo $(echo "$1" | grep -o -P -e '-[^/]+' | grep -o -P -e '[a-zA-Z]+' | tail -1)
 }
@@ -24,7 +27,7 @@ print_compile_script () {
     echo 'unset LD_LIBRARY_PATH' >> $1
     echo 'source /opt/elk/1.0/environment-setup-aarch64-elk-linux' >> $1
     echo 'export CXXFLAGS="-O3 -pipe -ffast-math -feliminate-unused-debug-types -funroll-loops"' >> $1
-    echo 'AR=aarch64-elk-linux-ar make -j`nproc` CONFIG=Release CFLAGS="-DJUCE_HEADLESS_PLUGIN_CLIENT=1 -Wno-psabi" TARGET_ARCH="-mcpu=cortex-a72 -mtune=cortex-a72"' >> $1
+    echo 'AR=aarch64-elk-linux-ar make -j`nproc` CONFIG='$CONFIG' CFLAGS="-DJUCE_HEADLESS_PLUGIN_CLIENT=1 -Wno-psabi" TARGET_ARCH="-mcpu=cortex-a72 -mtune=cortex-a72"' >> $1
 }
 
 
@@ -154,3 +157,8 @@ if [[ "${COPY_TO_REMOTE}" == "true" ]]; then
     scp startTechniqueClassifier.sh mind@$ELK_DESTINATION_IP:$ELK_DESTINATION_FOLDER/
 fi
 cd ..
+
+
+if [[ "${COPY_TO_REMOTE}" == "true" ]]; then
+    scp Source/guitarTechClassifier.json mind@$ELK_DESTINATION_IP:$ELK_DESTINATION_FOLDER/
+fi

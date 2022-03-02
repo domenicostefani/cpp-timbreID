@@ -180,7 +180,7 @@
       </MODULEPATHS>
     </LINUX_MAKE>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile-LegacyTFlite" extraDefs="USE_TFLITE"
-                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio">
+                externalLibraries="fftw3f&#10;liteclassifier&#10;tensorflow-lite&#10;aubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
                        headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
