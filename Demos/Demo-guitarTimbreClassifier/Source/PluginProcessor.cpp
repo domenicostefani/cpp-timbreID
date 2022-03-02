@@ -25,6 +25,31 @@
 #endif
 ClassifierPtr DemoProcessor::timbreClassifier = nullptr;
 
+std::string DemoProcessor::readJSONProperty(std::string configfilepath, std::string propertyName1, std::string propertyName2)
+{
+    // Read file
+    juce::File fileToRead = juce::File(configfilepath);
+    if (! fileToRead.existsAsFile())
+        throw std::logic_error("Configuration file does not exist at " + configfilepath);
+    // Read content as string
+    auto configJsonString = fileToRead.loadFileAsString();
+    // Parse JSON
+    juce::var parsedJson;
+    if( juce::JSON::parse(configJsonString, parsedJson).wasOk() )
+    {
+        std::string readProperty = parsedJson[propertyName1.c_str()][propertyName2.c_str()].toString().toStdString();
+        if (readProperty == "")
+            throw std::logic_error(propertyName2 + " property missing in the configuration file ("+configfilepath+")");
+        else
+            return readProperty;
+    }
+    else
+    {
+        throw std::logic_error("Error parsing the json file at '"+configfilepath+"')'");
+    }
+}
+
+
 //==============================================================================
 DemoProcessor::DemoProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -42,8 +67,10 @@ DemoProcessor::DemoProcessor()
     classificationThread(&DemoProcessor::classificationData,&DemoProcessor::timbreClassifier)
 #endif
 {
+    suspendProcessing (true);
   #ifndef FAST_MODE_1
    rtlogger.logInfo("Initializing Onset detector");
+   pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
   #endif
 
    #ifdef USE_AUBIO_ONSET
@@ -64,20 +91,73 @@ DemoProcessor::DemoProcessor()
     bfccRes.resize(BFCC_RES_SIZE);
     cepstrumRes.resize(CEPSTRUM_RES_SIZE);
 
-   #if defined(USE_TFLITE)
-    rtlogger.logInfo("Neural Network interpreter: Tensorflow Lite");
-   #elif defined(USE_RTNEURAL_CTIME)
-    rtlogger.logInfo("Neural Network interpreter: Rt neural, Compile-time defined model");
-   #elif defined(USE_RTNEURAL_RTIME)
-    rtlogger.logInfo("Neural Network interpreter: Rt neural, Run-time interpreted model");
-   #elif defined(USE_ONNX)
-    rtlogger.logInfo("Neural Network interpreter: OnnxRuntime");
-   #elif USE_TORCHSCRIPT
-    rtlogger.logInfo("Neural Network interpreter: TorchScript");
-   #else
-    rtlogger.logInfo("ERROR, can't find a preprocessor directive with the neural interpreter to use");
-   #endif
+    try
+    {
+       #if defined(USE_TFLITE)
+        rtlogger.logInfo("Neural Network interpreter: Tensorflow Lite");
+        MODEL_PATH = readJSONProperty(NN_CONFIG_JSON_PATH,"models","tensorflowlite");
+       #elif defined(USE_RTNEURAL_CTIME)
+        rtlogger.logInfo("Neural Network interpreter: Rt neural, Compile-time defined model");
+        MODEL_PATH = readJSONProperty(NN_CONFIG_JSON_PATH,"models","rtneural");
+       #elif defined(USE_RTNEURAL_RTIME)
+        rtlogger.logInfo("Neural Network interpreter: Rt neural, Run-time interpreted model");
+        MODEL_PATH = readJSONProperty(NN_CONFIG_JSON_PATH,"models","rtneural");
+       #elif defined(USE_ONNX)
+        rtlogger.logInfo("Neural Network interpreter: OnnxRuntime");
+        MODEL_PATH = readJSONProperty(NN_CONFIG_JSON_PATH,"models","onnx");
+       #elif USE_TORCHSCRIPT
+        rtlogger.logInfo("Neural Network interpreter: TorchScript");
+        MODEL_PATH = readJSONProperty(NN_CONFIG_JSON_PATH,"models","torchscript");
+       #else
+        rtlogger.logInfo("ERROR, can't find a preprocessor directive with the neural interpreter to use");
+       #endif
+
+        if (!juce::File(MODEL_PATH).existsAsFile())
+            throw std::logic_error("Model file does not exist at specified path ("+MODEL_PATH+")");
+
+       #ifndef STOP_OSC
+        std::string enableOSC = readJSONProperty(NN_CONFIG_JSON_PATH,"osc","enable");
+        if ((enableOSC == "true") || (enableOSC == "True") || (enableOSC == "TRUE"))
+        {
+            std::string oscIP = readJSONProperty(NN_CONFIG_JSON_PATH,"osc","target-ip");
+            std::cout << "Setting OSC ip to " << oscIP << std::endl << std::flush;
+            int oscPort = std::stoi(readJSONProperty(NN_CONFIG_JSON_PATH,"osc","target-port"));
+            std::cout << "Setting OSC port to " << oscPort << std::endl << std::flush;
+            this->classificationThread.connectOSC(oscIP,oscPort);
+
+            
+            std::string oscMsg = readJSONProperty(NN_CONFIG_JSON_PATH,"osc","osc-address");
+            std::cout << "Setting OSC message address to " << oscMsg << std::endl << std::flush;
+            this->classificationThread.setOSCmessage(oscMsg);
+            
+            std::string classMsgType = readJSONProperty(NN_CONFIG_JSON_PATH,"osc","class-msg-type");
+            if (classMsgType == "all")
+            {
+                std::cout << "Setting OSC message type to send the entire output layer values (8)" << std::endl << std::flush;
+                this->classificationThread.setFullOSCmessage(true);
+            } 
+            else if (classMsgType == "best")
+            {
+                std::cout << "Setting OSC message type to send a single integer with the predicted class (best score)" << std::endl << std::flush;
+                this->classificationThread.setFullOSCmessage(false);
+            }
+            else
+            {
+                std::cerr << "Invalid message type in JSON config (use either 'all' or 'best')" << std::endl << std::flush;
+            }
+
+            this->classificationThread.setOSCmessage(oscMsg);
+        }
+       #endif
+       
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl << std::flush;
+        rtlogger.logInfo(e.what());
+    }
     rtlogger.logValue("Model Path: ",MODEL_PATH.c_str());
+
 
     /** SET UP CLASSIFIER **/
    #ifndef FAST_MODE_1
@@ -88,9 +168,8 @@ DemoProcessor::DemoProcessor()
     DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH);
    #ifndef FAST_MODE_1
     rtlogger.logInfo("Classifier object istantiated");
-    /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
-    pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
    #endif
+    suspendProcessing (false);
 }
 
 DemoProcessor::~DemoProcessor(){

@@ -17,7 +17,7 @@
 #include "squaredSineWavetable.h"
 
 #ifdef USE_TFLITE
- #include "tflitewrapper.h"
+ #include "liteclassifier.h"
 #endif
 
 #ifdef USE_RTNEURAL_CTIME
@@ -48,12 +48,7 @@
 // #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
 #define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
 
-#define SEND_OSC
-#ifdef SEND_OSC
- #define OSC_TARGET_IP "192.168.42.38"
-//  #define OSC_TARGET_IP "192.168.42.38"
- #define OSC_TARGET_PORT 9001
-#endif
+// #define STOP_OSC
 
 namespace CData{
 
@@ -84,11 +79,6 @@ public:
         this->cdata = cdata;
         this->tclassifier = tclassifier;
 
-       #ifdef SEND_OSC
-        if (! this->sender.connect (OSC_TARGET_IP, OSC_TARGET_PORT))
-            showConnectionErrorMessage ("Error: could not connect to UDP port.");
-       #endif
-
         startThread (6);
     }
 
@@ -96,6 +86,26 @@ public:
     {
         stopThread (2000); // allow the thread 2 seconds to stop cleanly - should be plenty of time.
     }
+   
+   #ifndef STOP_OSC
+    void connectOSC(std::string osc_target_ip, int osc_target_port)
+    {
+        if (! this->sender.connect (osc_target_ip, osc_target_port))
+            showConnectionErrorMessage ("Error: could not connect to UDP port.");
+        else
+            this->isOSCconnected = true;
+    }
+
+    void setOSCmessage(std::string osc_message)
+    {
+        this->oscMessage = osc_message;
+    }
+
+    void setFullOSCmessage (bool fullOSCmessage)
+    {
+        this->full_message_type = fullOSCmessage;
+    }
+   #endif
 
     void run() override
     {
@@ -110,16 +120,44 @@ public:
             {
                 static ClassificationData::predictions_t towritePredictions;
                 classify(*tclassifier,readFeatures,towritePredictions);
-               #ifdef SEND_OSC
-                if (! this->sender.send ("/techclassifier/class", (float) towritePredictions[0],
-                                                                  (float) towritePredictions[1],
-                                                                  (float) towritePredictions[2],
-                                                                  (float) towritePredictions[3],
-                                                                  (float) towritePredictions[4],
-                                                                  (float) towritePredictions[5],
-                                                                  (float) towritePredictions[6],
-                                                                  (float) towritePredictions[7]))
-                    showConnectionErrorMessage ("Error: could not send OSC message.");
+               #ifndef STOP_OSC
+                if(isOSCconnected)
+                {
+                    if (full_message_type)
+                    {
+                        if (! this->sender.send (this->oscMessage.c_str(), (float) towritePredictions[0],
+                                                                   (float) towritePredictions[1],
+                                                                   (float) towritePredictions[2],
+                                                                   (float) towritePredictions[3],
+                                                                   (float) towritePredictions[4],
+                                                                   (float) towritePredictions[5],
+                                                                   (float) towritePredictions[6],
+                                                                   (float) towritePredictions[7]))
+                            showConnectionErrorMessage ("Error: could not send OSC message.");
+                    }
+                    else
+                    {
+                        float maxclass = 0;
+                        if  (towritePredictions[1] > towritePredictions[maxclass])
+                            maxclass = 1;
+                        if  (towritePredictions[2] > towritePredictions[maxclass])
+                            maxclass = 2;
+                        if  (towritePredictions[3] > towritePredictions[maxclass])
+                            maxclass = 3;
+                        if  (towritePredictions[4] > towritePredictions[maxclass])
+                            maxclass = 4;
+                        if  (towritePredictions[5] > towritePredictions[maxclass])
+                            maxclass = 5;
+                        if  (towritePredictions[6] > towritePredictions[maxclass])
+                            maxclass = 6;
+                        if  (towritePredictions[7] > towritePredictions[maxclass])
+                            maxclass = 7;
+
+
+                        if (! this->sender.send (this->oscMessage.c_str(), (int) maxclass), float towritePredictions[maxclass])
+                            showConnectionErrorMessage ("Error: could not send OSC message.");
+                    }
+                }
                #endif
                 cdata->predictionBuffer.write(towritePredictions);
             }
@@ -132,12 +170,15 @@ public:
         }
     }
 private:
-   #ifdef SEND_OSC
+   #ifndef STOP_OSC
+    bool isOSCconnected = false;
     void showConnectionErrorMessage (const juce::String& messageText)
     {
         std::cerr << messageText.toStdString() << std::endl;
     }
     juce::OSCSender sender;
+    std::string oscMessage = "/";
+    bool full_message_type = true;
    #endif
     ClassificationData* cdata = nullptr;
     ClassifierPtr* tclassifier = nullptr;
@@ -240,32 +281,9 @@ public:
 
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
-
-    const std::string MODEL_NAME = "model1-best";
-    // const std::string MODEL_NAME = "model2-nobatchnorm";
     
-   #ifdef USE_TFLITE
-    const std::string MODEL_SUBFOLDER = "tflite";
-    const std::string MODEL_EXTENSION = "tflite";
-   #endif
-
-   #if defined(USE_RTNEURAL_CTIME) ||  defined(USE_RTNEURAL_RTIME)
-    const std::string MODEL_SUBFOLDER = "rtneural";
-    const std::string MODEL_EXTENSION = "json";
-   #endif
-
-   #ifdef USE_ONNX
-    const std::string MODEL_SUBFOLDER = "onnx";
-    const std::string MODEL_EXTENSION = "onnx";
-   #endif
-
-   #ifdef USE_TORCHSCRIPT
-    const std::string MODEL_SUBFOLDER = "torchscript";
-    const std::string MODEL_EXTENSION = "pt";
-   #endif
-
-
-    const std::string MODEL_PATH =  "/udata/neural_net_models/"+MODEL_SUBFOLDER+"/"+MODEL_NAME+"."+MODEL_EXTENSION+"";
+    const std::string NN_CONFIG_JSON_PATH = "/udata/guitarTechClassifier.json";
+    std::string MODEL_PATH =  "";
 
     std::array<float, CData::N_CLASSES> classificationOutputVector;
 
@@ -377,6 +395,9 @@ public:
     /** Instantiate polling timer and pass callback **/
     PollingTimer pollingTimer{[this]{logPollingRoutine();}};
   #endif
+
+  
+    std::string readJSONProperty(std::string configfilepath, std::string propertyName1, std::string propertyName2);
 
 private:
     //============================== OUTPUT ====================================

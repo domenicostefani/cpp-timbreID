@@ -1,0 +1,16 @@
+{
+    "models": {
+      "tensorflowlite": "/udata/neural_net_models/tflite/model1-best.tflite",
+      "torchscript":     "/udata/neural_net_models/torchscript/model1-best.pt",
+      "onnx":            "/udata/neural_net_models/onnx/model1-best.onnx",
+      "rtneural":        "/udata/neural_net_models/rtneural/model2-nobatchnorm.json"
+    },
+    "osc": {
+        "enable": "true",
+        "target-ip": "localhost",
+        "target-port": "9001",
+        "osc-address": "/guitarClassifier/class",
+        "___comment___" : "class-msg-type can either be 'all' to have the 8 outputs of the last layer, or 'best' to have only an int with the best class",
+        "class-msg-type": "all"
+    }
+}
