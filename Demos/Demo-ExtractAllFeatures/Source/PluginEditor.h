@@ -18,14 +18,16 @@
 #include "LED.h"
 #include "setParamBox.h"
 
-
 #define EXTRACTOR_DATA_SIZE  8
+
+
+typedef juce::AudioProcessorValueTreeState::ComboBoxAttachment ComboBoxAttachment;
+typedef juce::AudioProcessorValueTreeState::ButtonAttachment ButtonAttachment;
 
 //==============================================================================
 /**
 */
 class DemoEditor  : public AudioProcessorEditor,
-                    public Button::Listener,
                     private ComboBox::Listener
 {
 public:
@@ -35,7 +37,6 @@ public:
     //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
-    void buttonClicked (Button *) override;
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
 
     LED onsetLed;
@@ -43,6 +44,11 @@ public:
     setParamBox boxIoI;
     setParamBox boxThresh;
     setParamBox boxSilenceThresh;
+
+    
+    std::unique_ptr<ComboBoxAttachment> storestateAttachment;
+    std::unique_ptr<ButtonAttachment>   clearAttachment,
+                                        savefileAttachment;
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -97,6 +103,7 @@ private:
         // } while (onsetCounter==-1);
 
         updateOnsetCounter(onsetCounter);
+        performStoreClearActions();
     }
 
     PollingTimer pollingTimer{[this]{pollingRoutine();}};
@@ -108,7 +115,11 @@ private:
     Label storageTitle;
     ComboBox storageStateBox;
     TextButton clearAll;
-    setParamBox write;
+    setDualParamBox write {"SaveFile"};
     Label dispInfo;
     void updateOnsetCounter(unsigned int onsetCounter);
+    std::string dirpath;
+
+
+    void performStoreClearActions();
 };

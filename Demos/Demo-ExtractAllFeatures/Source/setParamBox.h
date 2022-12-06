@@ -10,18 +10,22 @@
 class setParamBox  : public Component
 {
 public:
-    explicit setParamBox ();
+    explicit setParamBox(String buttonText = "Set");
     ~setParamBox() override;
 
     void paint (Graphics& g) override;
     void resized() override;
 
     void setLabelText(String text);
+    void setButtonText(String text);
 
     void addListener(Button::Listener *listener);
     String getText();
     void setDefaultText(String text);
     bool hasButton(Button* button);
+
+    
+    TextButton& getButtonReference() { return this->setButton; }
 
 protected:
     TextButton setButton;
@@ -34,7 +38,7 @@ private:
 class setDualParamBox : public setParamBox
 {
 public:
-    setDualParamBox() : setParamBox()
+    setDualParamBox(String buttonText = "Set") : setParamBox(buttonText)
     {
         addAndMakeVisible(inputText2);
     }
@@ -52,10 +56,23 @@ public:
     void resized() override
     {
         Rectangle<int> area = getLocalBounds();
-        boxLabel.setBounds(area.removeFromLeft(area.getWidth()*0.4));   //40% left
-        inputText.setBounds(area.removeFromLeft(area.getWidth()*0.333)); //20% left of total
-        inputText2.setBounds(area.removeFromLeft(area.getWidth()*0.5)); //20% left of total
+        boxLabel.setBounds(area.removeFromLeft(area.getWidth()*0.2));
+        inputText.setBounds(area.removeFromLeft(area.getWidth()*0.333));
+        inputText2.setBounds(area.removeFromLeft(area.getWidth()*0.5));
         setButton.setBounds(area);  //remaining 20%
+    }
+
+    
+    void setDefaultText(String text) = delete;
+
+    void setDefaultText1(String text)
+    {
+        inputText.setText(text);
+    }
+    
+    void setDefaultText2(String text)
+    {
+        inputText2.setText(text);
     }
 private:
     TextEditor inputText2;

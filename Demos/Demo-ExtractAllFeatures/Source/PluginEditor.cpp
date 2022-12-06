@@ -17,11 +17,33 @@
 #include <iostream>
 #include <string>
 
+#define COMPACT_INTERFACE
+
 //==============================================================================
+std::string generateName(std::string directoryPath)
+{
+    std::string filename = "test.csv";
+
+    File tmpfile = File(directoryPath+filename);
+    int counter = 1;
+    while(tmpfile.exists())
+    {
+        filename = "test" + std::to_string(counter++) + ".csv";
+        tmpfile = File(directoryPath+filename);
+    }
+    return filename;
+}
+
+
 DemoEditor::DemoEditor (DemoProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
+
+   #ifndef COMPACT_INTERFACE
     setSize (1200, 750);
+   #else
+    setSize (500, 200);
+   #endif
 
     addAndMakeVisible(titleLabel);
     titleLabel.setText("Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
@@ -33,17 +55,17 @@ DemoEditor::DemoEditor (DemoProcessor& p)
 
     addAndMakeVisible(onsetLed);
 
-    addAndMakeVisible(boxIoI);
-    boxIoI.setLabelText("Min Inter Onset Interval (millis) [0-inf]: ");
-    boxIoI.addListener(this);
+    // addAndMakeVisible(boxIoI);
+    // boxIoI.setLabelText("Min Inter Onset Interval (millis) [0-inf]: ");
+    // boxIoI.addListener(this);
 
-    addAndMakeVisible(boxThresh);
-    boxThresh.setLabelText("Onset Threshold: ");
-    boxThresh.addListener(this);
+    // addAndMakeVisible(boxThresh);
+    // boxThresh.setLabelText("Onset Threshold: ");
+    // boxThresh.addListener(this);
 
-    addAndMakeVisible(boxSilenceThresh);
-    boxSilenceThresh.setLabelText("Silence Threshold: ");
-    boxSilenceThresh.addListener(this);
+    // addAndMakeVisible(boxSilenceThresh);
+    // boxSilenceThresh.setLabelText("Silence Threshold: ");
+    // boxSilenceThresh.addListener(this);
 
     pollingTimer.startPolling();
 
@@ -58,20 +80,32 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     storageTitle.setJustificationType(Justification::centred);
 
     addAndMakeVisible(storageStateBox);
-    storageStateBox.addItem("Idle",2);
     storageStateBox.addItem("Store",1);
-    storageStateBox.setSelectedId(2);
+    storageStateBox.addItem("Idle",2);
+    auto val = processor.storageState.load();
+    if(val == DemoProcessor::StorageState::idle)
+        storageStateBox.setSelectedId(2);
+    else
+        storageStateBox.setSelectedId(1);
     storageStateBox.setJustificationType(Justification::centred);
-    storageStateBox.addListener(this);
+    // storageStateBox.addListener(this);
+    storestateAttachment.reset(new ComboBoxAttachment(processor.parameters,processor.STORESTATE_ID,storageStateBox));
 
     addAndMakeVisible(clearAll);  //TextButton
-    clearAll.addListener(this);
+    // clearAll.addListener(this);
     clearAll.setButtonText("clear");
+    clearAll.setClickingTogglesState (true);
+    clearAttachment.reset(new ButtonAttachment(processor.parameters,processor.CLEAR_ID,clearAll));
 
     addAndMakeVisible(write);  //SetParamBox
-    write.addListener(this);
+    // write.addListener(this);
     write.setLabelText("write");
-    write.setDefaultText("./data/feature-db.csv");
+    this->dirpath = "~/DatasetFeatureExtraction/";
+    write.setDefaultText1(dirpath);
+    write.setDefaultText2(generateName(this->dirpath));
+
+    write.getButtonReference().setClickingTogglesState(true);
+    savefileAttachment.reset(new ButtonAttachment(processor.parameters,processor.SAVEFILE_ID,write.getButtonReference()));
 
     addAndMakeVisible(dispInfo);  //Label
     dispInfo.setText("dispInfo", NotificationType::dontSendNotification);
@@ -85,6 +119,9 @@ DemoEditor::~DemoEditor()
 void DemoEditor::paint (Graphics& g)
 {
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+    // g.fillAll (juce::Colours::lightgreen);
+
+
 
     this->mSampleRate = processor.getSampleRate();
     this->mBlockSize = processor.getBlockSize();
@@ -98,20 +135,29 @@ void DemoEditor::resized()
     Rectangle<int> usable = area.reduced(10);
 
     titleLabel.setBounds(usable.removeFromTop(boxHeight*2));
+
+
+   #ifndef COMPACT_INTERFACE
     Rectangle<int> data = usable.removeFromTop(usable.getHeight()*0.4);
     Rectangle<int> bottom = usable;
+   #else
+    Rectangle<int> data = usable;
+   #endif
 
-    onsetLed.setBounds(data.removeFromLeft(100));
-    Rectangle<int> onsetdata = data.removeFromLeft(data.getWidth()*0.7);
+    onsetLed.setBounds(data.removeFromLeft(70));
+   #ifndef COMPACT_INTERFACE
+    Rectangle<int> onsetdata = data.removeFromLeft(data.getWidth()*0.5);
     dataLabel.setBounds(onsetdata.removeFromTop(onsetdata.getHeight()*0.5));
-    Rectangle<int> classifierBox = data;
-
     boxIoI.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxIoI.getHeight()));
     boxThresh.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxThresh.getHeight()));
     boxSilenceThresh.setBounds(onsetdata.removeFromTop(boxHeight<bottom.getHeight()?boxHeight:boxSilenceThresh.getHeight()));
+   #endif
+    Rectangle<int> classifierBox = data;
 
     // Knn classifier (timbreID on the right)
+   #ifndef COMPACT_INTERFACE
     storageTitle.setBounds(classifierBox.removeFromTop(boxHeight*2));
+   #endif
     Rectangle<int> storageCommands = classifierBox.removeFromTop(classifierBox.getHeight()*0.8);
     Rectangle<int> knnDisplay = classifierBox;
 
@@ -121,11 +167,12 @@ void DemoEditor::resized()
     write.setBounds(storageCommands.removeFromTop(boxHeight));
 
     dispInfo.setBounds(knnDisplay.removeFromTop(boxHeight));
-
     //bottom
+   #ifndef COMPACT_INTERFACE
     int dataWidth = bottom.getWidth()/EXTRACTOR_DATA_SIZE;
     for(int i = 0; i < EXTRACTOR_DATA_SIZE; ++i)
         extractorData[i].setBounds(bottom.removeFromLeft(dataWidth));
+   #endif
 
 }
 
@@ -149,41 +196,67 @@ std::vector<std::string> splitString(const std::string& s, char seperator)
     return output;
 }
 
-
-void DemoEditor::buttonClicked (Button * button)
+void DemoEditor::performStoreClearActions()
 {
-    if(boxIoI.hasButton(button))
-    {
-        unsigned int millis = boxIoI.getText().getIntValue();
-        std::cout << "Setting minIOI time to " << (millis/1000.0f) << " seconds at next memory release/alloc" << std::endl;
-        this->processor.aubioOnset.setOnsetMinioi(millis/1000.0f);
-    }
-    if(boxThresh.hasButton(button))
-    {
-        float val = boxThresh.getText().getFloatValue();
-        std::cout << "Setting Onset Threshold to " << val << " at next memory release/alloc" << std::endl;
-        this->processor.aubioOnset.setOnsetThreshold(val);
-    }
-    if(boxSilenceThresh.hasButton(button))
-    {
-        float val = boxSilenceThresh.getText().getFloatValue();
-        std::cout << "Setting Silence Threshold to " << val << " at next memory release/alloc" << std::endl;
-        this->processor.aubioOnset.setSilenceThreshold(val);
-    }
-    else if(&clearAll == button)
+
+    if(processor.clear.load())
     {
         std::cout << "clearAll pressed" << std::endl;
         this->processor.csvsaver.clearEntries();
         this->processor.onsetCounterAtomic.store(0);
+        processor.clear.store(false);
     }
-    else if(write.hasButton(button))
+    
+    if(processor.savefile.load())
     {
         std::cout << "write pressed" << std::endl;
-        std::string path = write.getText().toStdString();
+        File temp = File(write.getText1()+write.getText2());
+        std::string path = temp.getFullPathName().toStdString();
         std::cout << "path " << path << std::endl;
+
         this->processor.csvsaver.writeToFile(path,processor.header);
+        write.setDefaultText2(generateName(this->dirpath));
+        processor.savefile.store(false);
     }
 }
+
+// void DemoEditor::buttonClicked (Button * button)
+// {
+//     if(boxIoI.hasButton(button))
+//     {
+//         unsigned int millis = boxIoI.getText().getIntValue();
+//         std::cout << "Setting minIOI time to " << (millis/1000.0f) << " seconds at next memory release/alloc" << std::endl;
+//         this->processor.aubioOnset.setOnsetMinioi(millis/1000.0f);
+//     }
+//     if(boxThresh.hasButton(button))
+//     {
+//         float val = boxThresh.getText().getFloatValue();
+//         std::cout << "Setting Onset Threshold to " << val << " at next memory release/alloc" << std::endl;
+//         this->processor.aubioOnset.setOnsetThreshold(val);
+//     }
+//     if(boxSilenceThresh.hasButton(button))
+//     {
+//         float val = boxSilenceThresh.getText().getFloatValue();
+//         std::cout << "Setting Silence Threshold to " << val << " at next memory release/alloc" << std::endl;
+//         this->processor.aubioOnset.setSilenceThreshold(val);
+//     }
+//     else if(&clearAll == button)
+//     {
+//         std::cout << "clearAll pressed" << std::endl;
+//         this->processor.csvsaver.clearEntries();
+//         this->processor.onsetCounterAtomic.store(0);
+//     }
+//     else if(write.hasButton(button))
+//     {
+//         std::cout << "write pressed" << std::endl;
+//         File temp = File(write.getText1()+write.getText2());
+//         std::string path = temp.getFullPathName().toStdString();
+//         std::cout << "path " << path << std::endl;
+
+//         this->processor.csvsaver.writeToFile(path,processor.header);
+//         write.setDefaultText2(generateName(this->dirpath));
+//     }
+// }
 
 void DemoEditor::updateDataLabels(){
     std::string text = "";

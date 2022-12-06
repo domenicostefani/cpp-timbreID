@@ -19,12 +19,13 @@
 #include "postOnsetTimer.h"
 #include "csv_saver.h"
 
-#define LOG_LATENCY
+// #define LOG_LATENCY
 #define DO_LOG_TO_FILE
 /**
 */
 class DemoProcessor : public AudioProcessor,
-                      public tid::aubio::Onset<float>::Listener
+                      public tid::aubio::Onset<float>::Listener,
+                      private juce::AudioProcessorValueTreeState::Listener
 {
 public:
 
@@ -37,7 +38,7 @@ public:
     const unsigned int AUBIO_WINDOW_SIZE = 256;
     const unsigned int AUBIO_HOP_SIZE = 64;
     const float ONSET_THRESHOLD = 1.21f;
-    const float ONSET_MINIOI = 0.02f;  //20 ms debounce
+    const float ONSET_MINIOI = 0.110f;  //110 ms debounce
     const float SILENCE_THRESHOLD = -53.0f;
     const tid::aubio::OnsetMethod ONSET_METHOD = tid::aubio::OnsetMethod::mkl;
     const bool DISABLE_ADAPTIVE_WHITENING = true; // remember to implement in initialization module
@@ -56,6 +57,8 @@ public:
                                         SILENCE_THRESHOLD,
                                         ONSET_METHOD};
     void onsetDetected (tid::aubio::Onset<float> *);
+    // double lastOnsetDetectionTime = -1.0;
+    long unsigned int lastOnsetDetectionTime = 0;
 
     PostOnsetTimer postOnsetTimer;
     void onsetDetectedRoutine();
@@ -89,9 +92,15 @@ public:
     const std::vector<std::string> header = {"attackTime_peaksamp","attackTime_attackStartIdx","attackTime_value","barkSpecBrightness","barkSpec_1","barkSpec_2","barkSpec_3","barkSpec_4","barkSpec_5","barkSpec_6","barkSpec_7","barkSpec_8","barkSpec_9","barkSpec_10","barkSpec_11","barkSpec_12","barkSpec_13","barkSpec_14","barkSpec_15","barkSpec_16","barkSpec_17","barkSpec_18","barkSpec_19","barkSpec_20","barkSpec_21","barkSpec_22","barkSpec_23","barkSpec_24","barkSpec_25","barkSpec_26","barkSpec_27","barkSpec_28","barkSpec_29","barkSpec_30","barkSpec_31","barkSpec_32","barkSpec_33","barkSpec_34","barkSpec_35","barkSpec_36","barkSpec_37","barkSpec_38","barkSpec_39","barkSpec_40","barkSpec_41","barkSpec_42","barkSpec_43","barkSpec_44","barkSpec_45","barkSpec_46","barkSpec_47","barkSpec_48","barkSpec_49","barkSpec_50","bfcc_1","bfcc_2","bfcc_3","bfcc_4","bfcc_5","bfcc_6","bfcc_7","bfcc_8","bfcc_9","bfcc_10","bfcc_11","bfcc_12","bfcc_13","bfcc_14","bfcc_15","bfcc_16","bfcc_17","bfcc_18","bfcc_19","bfcc_20","bfcc_21","bfcc_22","bfcc_23","bfcc_24","bfcc_25","bfcc_26","bfcc_27","bfcc_28","bfcc_29","bfcc_30","bfcc_31","bfcc_32","bfcc_33","bfcc_34","bfcc_35","bfcc_36","bfcc_37","bfcc_38","bfcc_39","bfcc_40","bfcc_41","bfcc_42","bfcc_43","bfcc_44","bfcc_45","bfcc_46","bfcc_47","bfcc_48","bfcc_49","bfcc_50","cepstrum_1","cepstrum_2","cepstrum_3","cepstrum_4","cepstrum_5","cepstrum_6","cepstrum_7","cepstrum_8","cepstrum_9","cepstrum_10","cepstrum_11","cepstrum_12","cepstrum_13","cepstrum_14","cepstrum_15","cepstrum_16","cepstrum_17","cepstrum_18","cepstrum_19","cepstrum_20","cepstrum_21","cepstrum_22","cepstrum_23","cepstrum_24","cepstrum_25","cepstrum_26","cepstrum_27","cepstrum_28","cepstrum_29","cepstrum_30","cepstrum_31","cepstrum_32","cepstrum_33","cepstrum_34","cepstrum_35","cepstrum_36","cepstrum_37","cepstrum_38","cepstrum_39","cepstrum_40","cepstrum_41","cepstrum_42","cepstrum_43","cepstrum_44","cepstrum_45","cepstrum_46","cepstrum_47","cepstrum_48","cepstrum_49","cepstrum_50","cepstrum_51","cepstrum_52","cepstrum_53","cepstrum_54","cepstrum_55","cepstrum_56","cepstrum_57","cepstrum_58","cepstrum_59","cepstrum_60","cepstrum_61","cepstrum_62","cepstrum_63","cepstrum_64","cepstrum_65","cepstrum_66","cepstrum_67","cepstrum_68","cepstrum_69","cepstrum_70","cepstrum_71","cepstrum_72","cepstrum_73","cepstrum_74","cepstrum_75","cepstrum_76","cepstrum_77","cepstrum_78","cepstrum_79","cepstrum_80","cepstrum_81","cepstrum_82","cepstrum_83","cepstrum_84","cepstrum_85","cepstrum_86","cepstrum_87","cepstrum_88","cepstrum_89","cepstrum_90","cepstrum_91","cepstrum_92","cepstrum_93","cepstrum_94","cepstrum_95","cepstrum_96","cepstrum_97","cepstrum_98","cepstrum_99","cepstrum_100","cepstrum_101","cepstrum_102","cepstrum_103","cepstrum_104","cepstrum_105","cepstrum_106","cepstrum_107","cepstrum_108","cepstrum_109","cepstrum_110","cepstrum_111","cepstrum_112","cepstrum_113","cepstrum_114","cepstrum_115","cepstrum_116","cepstrum_117","cepstrum_118","cepstrum_119","cepstrum_120","cepstrum_121","cepstrum_122","cepstrum_123","cepstrum_124","cepstrum_125","cepstrum_126","cepstrum_127","cepstrum_128","cepstrum_129","cepstrum_130","cepstrum_131","cepstrum_132","cepstrum_133","cepstrum_134","cepstrum_135","cepstrum_136","cepstrum_137","cepstrum_138","cepstrum_139","cepstrum_140","cepstrum_141","cepstrum_142","cepstrum_143","cepstrum_144","cepstrum_145","cepstrum_146","cepstrum_147","cepstrum_148","cepstrum_149","cepstrum_150","cepstrum_151","cepstrum_152","cepstrum_153","cepstrum_154","cepstrum_155","cepstrum_156","cepstrum_157","cepstrum_158","cepstrum_159","cepstrum_160","cepstrum_161","cepstrum_162","cepstrum_163","cepstrum_164","cepstrum_165","cepstrum_166","cepstrum_167","cepstrum_168","cepstrum_169","cepstrum_170","cepstrum_171","cepstrum_172","cepstrum_173","cepstrum_174","cepstrum_175","cepstrum_176","cepstrum_177","cepstrum_178","cepstrum_179","cepstrum_180","cepstrum_181","cepstrum_182","cepstrum_183","cepstrum_184","cepstrum_185","cepstrum_186","cepstrum_187","cepstrum_188","cepstrum_189","cepstrum_190","cepstrum_191","cepstrum_192","cepstrum_193","cepstrum_194","cepstrum_195","cepstrum_196","cepstrum_197","cepstrum_198","cepstrum_199","cepstrum_200","cepstrum_201","cepstrum_202","cepstrum_203","cepstrum_204","cepstrum_205","cepstrum_206","cepstrum_207","cepstrum_208","cepstrum_209","cepstrum_210","cepstrum_211","cepstrum_212","cepstrum_213","cepstrum_214","cepstrum_215","cepstrum_216","cepstrum_217","cepstrum_218","cepstrum_219","cepstrum_220","cepstrum_221","cepstrum_222","cepstrum_223","cepstrum_224","cepstrum_225","cepstrum_226","cepstrum_227","cepstrum_228","cepstrum_229","cepstrum_230","cepstrum_231","cepstrum_232","cepstrum_233","cepstrum_234","cepstrum_235","cepstrum_236","cepstrum_237","cepstrum_238","cepstrum_239","cepstrum_240","cepstrum_241","cepstrum_242","cepstrum_243","cepstrum_244","cepstrum_245","cepstrum_246","cepstrum_247","cepstrum_248","cepstrum_249","cepstrum_250","cepstrum_251","cepstrum_252","cepstrum_253","cepstrum_254","cepstrum_255","cepstrum_256","cepstrum_257","cepstrum_258","cepstrum_259","cepstrum_260","cepstrum_261","cepstrum_262","cepstrum_263","cepstrum_264","cepstrum_265","cepstrum_266","cepstrum_267","cepstrum_268","cepstrum_269","cepstrum_270","cepstrum_271","cepstrum_272","cepstrum_273","cepstrum_274","cepstrum_275","cepstrum_276","cepstrum_277","cepstrum_278","cepstrum_279","cepstrum_280","cepstrum_281","cepstrum_282","cepstrum_283","cepstrum_284","cepstrum_285","cepstrum_286","cepstrum_287","cepstrum_288","cepstrum_289","cepstrum_290","cepstrum_291","cepstrum_292","cepstrum_293","cepstrum_294","cepstrum_295","cepstrum_296","cepstrum_297","cepstrum_298","cepstrum_299","cepstrum_300","cepstrum_301","cepstrum_302","cepstrum_303","cepstrum_304","cepstrum_305","cepstrum_306","cepstrum_307","cepstrum_308","cepstrum_309","cepstrum_310","cepstrum_311","cepstrum_312","cepstrum_313","cepstrum_314","cepstrum_315","cepstrum_316","cepstrum_317","cepstrum_318","cepstrum_319","cepstrum_320","cepstrum_321","cepstrum_322","cepstrum_323","cepstrum_324","cepstrum_325","cepstrum_326","cepstrum_327","cepstrum_328","cepstrum_329","cepstrum_330","cepstrum_331","cepstrum_332","cepstrum_333","cepstrum_334","cepstrum_335","cepstrum_336","cepstrum_337","cepstrum_338","cepstrum_339","cepstrum_340","cepstrum_341","cepstrum_342","cepstrum_343","cepstrum_344","cepstrum_345","cepstrum_346","cepstrum_347","cepstrum_348","cepstrum_349","cepstrum_350","cepstrum_351","cepstrum_352","cepstrum_353","mfcc_1","mfcc_2","mfcc_3","mfcc_4","mfcc_5","mfcc_6","mfcc_7","mfcc_8","mfcc_9","mfcc_10","mfcc_11","mfcc_12","mfcc_13","mfcc_14","mfcc_15","mfcc_16","mfcc_17","mfcc_18","mfcc_19","mfcc_20","mfcc_21","mfcc_22","mfcc_23","mfcc_24","mfcc_25","mfcc_26","mfcc_27","mfcc_28","mfcc_29","mfcc_30","mfcc_31","mfcc_32","mfcc_33","mfcc_34","mfcc_35","mfcc_36","mfcc_37","mfcc_38","peakSample_value","peakSample_index","zeroCrossing"};
 
     //============================= SAVE CSV ===================================
-    // TODO: put stuff related to CSV save gere
+    // TODO: check atomic::wait
+    // float oldOnsetMinIoi,oldOnsetThreshold,oldOnsetSilence;
+    // std::atomic<float> onsetMinIoi,onsetThreshold,onsetSilence;
+    std::atomic<bool> clearAt{false},writeAt{false};
 
-
+    SaveToCsv<100000,VECTOR_SIZE,CSV_FLOAT_PRECISION> csvsaver;
+    int pluginSampleRate,pluginBlockSize;
+    void logInCsvSpecial(std::string messagestr);
+    long unsigned int sampleCounter = 0;
     //============================== OTHER =====================================
     /**    Debugging    */
    #ifdef DEBUG_WHICH_CHANNEL
@@ -190,14 +199,6 @@ public:
 
     std::atomic<StorageState> storageState {StorageState::idle};
 
-
-    // TODO: check atomic::wait
-    // float oldOnsetMinIoi,oldOnsetThreshold,oldOnsetSilence;
-    // std::atomic<float> onsetMinIoi,onsetThreshold,onsetSilence;
-    std::atomic<bool> clearAt{false},writeAt{false};
-
-    SaveToCsv<100000,VECTOR_SIZE,CSV_FLOAT_PRECISION> csvsaver;
-
    #ifdef LOG_LATENCY
     //Latency log
 
@@ -205,12 +206,22 @@ public:
         latencyLogPeriod = 1000;
    #endif
 
+    const juce::String STORESTATE_NAME = "Store State",
+                       CLEAR_NAME      = "Clear Entries",
+                       SAVEFILE_NAME   = "Save Csv", 
+                       STORESTATE_ID   = "storestate",
+                       CLEAR_ID        = "clearentries",
+                       SAVEFILE_ID     = "savecsv";
+    AudioProcessorValueTreeState parameters;
+    AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    
+    void parameterChanged(const juce::String & parameterID, float newValue);
 
 
+    std::atomic<bool> clear{false},
+                      savefile{false};
 
-
-
-
+    
 
 
 private:

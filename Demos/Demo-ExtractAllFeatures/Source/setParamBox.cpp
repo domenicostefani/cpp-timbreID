@@ -1,13 +1,13 @@
 #include "setParamBox.h"
 
 //==============================================================================
-setParamBox::setParamBox ()
+setParamBox::setParamBox (String buttonText)
 {
     addAndMakeVisible(boxLabel);
     addAndMakeVisible(inputText);
     addAndMakeVisible(setButton);
-
-    setButton.setButtonText("Set");
+    
+    setButton.setButtonText(buttonText);
 }
 
 setParamBox::~setParamBox(){}
@@ -29,6 +29,11 @@ void setParamBox::resized()
 void setParamBox::setLabelText(String text)
 {
     boxLabel.setText(text, dontSendNotification);
+}
+
+void setParamBox::setButtonText(String text)
+{
+    setButton.setButtonText(text);
 }
 
 void setParamBox::addListener(Button::Listener *listener)

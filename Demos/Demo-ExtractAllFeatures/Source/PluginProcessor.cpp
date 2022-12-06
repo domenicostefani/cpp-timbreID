@@ -40,9 +40,11 @@ DemoProcessor::DemoProcessor()
                       #endif
                        .withOutput ("Output", AudioChannelSet::mono(), true)
                      #endif
-                       )
+                       ),
 #endif
-{
+    parameters(*this, nullptr, "PARAMETERS", createParameterLayout())
+{    
+    suspendProcessing (true);
     rtlogger.logInfo("Initializing Onset detector");
 
     /** ADD ONSET DETECTOR LISTENER **/
@@ -58,6 +60,48 @@ DemoProcessor::DemoProcessor()
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
    #endif
+
+    // if (JUCEApplicationBase::isStandaloneApp()) TODO: reemove because I did this below
+    //     storageState.store(StorageState::idle);
+    // else
+    //     storageState.store(StorageState::store);
+
+    parameters.state = ValueTree("savedParams");
+    parameters.addParameterListener(STORESTATE_ID,this);
+    parameters.addParameterListener(CLEAR_ID,this);
+    parameters.addParameterListener(SAVEFILE_ID,this);
+
+    for (auto p : getParameters())
+    {
+        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    }
+
+    rtlogger.logValue("HasEditor",this->hasEditor());
+
+    suspendProcessing (false);
+}
+
+void DemoProcessor::logInCsvSpecial(std::string messagestr)
+{
+    Entry<VECTOR_SIZE>* currentEntry = csvsaver.entryToWrite();
+
+    if (!currentEntry)
+        rtlogger.logInfo("ERROR: csv buffer full");
+    else
+    {
+        currentEntry->onsetDetectionTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
+        currentEntry->featureComputationTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
+        currentEntry->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;
+        currentEntry->sampleRate = this->pluginSampleRate;
+        currentEntry->blockSize = this->pluginBlockSize;
+        currentEntry->writeMessage(messagestr.c_str());
+        /*--------------------/
+        | 3. STORE Entry      |
+        /--------------------*/
+        size_t oc = csvsaver.confirmEntry();
+        // onsetCounterAtomic.exchange(oc);
+    }
 }
 
 DemoProcessor::~DemoProcessor(){
@@ -71,6 +115,11 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
+
+    logInCsvSpecial("StartProcessing");
+
+    this->pluginSampleRate = (int)sampleRate;
+    this->pluginBlockSize = samplesPerBlock;
 
     /** INIT ONSET DETECTOR MODULE**/
     if (DISABLE_ADAPTIVE_WHITENING)
@@ -125,6 +174,8 @@ void DemoProcessor::releaseResources()
     rtlogger.logInfo("+--ReleaseResources called");
     rtlogger.logInfo("+  Releasing Onset detector resources");
 
+    logInCsvSpecial("StopProcessing");
+
     /** FREE ONSET DETECTOR MEMORY **/
     aubioOnset.reset();
 
@@ -148,6 +199,7 @@ void DemoProcessor::releaseResources()
 void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
+    sampleCounter += buffer.getNumSamples();
    #ifdef LOG_LATENCY
     int64 timeAtProcessStart = 0;
     if (++latencyCounter >= latencyLogPeriod)
@@ -186,7 +238,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         rtlogger.logInfo("An unknwn exception has occurred while buffering: ");
     }
     /** CLEAR THE BUFFER (OPTIONAL) **/
-    // buffer.clear(); // Uncomment to let input pass through
+    buffer.clear(); // Uncomment to let input pass through
 
     /** UPDATE POST ONSET COUNTER/TIMER **/
    #ifdef DO_DELAY_ONSET
@@ -208,9 +260,11 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 }
 
 void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
+    // this->onsetDetectionTime =  Time::Time::getHighResolutionTicks();
     if(aubioOnset == &this->aubioOnset)
     {
         this->onsetMonitorState.exchange(true);
+        this->lastOnsetDetectionTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes();
        #ifdef DO_DELAY_ONSET
         if(postOnsetTimer.isIdle())
         {
@@ -249,11 +303,21 @@ void DemoProcessor::onsetDetectedRoutine ()
             /--------------------*/
             this->computeFeatureVector(currentFV->features);
 
-            /*-------------------/
-            | 2. STORE FEATURES  |
-            /-------------------*/
+            /*--------------------/
+            | 2. ADD METADATA     |
+            /--------------------*/
+            currentFV->onsetDetectionTime = this->lastOnsetDetectionTime; //double
+            currentFV->featureComputationTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes(); //double
+            currentFV->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;   // int
+            currentFV->sampleRate = this->pluginSampleRate;   // int
+            currentFV->blockSize = this->pluginBlockSize;    // int
+            /*--------------------/
+            | 3. STORE FEATURES   |
+            /--------------------*/
             size_t oc = csvsaver.confirmEntry();
-            onsetCounterAtomic.exchange(oc);
+
+            onsetCounterAtomic++;   // I stopped using the next line when introducing special log entries in the csv buffer, otherwise they would be counted.
+            // onsetCounterAtomic.exchange(oc);
         }
     }
     else
@@ -383,6 +447,70 @@ void DemoProcessor::computeFeatureVector(float featureVector[])
 
 }
 
+void DemoProcessor::parameterChanged(const juce::String & parameterID, float newValue)
+{
+    // std::cout << parameterID << " changed (" << newValue << ")\n" << std::flush;
+    if (parameterID == this->STORESTATE_ID)
+        this->storageState = (int)(newValue == 0) ? StorageState::store : StorageState::idle;
+    else if (parameterID == this->CLEAR_ID)
+    {
+        this->clear = true;
+        // std::cout << "set clear to " << std::endl;
+        // std::cout << "clearAll pressed" << std::endl;
+        // this->processor.csvsaver.clearEntries();
+        // this->processor.onsetCounterAtomic.store(0);
+    }    
+    else if (parameterID == this->SAVEFILE_ID)
+    {
+        // std::cout << "write pressed" << std::endl;
+        this->savefile = true;
+        // File temp = File(write.getText1()+write.getText2());
+        // std::string path = temp.getFullPathName().toStdString();
+        // std::cout << "path " << path << std::endl;
+
+        // this->processor.csvsaver.writeToFile(path,processor.header);
+        // write.setDefaultText2(generateName(this->dirpath));
+    }
+}
+
+/** Create the parameters to add to the value tree state
+ * In this case only the boolean recording state (true = rec, false = stop)
+*/
+AudioProcessorValueTreeState::ParameterLayout DemoProcessor::createParameterLayout()
+{
+    std::vector<std::unique_ptr<RangedAudioParameter>> parameters;
+    parameters.push_back(std::make_unique<AudioParameterBool>(STORESTATE_ID, STORESTATE_NAME,JUCEApplicationBase::isStandaloneApp() ? false : true));
+    parameters.push_back(std::make_unique<AudioParameterBool>(CLEAR_ID, CLEAR_NAME,false));
+    parameters.push_back(std::make_unique<AudioParameterBool>(SAVEFILE_ID, SAVEFILE_NAME,false));
+
+    return {parameters.begin(), parameters.end()};
+}
+
+//== SAVING PARAMETERS =========================================================
+void DemoProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    // Save parameters
+    std::unique_ptr<XmlElement> xml(parameters.state.createXml());
+    copyXmlToBinary(*xml,destData);
+}
+
+void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    // Restore parameters
+    std::unique_ptr<XmlElement> xml(getXmlFromBinary(data,sizeInBytes));
+
+    if(xml != nullptr)
+        if(xml->hasTagName(parameters.state.getType()))
+            parameters.state = juce::ValueTree::fromXml(*xml);
+
+    for (auto p : getParameters())
+    {
+        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    }
+}
+
+
 /*    JUCE stuff ahead, not relevant to the demo    */
 
 
@@ -459,8 +587,6 @@ bool DemoProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 //==============================================================================
 bool DemoProcessor::hasEditor() const {return true;}
 AudioProcessorEditor* DemoProcessor::createEditor(){return new DemoEditor (*this);}
-void DemoProcessor::getStateInformation (MemoryBlock& destData){}
-void DemoProcessor::setStateInformation (const void* data, int sizeInBytes){}
 
 //==============================================================================
 // This creates new instances of the plugin..

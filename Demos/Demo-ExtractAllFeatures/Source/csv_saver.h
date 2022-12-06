@@ -6,6 +6,24 @@ template <unsigned int FEATURE_NUM>
 struct Entry
 {
     float features[FEATURE_NUM];
+    long unsigned int onsetDetectionTime, featureComputationTime;
+    int featureExtractionWindowSize,sampleRate,blockSize;
+    bool isSpecial = false;
+    char message[51];
+
+    void writeMessage(const char message[]){
+        this->isSpecial = true;
+        strncpy(this->message, message, 51);
+    }
+
+    void reset() {
+        for(float& val:features)
+            val = 0.0;
+        onsetDetectionTime = 0;
+        featureComputationTime = 0;
+        isSpecial = false;
+        message[0] = '\0';
+    }
 };
 
 template <unsigned int BUFFER_SIZE, unsigned int FEATURE_NUM, unsigned int PRECISION>
@@ -24,7 +42,10 @@ public:
     // }
 
     Entry<FEATURE_NUM>* entryToWrite(){
-        return tail < BUFFER_SIZE ? &entriesBuffer[tail] : nullptr;
+        auto res = tail < BUFFER_SIZE ? &entriesBuffer[tail] : nullptr;
+        if (res)
+            res -> reset();
+        return res;
     }
 
     size_t confirmEntry(){
@@ -46,7 +67,9 @@ public:
 
         std::ofstream csvFile;
         csvFile.open (filename);
+
         // WRITE HEADER
+        csvFile << "onsetDetectionTime,featureComputationTime,featureExtractionWindowSize,sampleRate,blockSize,";
         for (size_t i=0; i < header.size(); ++i)
         {
             csvFile << header[i];
@@ -55,17 +78,32 @@ public:
             else
                 csvFile  << "\n";
         }
+
         // WRITE ENTRIES
         int endIndex = tail.load();
         for (size_t i=0; i < endIndex; ++i)
         {
-            for (size_t j=0; j < FEATURE_NUM; ++j)
+            csvFile << std::setprecision(std::numeric_limits<double>::digits10 + 1) <<\
+                       entriesBuffer[i].onsetDetectionTime << "," <<\
+                       entriesBuffer[i].featureComputationTime << "," <<\
+                       entriesBuffer[i].featureExtractionWindowSize << "," <<\
+                       entriesBuffer[i].sampleRate << "," <<\
+                       entriesBuffer[i].blockSize << ",";
+
+            if (entriesBuffer[i].isSpecial)
             {
-                csvFile << std::setprecision(PRECISION) << entriesBuffer[i].features[j];
-                if( j != FEATURE_NUM-1)
-                    csvFile  << ",";
-                else
-                    csvFile  << "\n";
+                csvFile << entriesBuffer[i].message << '\n';
+            }
+            else
+            {
+                for (size_t j=0; j < FEATURE_NUM; ++j)
+                {
+                    csvFile << std::setprecision(PRECISION) << entriesBuffer[i].features[j];
+                    if( j != FEATURE_NUM-1)
+                        csvFile  << ",";
+                    else
+                        csvFile  << "\n";
+                }
             }
         }
 
