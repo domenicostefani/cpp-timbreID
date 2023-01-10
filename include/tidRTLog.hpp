@@ -31,7 +31,7 @@ public:
 
     /** Entry in the log */
     struct LogEntry {
-        static const int MESSAGE_LENGTH = 80;       // Length of messages in the fifo buffer
+        static const int MESSAGE_LENGTH = 240;       // Length of messages in the fifo buffer
         int64 timeAtStart,  // Intended to log time intervals
             timeAtEnd;    // Intended to log time intervals
         char message[MESSAGE_LENGTH+1];
