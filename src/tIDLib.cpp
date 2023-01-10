@@ -57,17 +57,17 @@ float bark2freq(float bark)
     switch(formula)
     {
         case tIDLib::bark2freqFormula0:
-            freq = 600.0 * sinh(bark/6.0);
+            freq = 600.0f * sinh(bark/6.0f);
             break;
         case tIDLib::bark2freqFormula1:
-            freq = 53548.0/(bark*bark - 52.56*bark + 690.39);
+            freq = 53548.0f/(bark*bark - 52.56f*bark + 690.39f);
             break;
         case tIDLib::bark2freqFormula2:
-            freq = 1960/(26.81/(bark+0.53) - 1);
+            freq = 1960f/(26.81f/(bark+0.53f) - 1f);
             freq = (freq<0)?0:freq;
             break;
         default:
-            freq = 0;
+            freq = 0f;
     }
 
     return(freq);
@@ -83,17 +83,17 @@ float freq2bark(float freq)
     switch(formula)
     {
         case tIDLib::freq2barkFormula0:
-            barkFreq = 6.0*asinh(freq/600.0);
+            barkFreq = 6.0f*asinh(freq/600.0f);
             break;
         case tIDLib::freq2barkFormula1:
-            barkFreq = 13*atan(0.00076*freq) + 3.5*atan(powf((freq/7500), 2));
+            barkFreq = 13f*atan(0.00076f*freq) + 3.5f*atan(powf((freq/7500f), 2));
             break;
         case tIDLib::freq2barkFormula2:
-            barkFreq = ((26.81*freq)/(1960+freq))-0.53;
+            barkFreq = ((26.81f*freq)/(1960f+freq))-0.53f;
             if(barkFreq<2)
-                barkFreq += 0.15*(2-barkFreq);
-            else if(barkFreq>20.1)
-                barkFreq += 0.22*(barkFreq-20.1);
+                barkFreq += 0.15f*(2-barkFreq);
+            else if(barkFreq>20.1f)
+                barkFreq += 0.22f*(barkFreq-20.1f);
             break;
         default:
             barkFreq = 0;
@@ -118,9 +118,9 @@ float mel2freq(float mel)
 {
     float freq;
 
-    freq = 700 * (exp(mel/1127) - 1);
-//    freq = 700 * (exp(mel/1127.01048) - 1);
-    freq = (freq<0)?0:freq;
+    freq = 700 * (exp(mel/1127f) - 1f);
+//    freq = 700 * (exp(mel/1127.01048f) - 1);
+    freq = (freq<0f)?0f:freq;
     return(freq);
 }
 /* ---------------- END conversion functions ---------------------- */
@@ -151,7 +151,7 @@ signed char signum(float input)
 
 float euclidDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights, bool sqroot)
 {
-    float dist = 0.0;
+    float dist = 0.0f;
 
     for(t_attributeIdx i = 0; i < n; ++i)
     {
@@ -167,7 +167,7 @@ float euclidDist(t_attributeIdx n, const std::vector<float>& v1, const std::vect
 
 float taxiDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2, const std::vector<float>& weights)
 {
-    float dist = 0.0;
+    float dist = 0.0f;
     for(t_attributeIdx i = 0; i < n; i++)
         dist += fabs(v1[i] - v2[i]) * weights[i];
     return(dist);
@@ -175,7 +175,7 @@ float taxiDist(t_attributeIdx n, const std::vector<float>& v1, const std::vector
 
 float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<float>& v2)
 {
-    float sum1 = 0.0, sum2 = 0.0;
+    float sum1 = 0.0f, sum2 = 0.0f;
     for(t_attributeIdx i = 0; i < n; ++i)
     {
         sum1 += v1[i];
@@ -193,7 +193,7 @@ float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<flo
         v2centered[i] = v2[i] - mean2;
     }
 
-    float std1 = 0.0, std2 = 0.0;
+    float std1 = 0.0f, std2 = 0.0f;
     for(t_attributeIdx i = 0; i < n; i++)
     {
         std1 += v1centered[i]*v1centered[i];
@@ -203,7 +203,7 @@ float corr(t_attributeIdx n, const std::vector<float>& v1, const std::vector<flo
     std1 = sqrt(std1/n);
     std2 = sqrt(std2/n);
 
-    float corr = 0.0;
+    float corr = 0.0f;
     for(t_attributeIdx i = 0; i < n; i++)
         corr += v1centered[i] * v2centered[i];
 
@@ -286,7 +286,7 @@ void sortKnnInfo(unsigned short int k, t_instanceIdx numInstances, t_instanceIdx
 t_binIdx nearestBinIndex(float target, const float *binFreqs, t_binIdx n)
 {
     float bestDist = FLT_MAX;
-    float dist = 0.0;
+    float dist = 0.0f;
     t_binIdx bin = 0;
 
     for(t_binIdx i=0; i<n; ++i)
@@ -312,13 +312,13 @@ t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_bin
 // resizes the filterFreqs array and fills it with the Hz values for the Bark filter boundaries. Reports the new number of Bark frequency band boundaries based on the desired spacing. The size of the corresponding filterbank would be sizeFilterFreqs-2
 t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr)
 {
-    if(spacing<0.1 || spacing>6.0)
+    if(spacing<0.1f || spacing>6.0f)
         throw std::invalid_argument("Bark spacing must be between 0.1 and 6.0 Barks.");
 
-    float sumBark = 0.0;
+    float sumBark = 0.0f;
     t_filterIdx sizeFilterFreqs = 0;
 
-    while( (bark2freq(sumBark)<=(sr*0.5)) && (sumBark<=MAXBARKS) )
+    while( (bark2freq(sumBark)<=(sr*0.5f)) && (sumBark<=MAXBARKS) )
     {
         sizeFilterFreqs++;
         sumBark += spacing;
@@ -327,7 +327,7 @@ t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, fl
     filterFreqs.resize(sizeFilterFreqs);
 
     // First filter boundary should be at 0Hz
-    filterFreqs[0] = 0.0;
+    filterFreqs[0] = 0.0f;
 
     // reset the running Bark sum to the first increment past 0 Barks
     sumBark = spacing;
@@ -348,10 +348,10 @@ t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, flo
     if(spacing < 5 || spacing > 1000)
        throw std::invalid_argument("Mel spacing must be between 5 and 1000 mels");
 
-    float sumMel = 0.0;
+    float sumMel = 0.0f;
     t_filterIdx sizeFilterFreqs = 0;
 
-    while( (mel2freq(sumMel)<=(sr*0.5)) && (sumMel<=MAXMELS) )
+    while( (mel2freq(sumMel)<=(sr*0.5f)) && (sumMel<=MAXMELS) )
     {
         sizeFilterFreqs++;
         sumMel += spacing;
@@ -360,7 +360,7 @@ t_filterIdx getMelBoundFreqs(std::vector<float> &filterFreqs, float spacing, flo
     filterFreqs.resize(sizeFilterFreqs);
 
     // First filter boundary should be at 0Hz
-    filterFreqs[0] = 0.0;
+    filterFreqs[0] = 0.0f;
 
     // reset the running Bark sum to the first increment past 0 mels
     sumMel = spacing;
@@ -429,30 +429,30 @@ void createFilterbank(const std::vector<float> &filterFreqs,
 
         // initialize this filter
         for(t_binIdx j = 0; j < filterWidth; ++j)
-            filterbank[ffi-1].filter[j] = 0.0;
+            filterbank[ffi-1].filter[j] = 0.0f;
 
         // some special cases for very narrow filter widths
         switch(filterWidth)
         {
             case 1:
-                filterbank[ffi-1].filter[0] = 1.0;
+                filterbank[ffi-1].filter[0] = 1.0f;
                 break;
             // original wbrent comment:
             // no great way to do a triangle with a filter width of 2, so might as well average
             case 2:
-                filterbank[ffi-1].filter[0] = 0.5;
-                filterbank[ffi-1].filter[1] = 0.5;
+                filterbank[ffi-1].filter[0] = 0.5f;
+                filterbank[ffi-1].filter[1] = 0.5f;
                 break;
 
             // with 3 and greater, we can use our ramps
             default:
                 t_binIdx upN = peakIdx-startIdx+1;
                 std::vector<float> upRamp(upN);
-                linspace(upRamp, 0.0, 1.0);
+                linspace(upRamp, 0.0f, 1.0f);
 
                 t_binIdx downN = finishIdx-peakIdx+1;
                 std::vector<float> downRamp(downN);
-                linspace(downRamp, 1.0, 0.0);
+                linspace(downRamp, 1.0f, 0.0f);
 
                 t_binIdx fj;
                 // copy into filterbank[i-1].filter
@@ -466,11 +466,11 @@ void createFilterbank(const std::vector<float> &filterFreqs,
                 // clip the triangle within 0 and 1, just in case
                 for(t_binIdx fj = 0; fj < filterWidth; ++fj)
                 {
-                    if(filterbank[ffi-1].filter[fj] < 0.0)
-                        filterbank[ffi-1].filter[fj] = 0.0;
+                    if(filterbank[ffi-1].filter[fj] < 0.0f)
+                        filterbank[ffi-1].filter[fj] = 0.0f;
 
-                    if(filterbank[ffi-1].filter[fj] > 1.0)
-                        filterbank[ffi-1].filter[fj] = 1.0;
+                    if(filterbank[ffi-1].filter[fj] > 1.0f)
+                        filterbank[ffi-1].filter[fj] = 1.0f;
                 }
 
                 // free up memory (Does this actually )
@@ -495,7 +495,7 @@ void specFilterBands(t_binIdx n, t_filterIdx numFilters, float *spectrum, std::v
 
     for(t_filterIdx i=0; i<numFilters; ++i)
     {
-        float smoothedSpec = 0.0;
+        float smoothedSpec = 0.0f;
 
         for(t_binIdx j=filterbank[i].indices[0]; j<=filterbank[i].indices[1]; ++j)
                 smoothedSpec += spectrum[j];
@@ -530,7 +530,7 @@ void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, std::ve
     float sumSum = 0;
     for(t_filterIdx i=0; i<numFilters; ++i)
     {
-        float sum = 0.0;
+        float sum = 0.0f;
         t_binIdx j, k;
 
         for(j=filterbank[i].indices[0], k=0; j<=filterbank[i].indices[1]; ++j, ++k)
@@ -551,10 +551,10 @@ void filterbankMultiply(float *spectrum, bool normalize, bool filterAvg, std::ve
         if(sumSum==0)
             sumSum=1;
         else
-            sumSum = 1.0/sumSum; // take the reciprocal here to save a divide below
+            sumSum = 1.0f/sumSum; // take the reciprocal here to save a divide below
     }
     else
-        sumSum=1.0;
+        sumSum=1.0f;
 
     for(t_binIdx si=0; si<numFilters; ++si)
         spectrum[si] = filterbank[si].tmpValue * sumSum;
@@ -652,8 +652,8 @@ void veclog(t_binIdx n, float *input)  // compute logarithm of array elements
     while (n--)
     {
         // if to protect against log(0)
-        if(*input==0.0)
-            *input = 0.0;
+        if(*input==0.0f)
+            *input = 0.0f;
         else
             *input = log(*input);
 
@@ -677,7 +677,7 @@ void initBlackmanWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i] = 0.42 - (0.5 * cos(2*M_PI*i/n)) + (0.08 * cos(4*M_PI*i/n));
+        window[i] = 0.42f - (0.5f * cos(2f*M_PI*i/n)) + (0.08f * cos(4f*M_PI*i/n));
 }
 
 void initCosineWindow(std::vector<float> &window)
@@ -691,14 +691,14 @@ void initHammingWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i] = 0.5 - (0.46 * cos(2*M_PI*i/n));
+        window[i] = 0.5f - (0.46f * cos(2f*M_PI*i/n));
 }
 
 void initHannWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i]  = 0.5 * (1 - cos(2*M_PI*i/n));
+        window[i]  = 0.5f * (1f - cos(2f*M_PI*i/n));
 }
 /* ---------------- END windowing buffer functions ---------------------- */
 

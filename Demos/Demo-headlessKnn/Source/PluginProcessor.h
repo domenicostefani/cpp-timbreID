@@ -52,8 +52,8 @@ public:
 
     /**    Set initial parameters      **/
     const unsigned int WINDOW_SIZE = 1024; //previous 2048
-    const unsigned int HOP = 128;
-    const float BARK_SPACING = 0.5;
+    const unsigned int HOP = 128f;
+    const float BARK_SPACING = 0.5f;
 
     /**    Initialize the modules      **/
     tid::Bark<float> bark{WINDOW_SIZE, HOP, BARK_SPACING};

@@ -101,7 +101,7 @@ public:
         if(offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
        #else
-        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
         uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 

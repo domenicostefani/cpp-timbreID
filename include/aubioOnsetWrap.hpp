@@ -57,8 +57,8 @@ public:
         this->analysisWindowSize = 1024;
         this->hopSize = 256;
         this->onsetMethod = OnsetMethod::defaultMethod;
-        this->onset_threshold = 0.0;
-        this->onset_minioi = 0.0;
+        this->onset_threshold = 0.0f;
+        this->onset_minioi = 0.0f;
 
         this->onset_fvec = new_fvec (1);
         this->input_fvec = new_fvec (hopSize);
@@ -70,8 +70,8 @@ public:
         this->analysisWindowSize = windowSize;
         this->hopSize = hopSize;
         this->onsetMethod = onsetMethod;
-        this->onset_threshold = 0.0;
-        this->onset_minioi = 0.0;
+        this->onset_threshold = 0.0f;
+        this->onset_minioi = 0.0f;
 
         this->onset_fvec = new_fvec (1);
         this->input_fvec = new_fvec (hopSize);
@@ -394,8 +394,8 @@ private:
 
     // onset stuff
     OnsetMethod onsetMethod = OnsetMethod::defaultMethod;
-    smpl_t onset_threshold = 0.0; // will be set if != 0.
-    smpl_t onset_minioi = 0.0; // will be set if != 0.
+    smpl_t onset_threshold = 0.0f; // will be set if != 0.
+    smpl_t onset_minioi = 0.0f; // will be set if != 0.
     bool doSetAdaptiveWhitening = false;
     uint_t adaptiveWhitening = 0;
 

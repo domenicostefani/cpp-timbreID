@@ -100,13 +100,13 @@ public:
         // if(currentTime > blockSize*sampleRate)
         //     throw std::logic_error("Clock measure may have overflowed");
 
-        uint32 offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+        uint32 offsetSample = roundf((currentTime / 1000.0f) * this->sampleRate);
 
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
         if(offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
        #else
-        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
         uint32 offsetSample = (unsigned long int)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
@@ -118,7 +118,7 @@ public:
             this->analysisBuffer[i] = (float)this->signalBuffer[j];
 
         unsigned long int peakSampIdx = 0;
-        float peakSampVal = 0.0;
+        float peakSampVal = 0.0f;
         tIDLib::peakSample(this->analysisBuffer, &peakSampIdx, &peakSampVal);
 
         peakSampIdx += startSample; // add startSample back so we can find the peak sample index relative to x_signalBuffer (wbrent original comment)
@@ -140,15 +140,15 @@ public:
         // send searchBuffer to routine to find the point where sample magnitude is below x_sampMagThresh for at least x_numSampsThresh samples (wbrent original comment)
         unsigned long int attackStartIdx = tIDLib::findAttackStartSamp(searchBuffer, sampMagThresh, numSampsThresh);
 
-        float attackTime = 0.0;
+        float attackTime = 0.0f;
         // if the index returned is ULONG_MAX, the search failed
         if(attackStartIdx == ULONG_MAX)
-        	attackTime = -1.0;
+        	attackTime = -1.0f;
         else
         {
             // attack duration in samples is the end of buffer index (where the peak sample was) minus the start index
             attackTime = (this->maxSearchRange - attackStartIdx)/this->sampleRate;
-            attackTime *= 1000.0; // convert seconds to milliseconds
+            attackTime *= 1000.0f; // convert seconds to milliseconds
             // overwrite attackStartIdx to be the index relative to the entire table
             attackStartIdx = peakSampIdx - (this->maxSearchRange - attackStartIdx);
         }
@@ -180,8 +180,8 @@ public:
     */
     void setMaxSearchRange(float rangeMillis)
     {
-    	rangeMillis = (rangeMillis<5.0)?5.0:rangeMillis;
-    	unsigned long int newRange = roundf((rangeMillis/1000.0) * this->sampleRate);
+    	rangeMillis = (rangeMillis<5.0f)?5.0f:rangeMillis;
+    	unsigned long int newRange = roundf((rangeMillis/1000.0f) * this->sampleRate);
 
     	this->maxSearchRange = newRange;
 
@@ -196,7 +196,7 @@ public:
 
     void setSampMagThresh(float thresh)
     {
-        if(thresh < 0.0)
+        if(thresh < 0.0f)
             throw std::invalid_argument("Threshold has to be a positive value");
 
     	this->sampMagThresh = thresh;
@@ -209,7 +209,7 @@ public:
 
     void setNumSampsThresh(unsigned long int thresh)
     {
-        if(thresh < 0.0 || thresh > this->maxSearchRange)
+        if(thresh < 0.0f || thresh > this->maxSearchRange)
             throw std::invalid_argument("Threshold has to be between 0 and the maximumSearchRange ("+std::to_string(this->maxSearchRange)+")");
 
     	this->numSampsThresh = thresh;
@@ -291,10 +291,10 @@ private:
     unsigned short int numSampsThresh= 10;
 
     /** sample magnitude threshold for finding onset */
-	float sampMagThresh = 0.005;
+	float sampMagThresh = 0.005f;
 
     /** maximum search range */
-    unsigned long int maxSearchRange = this->sampleRate * 2.0; // two seconds
+    unsigned long int maxSearchRange = this->sampleRate * 2.0f; // two seconds
 
     std::vector<SampleType> signalBuffer;
     std::vector<float> analysisBuffer;

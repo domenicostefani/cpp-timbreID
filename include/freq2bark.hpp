@@ -29,7 +29,7 @@ class Freq2bark
 public:
     static float calculate(float freq)
     {
-        if(freq >= 0.0 && freq <= tIDLib::MAXBARKFREQ)
+        if(freq >= 0.0f && freq <= tIDLib::MAXBARKFREQ)
     		return tIDLib::freq2bark(freq);
     	else
             throw std::domain_error("Frequency must be between 0 and " + std::to_string(tIDLib::MAXBARKFREQ) + " Hz");

@@ -55,7 +55,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     const unsigned int WINDOW_SIZE = 1024;
-    const float BARK_SPACING = 0.5;
+    const float BARK_SPACING = 0.5f;
     //=================== Onset module initialization ==========================
 
    #ifdef USE_AUBIO_ONSET

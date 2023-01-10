@@ -29,7 +29,7 @@ class Mel2freq
 public:
     static float calculate(float mel)
     {
-        if(mel >= 0.0 && mel <= tIDLib::MAXMELS)
+        if(mel >= 0.0f && mel <= tIDLib::MAXMELS)
     		return tIDLib::mel2freq(mel);
     	else
             throw std::domain_error("Mel frequency must be between 0 and " + std::to_string(tIDLib::MAXMELS) + " mels");

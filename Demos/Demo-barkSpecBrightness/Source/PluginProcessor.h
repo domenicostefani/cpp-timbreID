@@ -48,8 +48,8 @@ public:
 
     /**    Set initial parameters      **/
     const unsigned int WINDOW_SIZE = 1024;
-    const float BARK_SPACING = 0.5;
-    const float BARK_BOUNDARY = 8.5;
+    const float BARK_SPACING = 0.5f;
+    const float BARK_BOUNDARY = 8.5f;
 
     /**    Initialize the module       **/
     tid::BarkSpecBrightness<float> barkSpecBrightness{this->WINDOW_SIZE, this->BARK_SPACING, this->BARK_BOUNDARY};

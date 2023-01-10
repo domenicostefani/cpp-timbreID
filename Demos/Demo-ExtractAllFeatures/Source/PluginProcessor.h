@@ -63,8 +63,8 @@ public:
 
     //==================== FEATURE EXTRACTION PARAMS ===========================
     const unsigned int FEATUREEXT_WINDOW_SIZE = DEFINED_WINDOW_SIZE; // 75 Blocks of 64samples, 100ms
-    const float BARK_SPACING = 0.5;
-    const float BARK_BOUNDARY = 8.5;
+    const float BARK_SPACING = 0.5f;
+    const float BARK_BOUNDARY = 8.5f;
     const float MEL_SPACING = 100;
 
     //========================= ONSET DETECTION ================================

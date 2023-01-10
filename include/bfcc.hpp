@@ -171,15 +171,15 @@ public:
     {
         std::vector<float> *windowFuncPtr;
 
-        unsigned long int windowHalf = this->analysisWindowSize * 0.5;
+        unsigned long int windowHalf = this->analysisWindowSize * 0.5f;
 
        #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        uint32 offsetSample = roundf((currentTime/1000.0)*this->sampleRate);
+        uint32 offsetSample = roundf((currentTime/1000.0f)*this->sampleRate);
         if (offsetSample >= this->blockSize)
             offsetSample = this->blockSize-1;
        #else
-        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
         uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
@@ -302,7 +302,7 @@ public:
             throw std::invalid_argument("Window size must be "+std::to_string(tIDLib::MINWINDOWSIZE)+" or greater");
         this->analysisWindowSize = windowSize;
 
-        unsigned long int windowHalf = windowSize*0.5;
+        unsigned long int windowHalf = windowSize*0.5f;
 
         this->signalBuffer.resize(this->analysisWindowSize + this->blockSize);
         this->fftwInputVector.resize(this->analysisWindowSize);
@@ -321,11 +321,11 @@ public:
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i = 0; i < this->analysisWindowSize; ++i)
-            this->fftwInputVector[i] = 0.0;
+            this->fftwInputVector[i] = 0.0f;
 
         // initialize signal buffer
         for (unsigned long int i = 0; i < this->analysisWindowSize + this->blockSize; ++i)
-            this->signalBuffer[i] = 0.0;
+            this->signalBuffer[i] = 0.0f;
 
         this->blackman.resize(this->analysisWindowSize);
         this->cosine.resize(this->analysisWindowSize);
@@ -456,7 +456,7 @@ private:
 
         // initialize signal buffer
         for (unsigned long int i = 0; i < this->analysisWindowSize + this->blockSize; ++i)
-            this->signalBuffer[i] = 0.0;
+            this->signalBuffer[i] = 0.0f;
 
         this->blackman.resize(this->analysisWindowSize);
         this->cosine.resize(this->analysisWindowSize);
@@ -470,14 +470,14 @@ private:
         tIDLib::initHannWindow(this->hann);
 
         // set up the FFTW output buffer
-        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize * 0.5 + 1);
+        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize * 0.5f + 1);
 
         // DFT plan
         this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, &(fftwInputVector[0]), this->fftwOut, FFTWPLANNERFLAG);
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i=0; i<this->analysisWindowSize; ++i)
-            this->fftwInputVector[i] = 0.0;
+            this->fftwInputVector[i] = 0.0f;
 
         this->sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
         jassert(this->sizeFilterFreqs == this->filterFreqs.size());

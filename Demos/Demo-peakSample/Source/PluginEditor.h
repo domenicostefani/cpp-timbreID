@@ -45,7 +45,7 @@ private:
     int mBlockSize = 0;
     uint32 mCrossings = 0;
 
-    float mSample = 0.0;
+    float mSample = 0.0f;
     unsigned long int mIndex = 0;
 
     void updateDataLabel();

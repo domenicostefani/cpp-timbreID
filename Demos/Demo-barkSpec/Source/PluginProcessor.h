@@ -48,7 +48,7 @@ public:
 
     /**    Set initial parameters      **/
     const unsigned int WINDOW_SIZE = 1024;
-    const float BARK_SPACING = 0.5;
+    const float BARK_SPACING = 0.5f;
 
     /**    Initialize the module       **/
     tid::BarkSpec<float> barkSpec{this->WINDOW_SIZE, this->BARK_SPACING};

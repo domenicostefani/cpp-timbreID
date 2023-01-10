@@ -32,8 +32,8 @@ You should have received a copy of the GNU General Public License along with thi
 namespace tid   /* TimbreID namespace*/
 {
 
-const float weights_dB[] = {-69.9, -60.4, -51.4, -43.3, -36.6, -30.3, -24.3, -19.5, -14.8, -10.7, -7.5, -4.8, -2.6, -0.8, 0.0, 0.6, 0.5, 0.0, -0.1, 0.5, 1.5, 3.6, 5.9, 6.5, 4.2, -2.6, -10.2, -10.0, -2.8};
-const float weights_freqs[] = {20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500};
+const float weights_dB[] = {-69.9f, -60.4f, -51.4f, -43.3f, -36.6f, -30.3f, -24.3f, -19.5f, -14.8f, -10.7f, -7.5f, -4.8f, -2.6f, -0.8f, 0.0f, 0.6f, 0.5f, 0.0f, -0.1f, 0.5f, 1.5f, 3.6f, 5.9f, 6.5f, 4.2f, -2.6f, -10.2f, -10.0f, -2.8f};
+const float weights_freqs[] = {20f, 25f, 31.5f, 40f, 50f, 63f, 80f, 100f, 125f, 160f, 200f, 250f, 315f, 400f, 500f, 630f, 800f, 1000f, 1250f, 1600f, 2000f, 2500f, 3150f, 4000f, 5000f, 6300f, 8000f, 10000f, 12500f};
 
 template <typename SampleType>
 class Bark : private Timer
@@ -54,7 +54,7 @@ public:
             throw std::invalid_argument("Window size must be "+std::to_string(tIDLib::MINWINDOWSIZE)+" or greater.");
 
         this->analysisWindowSize = analysisWindowSize;
-        this->hop = analysisWindowSize*0.25;
+        this->hop = analysisWindowSize*0.25f;
         this->barkSpacing = tIDLib::BARKSPACINGDEFAULT;
         initModule();
     }
@@ -313,7 +313,7 @@ public:
     */
     void setMask(unsigned int analysisPeriods, float decayRate)
     {
-        if((decayRate < 0.05) || (decayRate > 0.95))
+        if((decayRate < 0.05f) || (decayRate > 0.95f))
             throw std::invalid_argument("Mask decay rate must be betweeen 0.05 and 0.95");
         this->maskPeriods = analysisPeriods;
         this->maskDecay = decayRate;
@@ -412,8 +412,8 @@ public:
             rtlogger.logValue("Number of ticks: ", this->measureTicks);
             rtlogger.logValue("Average growth: ", (this->avgGrowth/this->measureTicks));
             rtlogger.logValue("Peak growth: ", this->peakGrowth);
-            this->avgGrowth = 0.0;
-            this->peakGrowth = 0.0;
+            this->avgGrowth = 0.0f;
+            this->peakGrowth = 0.0f;
             this->measureTicks = UINT_MAX;
         }
     }
@@ -549,7 +549,7 @@ private:
     unsigned long int analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;    // analysisWindowSize
 
     unsigned long int dspTick = 0;
-    unsigned long int hop = tIDLib::WINDOWSIZEDEFAULT*0.25;
+    unsigned long int hop = tIDLib::WINDOWSIZEDEFAULT*0.25f;
 
     bool normalize = false;
     tIDLib::SpectrumType spectrumTypeUsed = tIDLib::SpectrumType::powerSpectrum;
@@ -566,18 +566,18 @@ private:
     std::vector<float> loudWeights;
 
     unsigned int measureTicks = UINT_MAX;
-    float peakGrowth = 0.0;
-    float avgGrowth = 0.0;
-    float prevTotalGrowth = 0.0;
-    float loThresh = 3;
-    float hiThresh = 7;
-    float minvel = 1.0;
+    float peakGrowth = 0.0f;
+    float avgGrowth = 0.0f;
+    float prevTotalGrowth = 0.0f;
+    float loThresh = 3f;
+    float hiThresh = 7f;
+    float minvel = 1.0f;
     /* band range: loBin through hiBin (inclusive) */
     t_filterIdx loBin;
     t_filterIdx hiBin;
 
     int debounceTime = 100;
-    float maskDecay = 0.7;
+    float maskDecay = 0.7f;
     unsigned int maskPeriods = 4;
     std::vector<t_filterIdx> numPeriods; // t_filterIdx type because this buffer is used to check making per filter band
 
@@ -619,7 +619,7 @@ private:
         {
             t_binIdx nearIdx = tIDLib::nearestBinIndex(barkFreqs[i], weights_freqs, tIDLib::NUMWEIGHTPOINTS);
             float nearFreq = weights_freqs[nearIdx];
-            float diffdB = 0.0;
+            float diffdB = 0.0f;
 
             float diffFreq, dBint;
 
@@ -649,10 +649,10 @@ private:
             switch(this->spectrumTypeUsed)
             {
                 case tIDLib::SpectrumType::powerSpectrum:
-                    this->loudWeights[i] = powf(10.0, dBint*0.1);
+                    this->loudWeights[i] = powf(10.0f, dBint*0.1f);
                     break;
                 case tIDLib::SpectrumType::magnitudeSpectrum:
-                    this->loudWeights[i] = powf(10.0, dBint*0.05);
+                    this->loudWeights[i] = powf(10.0f, dBint*0.05f);
                     break;
                 default:
                     throw std::logic_error("Spectrum type option not available!");
@@ -698,13 +698,13 @@ private:
         this->fftwIn = &this->fftwInputVector[0];
 
         // set up the FFTW output buffer
-        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize*0.5 + 1);
+        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize*0.5f + 1);
         // DFT plan
         this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, this->fftwIn, this->fftwOut, FFTWPLANNERFLAG);
 
         // we're supposed to initialize the input array after we create the plan
         for(unsigned long int i=0; i<this->analysisWindowSize; ++i)
-            this->fftwIn[i] = 0.0;
+            this->fftwIn[i] = 0.0f;
 
         sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
 
@@ -741,7 +741,7 @@ private:
         std::vector<float> *windowFuncPtr;
 
         window = this->analysisWindowSize;
-        windowHalf = this->analysisWindowSize*0.5;
+        windowHalf = this->analysisWindowSize*0.5f;
 
          // shift signal buffer contents back.
         for(unsigned long int i=0; i<window; ++i)
@@ -756,8 +756,8 @@ private:
         if(this->dspTick >= this->hop)
         {
             this->dspTick = 0;
-            totalGrowth = 0.0;
-            totalVel = 0.0;
+            totalGrowth = 0.0f;
+            totalVel = 0.0f;
 
             switch(this->windowFunction)
             {
@@ -823,12 +823,12 @@ private:
                 totalVel += this->fftwIn[i];
 
                 // init growth list to zero
-                this->growth[i] = 0.0;
+                this->growth[i] = 0.0f;
 
                 // from p.3 of Puckette/Apel/Zicarelli, 1998
                 // salt divisor with + 1.0e-15 in case previous power was zero
                 if(this->fftwIn[i] > this->mask[i])
-                    this->growth[i] = this->fftwIn[i]/(this->mask[i] + 1.0e-15) - 1.0;
+                    this->growth[i] = this->fftwIn[i]/(this->mask[i] + 1.0f-15) - 1.0f;
 
                 if(i>=this->loBin && i<=this->hiBin && this->growth[i]>0)
                     totalGrowth += this->growth[i];

@@ -30,7 +30,7 @@ unsigned long int Freq2bin::windowSize = tIDLib::WINDOWSIZEDEFAULT;
 /* ------------------------ freq2bin -------------------------------- */
 float Freq2bin::calculate(float freq)
 {
-	if(freq>=0.0 && freq<Freq2bin::sampleRate)
+	if(freq>=0.0f && freq<Freq2bin::sampleRate)
 		return tIDLib::freq2bin(freq, Freq2bin::windowSize, Freq2bin::sampleRate);
 	else
         throw std::domain_error("freq2bin: frequency must be between 0 and " + std::to_string(Freq2bin::sampleRate));

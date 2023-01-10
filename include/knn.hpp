@@ -111,7 +111,7 @@ public:
         if (this->numInstances)
         {
             listLength = input.size();
-            confidence = 0.0;
+            confidence = 0.0f;
 
             if (listLength > this->maxFeatureLength)
             {
@@ -210,7 +210,7 @@ public:
                 }
             }
 
-            confidence = 1.0 - (bestDist / secondBestDist);
+            confidence = 1.0f - (bestDist / secondBestDist);
 
             t_prediction partres = std::make_tuple(winningID,confidence,bestDist);
 
@@ -311,7 +311,7 @@ public:
                 this->instances[i].knnInfo.dist = this->instances[i].knnInfo.safeDist = FLT_MAX;
             }
 
-            halfNeighborhood = this->neighborhood*0.5;
+            halfNeighborhood = this->neighborhood*0.5f;
 
             if (listLength > this->maxFeatureLength)
             {
@@ -525,7 +525,7 @@ public:
     */
     void setK(t_instanceIdx k)
     {
-        if (k < 1.0)
+        if (k < 1.0f)
         {
             char errtxt[RealTimeLogger::LogEntry::MESSAGE_LENGTH+1] = "K must be greater than one.";
             rtlogger.logInfo(errtxt);
@@ -583,9 +583,9 @@ public:
             // initialize normData
             for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
             {
-                this->attributeData[i].normData.min = 0.0;
-                this->attributeData[i].normData.max = 0.0;
-                this->attributeData[i].normData.normScalar = 1.0;
+                this->attributeData[i].normData.min = 0.0f;
+                this->attributeData[i].normData.max = 0.0f;
+                this->attributeData[i].normData.normScalar = 1.0f;
             }
 
             this->normalize = false;
@@ -621,11 +621,11 @@ public:
                     if (this->attributeData[j].normData.max <= this->attributeData[j].normData.min)
                     {
                         // this will fix things in the case of 1 instance, where min==max
-                        this->attributeData[j].normData.min = 0.0;
-                        this->attributeData[j].normData.normScalar = 1.0;
+                        this->attributeData[j].normData.min = 0.0f;
+                        this->attributeData[j].normData.normScalar = 1.0f;
                     }
                     else
-                        this->attributeData[j].normData.normScalar = 1.0/(this->attributeData[j].normData.max - this->attributeData[j].normData.min);
+                        this->attributeData[j].normData.normScalar = 1.0f/(this->attributeData[j].normData.max - this->attributeData[j].normData.min);
 
                 }
 
@@ -854,9 +854,9 @@ public:
                 numClusterMembers1 = this->clusters[minDistIdx[0]].numMembers-1;
 
                 if (numClusterMembers1 > 0)
-                    numClusterMembers1_recip = 1.0/(float)numClusterMembers1;
+                    numClusterMembers1_recip = 1.0f/(float)numClusterMembers1;
                 else
-                    numClusterMembers1_recip = 1.0;
+                    numClusterMembers1_recip = 1.0f;
 
                 // resize the usurped cluster's cluster list memory, and update its size to 1
                 this->clusters[minDistIdx[1]].members.resize(1);
@@ -987,7 +987,7 @@ public:
             // init mean centered
             for (i=0; i<this->numInstances; ++i)
                 for (j=0; j<meanCentered[i].length; ++j)
-                    meanCentered[i].data[j] = 0.0;
+                    meanCentered[i].data[j] = 0.0f;
 
             // get the mean of each attribute
             for (i=0; i<this->maxFeatureLength; ++i)
@@ -1023,7 +1023,7 @@ public:
             // replace it with -FLT_MAX, find next max.
             for (i=0; i<this->maxFeatureLength; ++i)
             {
-                float max = 0.0;
+                float max = 0.0f;
                 for (j=0; j<this->maxFeatureLength; ++j)
                 {
                     if (attributeVar[j] > max)
@@ -1111,7 +1111,7 @@ public:
 
         // if only the first few of a long feature vector are specified, fill in the rest with 1.0
         for (; i<this->maxFeatureLength; ++i)
-            this->attributeData[i].weight = 1.0;
+            this->attributeData[i].weight = 1.0f;
     }
 
     /**
@@ -2117,7 +2117,7 @@ public:
                     distances[i].data.resize(numInst);
                     distances[i].length = numInst;
                     for (j = 0; j < distances[i].length; ++j)
-                        distances[i].data[j] = 0.0;
+                        distances[i].data[j] = 0.0f;
                 }
 
                 for (i = startInstance, j = 0; i <= finishInstance; ++i, ++j)
@@ -2134,7 +2134,7 @@ public:
                     }
                 }
 
-                maxDist = 1.0 / maxDist;
+                maxDist = 1.0f / maxDist;
 
 
 
@@ -2221,14 +2221,14 @@ private:
         this->reorientFlag = false;
         this->neighborhood = 0;
         this->searchCenter = 0;
-        this->jumpProb = 0.0;
+        this->jumpProb = 0.0f;
     }
 
     /* ------------------------- utility functions -------------------------- */
 
     float attributeMean(t_instanceIdx numRows, t_attributeIdx column, const std::vector<tIDLib::t_instance> &instances, bool normalFlag, const std::vector<tIDLib::t_attributeData> &attributeData) const
     {
-        float min, scalar, avg = 0.0;
+        float min, scalar, avg = 0.0f;
         for (t_instanceIdx i = 0; i < numRows; ++i)
         {
             // check that this attribute is in range for instance i
@@ -2256,10 +2256,10 @@ private:
         std::vector<float> vec2Buffer(vecLen);
         std::vector<float> vecWeights(vecLen);
 
-        float min = 0.0,
-              max = 0.0,
-              normScalar = 1.0,
-              dist = 0.0;
+        float min = 0.0f,
+              max = 0.0f,
+              normScalar = 1.0f,
+              dist = 0.0f;
 
         // extract the right attributes and apply normalization if it's active
         for (t_attributeIdx i = this->attributeLo, j = 0; i <= this->attributeHi; ++i, ++j)
@@ -2286,7 +2286,7 @@ private:
                 if (this->attributeData[thisAttribute].inputData > this->attributeData[thisAttribute].normData.max)
                 {
                     max = this->attributeData[thisAttribute].inputData;
-                    normScalar = 1.0/(max-min);
+                    normScalar = 1.0f/(max-min);
                 }
                 else
                 {
@@ -2333,8 +2333,8 @@ private:
         std::vector<float> vec2Buffer(vecLen);
         std::vector<float> vecWeights(vecLen);
 
-        float normScalar = 1.0,
-              dist = 0.0;
+        float normScalar = 1.0f,
+              dist = 0.0f;
 
         // extract the right attributes and apply normalization if it's active
         for (t_attributeIdx i = this->attributeLo, j = 0; i <= this->attributeHi; ++i, ++j)
@@ -2397,9 +2397,9 @@ private:
         // initialize attributeData
         for (t_attributeIdx i = 0; i < this->maxFeatureLength; ++i)
         {
-            this->attributeData[i].inputData = 0.0;
+            this->attributeData[i].inputData = 0.0f;
             this->attributeData[i].order = i;
-            this->attributeData[i].weight = 1.0;
+            this->attributeData[i].weight = 1.0f;
             this->attributeData[i].name = "NULL";
         }
 

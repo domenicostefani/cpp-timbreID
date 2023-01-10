@@ -127,15 +127,15 @@ public:
     std::vector<float>& compute()
     {
         std::vector<float> *windowFuncPtr;
-        unsigned long int windowHalf = this->analysisWindowSize * 0.5;
+        unsigned long int windowHalf = this->analysisWindowSize * 0.5f;
 
        #if ASYNC_FEATURE_EXTRACTION
         uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        uint32 offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+        uint32 offsetSample = roundf((currentTime / 1000.0f) * this->sampleRate);
         if (offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
        #else
-        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
         uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
@@ -181,7 +181,7 @@ public:
         // add 1.0 to power or magnitude spectrum before taking the log and then IFT. Avoid large negative values from log(negativeNum)
         if (this->spectrumOffset)
             for (unsigned long int i = 0; i < windowHalf + 1; ++i)
-                this->fftwInputVector[i] += 1.0;
+                this->fftwInputVector[i] += 1.0f;
 
         tIDLib::veclog(windowHalf + 1, fftwIn);   // this can also be called on a std::vector
 
@@ -189,7 +189,7 @@ public:
         for (unsigned long int i=0; i<windowHalf + 1; ++i)
         {
             this->fftwOut[i][0] = this->fftwInputVector[i];
-            this->fftwOut[i][1] = 0.0;
+            this->fftwOut[i][1] = 0.0f;
         }
 
         fftwf_execute(this->fftwBackwardPlan);
@@ -261,7 +261,7 @@ public:
             throw std::invalid_argument("Window size must be " + std::to_string(tIDLib::MINWINDOWSIZE) + " or greater");
         this->analysisWindowSize = windowSize;
 
-        unsigned long int windowHalf = this->analysisWindowSize * 0.5;
+        unsigned long int windowHalf = this->analysisWindowSize * 0.5f;
 
         this->signalBuffer.resize(this->analysisWindowSize + this->blockSize);
         this->fftwInputVector.resize(this->analysisWindowSize);
@@ -284,11 +284,11 @@ public:
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i = 0; i < this->analysisWindowSize; ++i)
-            this->fftwInputVector[i] = 0.0;
+            this->fftwInputVector[i] = 0.0f;
 
         // initialize signal buffer
         for (unsigned long int i = 0; i < this->analysisWindowSize + this->blockSize; ++i)
-            this->signalBuffer[i] = 0.0;
+            this->signalBuffer[i] = 0.0f;
 
         this->blackman.resize(this->analysisWindowSize);
         this->cosine.resize(this->analysisWindowSize);
@@ -404,10 +404,10 @@ private:
 
         this->signalBuffer.resize(this->analysisWindowSize + this->blockSize);
         this->fftwInputVector.resize(this->analysisWindowSize);
-        this->listOut.resize(this->analysisWindowSize * 0.5 + 1);
+        this->listOut.resize(this->analysisWindowSize * 0.5f + 1);
 
         for (unsigned long int i = 0; i < (this->analysisWindowSize + this->blockSize); ++i)
-            this->signalBuffer[i] = 0.0;
+            this->signalBuffer[i] = 0.0f;
 
         this->blackman.resize(this->analysisWindowSize);
         this->cosine.resize(this->analysisWindowSize);
@@ -421,7 +421,7 @@ private:
         tIDLib::initHannWindow(this->hann);
 
         // set up the FFTW output buffer.
-        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize * 0.5 + 1);
+        this->fftwOut = (fftwf_complex *)fftwf_alloc_complex(this->analysisWindowSize * 0.5f + 1);
 
         // Forward DFT plan
         float* fftwIn = &(this->fftwInputVector[0]);
@@ -432,7 +432,7 @@ private:
 
         // we're supposed to initialize the input array after we create the plan
         for (unsigned long int i = 0; i < this->analysisWindowSize; ++i)
-            this->fftwInputVector[i] = 0.0;
+            this->fftwInputVector[i] = 0.0f;
     }
 
     /**

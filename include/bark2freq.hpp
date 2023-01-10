@@ -29,7 +29,7 @@ class Bark2freq
 public:
     static float calculate(float bark)
     {
-        if(bark >= 0.0 && bark <= tIDLib::MAXBARKS)
+        if(bark >= 0.0f && bark <= tIDLib::MAXBARKS)
     		return tIDLib::bark2freq(bark);
     	else
             throw std::domain_error("Bark value must be between 0.0 and " + std::to_string(tIDLib::MAXBARKS) + " Barks");

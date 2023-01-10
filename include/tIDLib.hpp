@@ -70,19 +70,19 @@ namespace tIDLib
 namespace tIDLib
 {
 constexpr unsigned int BLOCKSIZEDEFAULT = 64;
-constexpr float MINBARKSPACING = 0.1;
-constexpr float MAXBARKSPACING = 6.0;
-constexpr float BARKSPACINGDEFAULT = 0.5;
-constexpr float MINMELSPACING = 5.0;
-constexpr float MAXMELSPACING = 1000.0;
-constexpr float MELSPACINGDEFAULT = 100.0;
+constexpr float MINBARKSPACING = 0.1f;
+constexpr float MAXBARKSPACING = 6.0f;
+constexpr float BARKSPACINGDEFAULT = 0.5f;
+constexpr float MINMELSPACING = 5.0f;
+constexpr float MAXMELSPACING = 1000.0f;
+constexpr float MELSPACINGDEFAULT = 100.0f;
 constexpr unsigned long int WINDOWSIZEDEFAULT = 1024;
 constexpr unsigned long int MINWINDOWSIZE = 4;
 constexpr unsigned long int  SAMPLERATEDEFAULT = 44100;
-constexpr float MAXBARKS = 26.0;
-constexpr float MAXBARKFREQ = 22855.4;
-constexpr float MAXMELFREQ = 22843.6;
-constexpr float MAXMELS = 3962.0;
+constexpr float MAXBARKS = 26.0f;
+constexpr float MAXBARKFREQ = 22855.4f;
+constexpr float MAXMELFREQ = 22843.6f;
+constexpr float MAXMELS = 3962.0f;
 constexpr int NUMWEIGHTPOINTS = 29;
 constexpr int MAXTIDTEXTSTRING = 100000;
 
@@ -268,9 +268,9 @@ inline void unoptimized_discreteCosineTransform(float *output, const float *inpu
     float piOverNfilters = M_PI/numFilters; // save multiple divides below
     for(int i=0; i<numFilters; i++)
     {
-        output[i] = 0;
+        output[i] = 0f;
         for(int k=0; k<numFilters; k++)
-            output[i] += input[k] * cos(i * (k+0.5) * piOverNfilters);
+            output[i] += input[k] * cos(i * (k+0.5f) * piOverNfilters);
     }
 }
 

@@ -32,7 +32,7 @@ unsigned long int Bin2freq::windowSize = tIDLib::WINDOWSIZEDEFAULT;
 /* ------------------------ bin2freq -------------------------------- */
 float Bin2freq::calculate(float bin)
 {
-	if(bin>=0.0 && bin<(float)Bin2freq::windowSize)
+	if(bin>=0.0f && bin<(float)Bin2freq::windowSize)
 		return tIDLib::bin2freq(bin, (float)Bin2freq::windowSize, (float)Bin2freq::sampleRate);
 	else
         throw std::domain_error("bin2freq: bin number must be between 0 and " + std::to_string(Bin2freq::windowSize-1));

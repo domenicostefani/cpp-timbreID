@@ -47,7 +47,7 @@ private:
 
     unsigned long int mPeakSampIdx = 0;
     unsigned long int mAttackStartIdx = 0;
-    float mAttackTime = 0.0;
+    float mAttackTime = 0.0f;
 
     SetParamBox setSearchRangeBox;
     SetParamBox setSampMagThreshBox;

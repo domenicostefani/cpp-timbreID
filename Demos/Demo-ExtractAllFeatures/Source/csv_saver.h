@@ -18,7 +18,7 @@ struct Entry
 
     void reset() {
         for(float& val:features)
-            val = 0.0;
+            val = 0.0f;
         onsetDetectionTime = 0;
         featureComputationTime = 0;
         isSpecial = false;
