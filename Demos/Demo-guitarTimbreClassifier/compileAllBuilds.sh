@@ -2,7 +2,10 @@
 
 set -e 
 
+echo "starting: "$(date)
+
 ELK_DESTINATION_FOLDER='/home/mind/neuralClassifiersComparison'
+ELK_UDATA='/udata'
 ELK_DESTINATION_IP='dom-elk-pi.local'
 
 BASE=$(realpath $(pwd))
@@ -106,7 +109,7 @@ print_start_script () {
     echo '' >> $1
     echo $ELK_DESTINATION_FOLDER'/stopClassifier.sh   # stop eventual executions' >> $1
     echo '' >> $1
-    echo 'PS3="Chose Neural Inference Engine to use with the plugin or Quit: " ' >> $1
+    echo 'PS3="Choose Neural Inference Engine to use with the plugin or Quit: " ' >> $1
     echo 'options=(\'>> $1
     for build_folder in ../Builds/LinuxMakefile-*; do
         bname=$(get_bname $build_folder)
@@ -120,12 +123,13 @@ print_start_script () {
     for build_folder in ../Builds/LinuxMakefile-*; do
         bname=$(get_bname $build_folder)
         echo '        "'$bname'")'>> $1
-        echo '            echo "You chose "$opt'>> $1
+        echo '            echo "You choose "$opt'>> $1
         echo '            CONFIG_FILE_PATH="'$ELK_DESTINATION_FOLDER'/configs/config_'$bname'.json"'>> $1
         echo '            break'>> $1
         echo '            ;;'>> $1
     done
     echo '        "Quit")'>> $1
+    echo '            exit 0'>> $1
     echo '            break'>> $1
     echo '            ;;'>> $1
     echo '        *) echo "invalid option $REPLY";;'>> $1
@@ -136,19 +140,19 @@ print_start_script () {
     echo '# Launch sushi with classifier plugin' >> $1
     echo 'sushi -r  --timing-statistics -c $CONFIG_FILE_PATH &' >> $1
     echo '' >> $1
-    echo 'sleep 2' >> $1
+    echo 'sleep 5' >> $1
     echo '' >> $1
     echo '' >> $1
     echo '' >> $1
-    echo '# ORIGLOGNAME=$(ls /tmp/guit* | tail -1 | grep -o -P "guit.+")' >> $1
-    echo '# STATSLOGNAME="/tmp/$ORIGLOGNAME.cpumem.log" ' >> $1
+    echo 'ORIGLOGNAME=$(ls /tmp/guit* | tail -1 | grep -o -P "guit.+")' >> $1
+    echo 'STATSLOGNAME="/tmp/$ORIGLOGNAME.cpumem.log" ' >> $1
     echo '' >> $1
-    echo '# '$ELK_DESTINATION_FOLDER'/logutils/logcpumem.py $(pgrep sushi) $STATSLOGNAME &' >> $1
+    echo ''$ELK_DESTINATION_FOLDER'/logutils/logcpumem.py $(pgrep sushi) $STATSLOGNAME &' >> $1
     echo '' >> $1
-    echo '# echo "Classifier log at $ORIGLOGNAME"' >> $1
-    echo '# echo ""' >> $1
-    echo '# echo "CPU/MEM usage log at $STATSLOGNAME"' >> $1
-    echo '# echo ""' >> $1
+    echo 'echo "Classifier log at $ORIGLOGNAME"' >> $1
+    echo 'echo ""' >> $1
+    echo 'echo "CPU/MEM usage log at $STATSLOGNAME"' >> $1
+    echo 'echo ""' >> $1
 
 }
 cd bin
@@ -159,6 +163,54 @@ fi
 cd ..
 
 
+get_cname () {
+    echo $(echo "$1" | grep -o -P -e '\w+-\w+\.json')
+}
+
+print_config_script () {
+    echo '#!/bin/bash' > $1
+    echo '' >> $1
+    echo $ELK_DESTINATION_FOLDER'/stopClassifier.sh   # stop eventual executions' >> $1
+    echo '' >> $1
+    echo 'PS3="Choose Neural Inference Engine to use with the plugin or Quit: " ' >> $1
+    echo 'options=(\'>> $1
+    for config_file in ../Source/model*.json; do
+        cname=$(get_cname $config_file)
+        echo '         "'$cname'" \'>> $1
+    done
+    echo '         "Quit")'>> $1
+    echo 'select opt in "${options[@]}"'>> $1
+    echo 'do'>> $1
+    echo '    case $opt in'>> $1
+
+    for config_file in ../Source/model*.json; do
+        cname=$(get_cname $config_file)
+        echo '        "'$cname'")'>> $1
+        echo '            echo "You choose "$opt'>> $1
+        echo '            cp "/udata/'$cname'" /udata/guitarTechClassifier.json'>> $1
+        echo '            break'>> $1
+        echo '            ;;'>> $1
+    done
+    echo '        "Quit")'>> $1
+    echo '            exit 0'>> $1
+    echo '            break'>> $1
+    echo '            ;;'>> $1
+    echo '        *) echo "invalid option $REPLY";;'>> $1
+    echo '    esac'>> $1
+    echo 'done'>> $1
+}
+cd bin
+print_config_script changeModel.sh
 if [[ "${COPY_TO_REMOTE}" == "true" ]]; then
-    scp Source/guitarTechClassifier.json mind@$ELK_DESTINATION_IP:$ELK_DESTINATION_FOLDER/
+    scp changeModel.sh mind@$ELK_DESTINATION_IP:$ELK_DESTINATION_FOLDER/
 fi
+cd ..
+
+
+if [[ "${COPY_TO_REMOTE}" == "true" ]]; then
+    scp Source/modelA-guitarTechClassifier.json mind@$ELK_DESTINATION_IP:$ELK_UDATA/
+    scp Source/modelB-guitarTechClassifier.json mind@$ELK_DESTINATION_IP:$ELK_UDATA/
+    scp Source/modelC-guitarTechClassifier.json mind@$ELK_DESTINATION_IP:$ELK_UDATA/
+fi
+
+echo "completed: "$(date)
