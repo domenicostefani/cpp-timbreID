@@ -1,0 +1,18 @@
+{
+    "models": {
+      "tensorflowlite": "/udata/neural_net_models/tflite/tflite_ModelA.tflite",
+      "torchscript":     "/udata/neural_net_models/torchscript/torchscript_ModelA.pt",
+      "onnx":            "/udata/neural_net_models/onnx/onnx_ModelA.onnx"
+    },
+    "osc": {
+        "enable": "false",
+        "target-ip": "10.42.0.1",
+        "target-port": "9001",
+        "osc-address": "/guitarClassifier/class",
+        "___comment___" : "class-msg-type can either be 'all' to have the 8 outputs of the last layer, or 'best' to have only an int with the best class",
+        "class-msg-type": "best"
+    },
+  "features":{
+      "selected_features":["attackTime_value", "barkSpecBrightness", "barkSpec_1", "barkSpec_2", "barkSpec_3", "barkSpec_4", "barkSpec_5", "barkSpec_6", "barkSpec_7", "barkSpec_8", "barkSpec_9", "barkSpec_10", "barkSpec_11", "barkSpec_12", "barkSpec_13", "barkSpec_14", "barkSpec_15", "barkSpec_16", "barkSpec_17", "barkSpec_18", "barkSpec_19", "barkSpec_20", "barkSpec_21", "barkSpec_22", "barkSpec_23", "barkSpec_24", "barkSpec_25", "barkSpec_26", "barkSpec_27", "barkSpec_28", "barkSpec_29", "barkSpec_30", "barkSpec_31", "barkSpec_32", "barkSpec_33", "barkSpec_34", "barkSpec_35", "barkSpec_36", "barkSpec_37", "barkSpec_38", "barkSpec_39", "barkSpec_40", "barkSpec_41", "barkSpec_42", "barkSpec_43", "barkSpec_44", "barkSpec_45", "barkSpec_46", "barkSpec_47", "barkSpec_48", "barkSpec_49", "barkSpec_50", "bfcc_2", "bfcc_3", "bfcc_4", "bfcc_5", "bfcc_6", "bfcc_7", "bfcc_8", "bfcc_9", "bfcc_10", "bfcc_11", "bfcc_12", "bfcc_13", "bfcc_15", "bfcc_16", "bfcc_17", "bfcc_18", "bfcc_19", "bfcc_20", "bfcc_21", "bfcc_25", "bfcc_26", "bfcc_27", "bfcc_28", "bfcc_29", "bfcc_30", "bfcc_31", "bfcc_35", "bfcc_36", "bfcc_37", "bfcc_39", "bfcc_40", "bfcc_42", "bfcc_43", "bfcc_44", "bfcc_45", "bfcc_46", "bfcc_48", "cepstrum_1", "cepstrum_2", "cepstrum_3", "cepstrum_4", "cepstrum_5", "cepstrum_6", "cepstrum_7", "cepstrum_8", "cepstrum_9", "cepstrum_10", "cepstrum_11", "cepstrum_12", "cepstrum_13", "cepstrum_14", "cepstrum_15", "cepstrum_16", "cepstrum_17", "cepstrum_18", "cepstrum_19", "cepstrum_20", "cepstrum_21", "cepstrum_22", "cepstrum_23", "cepstrum_24", "cepstrum_25", "cepstrum_26", "cepstrum_27", "cepstrum_28", "cepstrum_29", "cepstrum_30", "cepstrum_31", "cepstrum_32", "cepstrum_33", "cepstrum_34", "cepstrum_35", "cepstrum_36", "cepstrum_37", "cepstrum_41", "cepstrum_42", "cepstrum_43", "cepstrum_44", "cepstrum_45", "cepstrum_46", "cepstrum_47", "cepstrum_48", "cepstrum_49", "cepstrum_54", "cepstrum_56", "cepstrum_59", "cepstrum_60", "cepstrum_67", "cepstrum_72", "cepstrum_86", "cepstrum_87", "cepstrum_108", "cepstrum_164", "cepstrum_205", "cepstrum_206", "mfcc_1", "mfcc_2", "mfcc_3", "mfcc_4", "mfcc_5", "mfcc_6", "mfcc_7", "mfcc_8", "mfcc_9", "mfcc_10", "mfcc_11", "mfcc_12", "mfcc_13", "mfcc_14", "mfcc_15", "mfcc_16", "mfcc_17", "mfcc_18", "mfcc_19", "mfcc_20", "mfcc_21", "mfcc_22", "mfcc_23", "mfcc_24", "mfcc_25", "mfcc_26", "mfcc_32", "mfcc_33", "mfcc_34", "mfcc_35", "mfcc_36", "peakSample_value", "zeroCrossing"]
+  }
+}
