@@ -63,7 +63,7 @@ public:
     void writeToFile(std::string filename, std::vector<std::string> header)
     {
         if (header.size() != FEATURE_NUM)
-            throw std::logic_error("Header size must be equal to the number of features");
+            throw std::logic_error("Header size must be equal to the number of features ("+std::to_string(header.size())+" != "+std::to_string(FEATURE_NUM)+")");
 
         std::ofstream csvFile;
         csvFile.open (filename);
