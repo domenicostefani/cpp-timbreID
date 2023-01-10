@@ -59,6 +59,9 @@ public:
         this->onsetMethod = OnsetMethod::defaultMethod;
         this->onset_threshold = 0.0;
         this->onset_minioi = 0.0;
+
+        this->onset_fvec = new_fvec (1);
+        this->input_fvec = new_fvec (hopSize);
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -69,6 +72,9 @@ public:
         this->onsetMethod = onsetMethod;
         this->onset_threshold = 0.0;
         this->onset_minioi = 0.0;
+
+        this->onset_fvec = new_fvec (1);
+        this->input_fvec = new_fvec (hopSize);
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, SampleType onset_threshold, SampleType onset_minioi, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -78,6 +84,9 @@ public:
         this->hopSize = hopSize;
         this->onset_threshold = onset_threshold;
         this->onset_minioi = onset_minioi;
+
+        this->onset_fvec = new_fvec (1);
+        this->input_fvec = new_fvec (hopSize);
     }
 
     Onset(unsigned long int windowSize, uint_t hopSize, SampleType onset_threshold, SampleType onset_minioi, SampleType silenceThreshold, OnsetMethod onsetMethod = OnsetMethod::defaultMethod)
@@ -88,9 +97,32 @@ public:
         this->onset_threshold = onset_threshold;
         this->onset_minioi = onset_minioi;
         this->silence_threshold = silenceThreshold;
+
+        std::cout << "Creating aubio object" << std::endl << std::flush;
+        this->onset_fvec = new_fvec (1);
+        this->input_fvec = new_fvec (hopSize);
     }
 
-    ~Onset(){}
+    ~Onset(){
+        std::cout << "Destroying aubio object" << std::endl << std::flush;
+        rtlogger.logInfo("Reset and release memory");
+        // destroy the input vector
+        if(input_fvec != nullptr)
+        {
+            del_fvec(input_fvec);
+            input_fvec = nullptr;
+        }
+        if(o)
+        {
+            del_aubio_onset (o);
+            o = nullptr;
+        }
+        if(onset_fvec)
+        {
+            del_fvec (onset_fvec);
+            onset_fvec = nullptr;
+        }
+    }
 
     /** Creates a copy of another Onset module. */
     Onset (const Onset&) = default;
@@ -131,30 +163,11 @@ public:
             rtlogger.logValue("compression ",aubio_onset_get_compression(o));
             rtlogger.logValue("minioi: ",aubio_onset_get_minioi_s(o));
         }
-
-        onset_fvec = new_fvec (1);
-        input_fvec = new_fvec (hopSize);
     }
 
     void reset()
     {
-        rtlogger.logInfo("Reset and release memory");
-        // destroy the input vector
-        if(input_fvec)
-        {
-            del_fvec(input_fvec);
-            input_fvec = nullptr;
-        }
-        if(o)
-        {
-            del_aubio_onset (o);
-            o = nullptr;
-        }
-        if(onset_fvec)
-        {
-            del_fvec (onset_fvec);
-            onset_fvec = nullptr;
-        }
+        
     }
 
     template <typename OtherSampleType>
@@ -251,7 +264,7 @@ public:
 private:
     void resizeBuffer()
     {
-        signalBuffer.resize(this->hopSize, this->blockSize);
+        signalBuffer.resize(this->hopSize + this->blockSize);
     }
 
     void storeAudioBlock(const SampleType* input, size_t n)
@@ -283,7 +296,8 @@ private:
            #endif
 
             for(unsigned long int i=0; i<hopSize; ++i)
-                fvec_set_sample(input_fvec, this->signalBuffer[firstIndex+i],firstIndex+i);
+                input_fvec->data[i] = this->signalBuffer[firstIndex+i];
+
             aubio_onset_do (o, input_fvec, onset_fvec);
             smpl_t is_onset = fvec_get_sample(onset_fvec, 0);
 
@@ -300,7 +314,7 @@ private:
                 int firstIndex = (int) (n / hopSize) * hopSize;
 
                #ifdef VERBOSE_PERFORM
-                snprintf(message,sizeof(message),"Buffering section [%d,%d]",firstIndex,firstIndex+numSamples);
+                snprintf(message,sizeof(message),"Buffering section [%d,%d]",firstIndex,firstIndex+numSamples); 
                 rtlogger.logInfo(message);
                #endif
 
@@ -371,8 +385,8 @@ private:
     ListenerList<Listener> onsetListeners;
 
     aubio_onset_t *o = nullptr;
-    fvec_t * input_fvec; //input vector
-    fvec_t *onset_fvec;       //output vector/value
+    fvec_t * input_fvec = nullptr; //input vector
+    fvec_t * onset_fvec = nullptr; //output vector/value
 
     // general stuff
     uint_t hopSize;
