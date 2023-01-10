@@ -11,13 +11,13 @@
 #include <array>
 
 template<std::size_t ELEMENT_SIZE, std::size_t BUFFER_SIZE>
-class ClassifierQueue
+class ClassifierArrayQueue
 {
 public:
     using ElementType = std::array<float,ELEMENT_SIZE>;
-    /** Construct a ClassifierQueue that can store float arrays
+    /** Construct a ClassifierArrayQueue that can store float arrays
     */
-    ClassifierQueue()
+    ClassifierArrayQueue()
     {
         for(int i=0;i<BUFFER_SIZE;++i)
             juce::FloatVectorOperations::clear(&(data[i][0]),ELEMENT_SIZE);
