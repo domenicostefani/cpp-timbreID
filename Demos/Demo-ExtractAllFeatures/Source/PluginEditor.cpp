@@ -46,7 +46,11 @@ DemoEditor::DemoEditor (DemoProcessor& p)
    #endif
 
     addAndMakeVisible(titleLabel);
+   #ifdef LONG_WINDOW
+    titleLabel.setText("(LONG WINDOW: 100ms) -> Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
+   #else
     titleLabel.setText("Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
+   #endif
     titleLabel.setJustificationType(Justification::centred);
 
     addAndMakeVisible(dataLabel);
@@ -118,10 +122,11 @@ DemoEditor::~DemoEditor()
 //==============================================================================
 void DemoEditor::paint (Graphics& g)
 {
+   #ifdef LONG_WINDOW
+    g.fillAll (juce::Colour (0xffff7080));
+   #else
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
-    // g.fillAll (juce::Colours::lightgreen);
-
-
+   #endif
 
     this->mSampleRate = processor.getSampleRate();
     this->mBlockSize = processor.getBlockSize();

@@ -25,9 +25,17 @@
 #include "PluginEditor.h"
 
 #define MONO_CHANNEL 0
-#define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
+
+#ifdef LONG_WINDOW
+ #define POST_ONSET_DELAY_MS 92.2933333333 // This delay is infact then rounded to the closest multiple of the audio block period
+                                           // In the case of 92.2933333333ms at 48000Hz and 64 samples blocksizes, the closes delay is 
+                                           // 92.0ms, corresponding to 69 audio block periods
+#else
+ #define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
                                  // In the case of 6.96ms at 48000Hz and 64 samples blocksizes, the closes delay is 
                                  // 6.66ms, corresponding to 5 audio block periods
+#endif
+
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
 //==============================================================================
@@ -519,12 +527,17 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 
 
-
+// Change Juce plugin name and prepend "superlong" if LONG_WINDOW is defined
+#ifdef LONG_WINDOW
+ #define Plugin_final_name "superlong"
+#else
+ #define Plugin_final_name JucePlugin_Name
+#endif
 
 
 
 //==============================================================================
-const String DemoProcessor::getName() const{return JucePlugin_Name;}
+const String DemoProcessor::getName() const{return Plugin_final_name;}
 bool DemoProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
