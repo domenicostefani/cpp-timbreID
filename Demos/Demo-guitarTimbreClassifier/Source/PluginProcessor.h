@@ -16,6 +16,8 @@
 #include "wavetableSine.h"
 #include "squaredSineWavetable.h"
 
+#include "readJsonConfig.h"
+
 #ifdef USE_TFLITE
  #include "liteclassifier.h"
 #endif
@@ -38,17 +40,24 @@
 
 
 #include "postOnsetTimer.h"
-#include "ClassifierFifoQueue.h"    // Lock-free queue that can store whole std::array elements
+#include "ClassifierArrayFifoQueue.h"    // Lock-free queue that can store whole std::array elements
+#include "ClassifierVectorFifoQueue.h"   // Same but with vectors, for runtime-defined size
 #include <thread>
 
 #define USE_AUBIO_ONSET //If this commented, the bark onset detector is used, otherwise the aubio onset module is used
 #define MEASURE_COMPUTATION_LATENCY
 // #define DEBUG_WHICH_CHANNEL
-#define PARALLEL_CLASSIFICATION // If defined, classification is performed on a separate thread
+
+// ! This is defined in the Projucer configuration
+// #define SEQUENTIAL_CLASSIFICATION // If defined, classification is performed SEQUENTIALLY on the audio thread, this might be bad
+                                   // This is defined in some of the projucer's configs to test small nn models
+// ! This is defined in the Projucer configuration
+
+
 // #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
 #define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
 
-// #define STOP_OSC
+#define STOP_OSC
 
 namespace CData{
 
@@ -56,15 +65,15 @@ const std::size_t N_FEATURES = 180;       // Number of audio features
 const int N_CLASSES = 8;                  // Number of classes for the neural network
 const int CLASSIFICATION_FIFO_BUFFER = 5; // Size of the ring buffers
 
-#ifdef PARALLEL_CLASSIFICATION
+#ifndef SEQUENTIAL_CLASSIFICATION
 
 struct ClassificationData{
     // In and Out buffers for parallel classification
-    ClassifierQueue<N_FEATURES,CLASSIFICATION_FIFO_BUFFER> featureBuffer;   // Audio thread --(featurevector)-> Classification thread
-    ClassifierQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER> predictionBuffer;  // Audio thread <--(predictions)--- Classification thread
+    ClassifierVectorQueue<CLASSIFICATION_FIFO_BUFFER> featureBuffer;   // Audio thread --(featurevector)-> Classification thread
+    ClassifierArrayQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER> predictionBuffer;  // Audio thread <--(predictions)--- Classification thread
     // Element types for both queues
-    using features_t = ClassifierQueue<N_FEATURES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
-    using predictions_t = ClassifierQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
+    using features_t = ClassifierVectorQueue<CLASSIFICATION_FIFO_BUFFER>::ElementType;
+    using predictions_t = ClassifierArrayQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
     // Run flag, to start and stop the classification thread
     std::atomic<bool> run;
     std::atomic<int> i;    
@@ -107,6 +116,11 @@ public:
     }
    #endif
 
+    void setFeatureNumber(size_t featureNumber)
+    {
+        this->cdata->featureBuffer.reserveVectorSize(featureNumber);
+    }
+
     void run() override
     {
         while (! threadShouldExit())
@@ -119,7 +133,7 @@ public:
             if (cdata->featureBuffer.read(readFeatures)) // Read from feature queue
             {
                 static ClassificationData::predictions_t towritePredictions;
-                classify(*tclassifier,readFeatures,towritePredictions);
+                classify(*tclassifier,&(readFeatures[0]), readFeatures.size(),&(towritePredictions[0]), towritePredictions.size());
                #ifndef STOP_OSC
                 if(isOSCconnected)
                 {
@@ -154,7 +168,7 @@ public:
                             maxclass = 7;
 
 
-                        if (! this->sender.send (this->oscMessage.c_str(), (int) maxclass), float towritePredictions[maxclass])
+                        if (! this->sender.send (this->oscMessage.c_str(), (int) maxclass, (float) towritePredictions[maxclass]))
                             showConnectionErrorMessage ("Error: could not send OSC message.");
                     }
                 }
@@ -245,6 +259,8 @@ public:
     void onsetDetectedRoutine();
 
     //======================== FEATURE EXTRACTION ==============================
+    std::unique_ptr<JsonConf::FeatureParser> featParser;    // Utility to read JSON configuration for feature extraction
+
     tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
     tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
     tid::AttackTime<float> attackTime;
@@ -257,10 +273,12 @@ public:
     tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
 
     /**    Feature Vector    **/
-    std::array<float, CData::N_FEATURES> featureVector;
+    std::vector<float> featureVector;
     // attack time
     unsigned long int rPeakSampIdx, rAttackStartIdx; 
     float rAttackTime;
+    //  bark Spec Brightness
+    float barkSpecBrightnessVal;
     // barkSpec
     const int BARKSPEC_RES_SIZE = 50;
     std::vector<float> barkSpecRes;
@@ -276,6 +294,11 @@ public:
     // peak sample    
     float peak;
     unsigned long int peakIdx;
+    // Zero Crossing
+    float zeroCrossingVal;
+
+    bool primeClassifier = true;
+
     // Compose vector
     void computeFeatureVector();
 
@@ -288,7 +311,7 @@ public:
     std::array<float, CData::N_CLASSES> classificationOutputVector;
 
 
-   #ifdef PARALLEL_CLASSIFICATION
+   #ifndef SEQUENTIAL_CLASSIFICATION
     // Classification is performed on a separate thread
     // Feature vectors are fed to the classifier through a lock-free queue
     // Classification result vectors are fed back to the audio thread through a second lock-free queue
@@ -310,7 +333,8 @@ public:
    #endif
     /**    Profiling    **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    double latencyTime = 0;
+    double latencyTime = 0, classf_start = 0, classf_end = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> chrono_start, chrono_end;
     uint64 logProcessblock_counter = 0, logProcessblock_fixedCounter = 0;
     const uint64 logProcessblock_period = 48000/64 * 5; // Log every 5 second the duration of the processblock routine (SampleRate/BlockSize)
    #endif
@@ -397,8 +421,6 @@ public:
   #endif
 
   
-    std::string readJSONProperty(std::string configfilepath, std::string propertyName1, std::string propertyName2);
-
 private:
     //============================== OUTPUT ====================================
     WavetableSine sinewt;   // Simple wavetable sine synth with short decay
