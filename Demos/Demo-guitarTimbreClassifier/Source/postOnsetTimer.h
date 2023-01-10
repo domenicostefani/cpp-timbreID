@@ -60,7 +60,7 @@ inline float PostOnsetTimer::start(double delay_ms)
         throw std::logic_error("Cannot call start in STARTED state, call reset before");
     timerCounter = 0;
     // Compute deadline in number of blocks
-    deadline = (delay_ms / 1000.0) * sampleRate / blockSize;
+    deadline = std::round((delay_ms / 1000.0) * sampleRate / blockSize);
     state = TimerState::STARTED;
     return deadline * blockSize / sampleRate *1000;
 }
