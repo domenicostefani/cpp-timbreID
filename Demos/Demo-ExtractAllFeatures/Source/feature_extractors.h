@@ -18,7 +18,11 @@
 #include <JuceHeader.h>
 #include "juce_timbreID.h"
 
-#define DEFINED_WINDOW_SIZE 704
+
+namespace FE {
+
+enum Extractor{ATTACKTIME,BARKSPECBRIGHTNESS,BARKSPEC,BFCC,CEPSTRUM,MFCC,PEAKSAMPLE,ZEROCROSSING};
+
 
 /**
  * @brief Class for feature extractors.
@@ -38,14 +42,14 @@ private:
     const bool USE_PEAKSAMPLE = true;
     const bool USE_ZEROCROSSING = true;
 
-    constexpr int _ATTACKTIME_RES_SIZE = 3;
-    constexpr int _BARKSPECBRIGHTNESS_RES_SIZE = 1;
-    constexpr int _BARKSPEC_SIZE = 50;
-    constexpr int _BFCC_RES_SIZE = 50;
-    constexpr int _CEPSTRUM_RES_SIZE = DEFINED_WINDOW_SIZE/2+1; // WindowSize/2+1 (It would be 513 with 1025)
-    constexpr int _MFCC_RES_SIZE = 38;
-    constexpr int _PEAKSAMPLE_RES_SIZE = 2;
-    constexpr int _ZEROCROSSING_RES_SIZE = 1;
+    static constexpr int _ATTACKTIME_RES_SIZE = 3;
+    static constexpr int _BARKSPECBRIGHTNESS_RES_SIZE = 1;
+    static constexpr int _BARKSPEC_SIZE = 50;
+    static constexpr int _BFCC_RES_SIZE = 50;
+    static constexpr int _CEPSTRUM_RES_SIZE = FE_WINDOW_SIZE/2+1; // WindowSize/2+1 (It would be 513 with 1025)
+    static constexpr int _MFCC_RES_SIZE = 38;
+    static constexpr int _PEAKSAMPLE_RES_SIZE = 2;
+    static constexpr int _ZEROCROSSING_RES_SIZE = 1;
 
     //==================== FEATURE EXTRACTION PARAMS ===========================
     const unsigned int FEATUREEXT_WINDOW_SIZE = FE_WINDOW_SIZE; // 75 Blocks of 64samples, 100ms
@@ -86,8 +90,6 @@ private:
                                             _MFCC_RES_SIZE+\
                                             _PEAKSAMPLE_RES_SIZE+\
                                             _ZEROCROSSING_RES_SIZE;
-    void computeFeatureVector(float featureVector[]);          // Compose vector
-
 
     #ifdef LONG_WINDOW                                      
     // This is for a window of 4800 samples
@@ -120,135 +122,244 @@ public:
 
     }
 
-    static size_t get_fe_vector_size() const {
-        assert(VECTOR_SIZE == header.size())
+    constexpr static size_t getFeVectorSize() {
         return VECTOR_SIZE;
     }
 
-    std::vector<std::string> get_header() {
+    std::vector<std::string> getHeader() {
         return header;
     }
 
+    void resizeVectors() {
+        barkSpecRes.resize(BARKSPEC_SIZE);
+        bfccRes.resize(BFCC_RES_SIZE);
+        cepstrumRes.resize(CEPSTRUM_RES_SIZE);
+        mfccRes.resize(MFCC_RES_SIZE);
+        
+        attackTime.setMaxSearchRange(20);
+    }
+
+    void prepare(double sampleRate, unsigned int samplesPerBlock) {
+        /** Prepare feature extractors **/
+
+        /*-------------------------------------/
+        | Bark Frequency Cepstral Coefficients |
+        /-------------------------------------*/
+        bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Cepstrum Coefficients               |
+        /------------------------------------*/
+        cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Attack time                         |
+        /------------------------------------*/
+        attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Bark spectral brightness            |
+        /------------------------------------*/
+        barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Bark Spectrum                       |
+        /------------------------------------*/
+        barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Zero Crossings                      |
+        /------------------------------------*/
+        mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Zero Crossings                      |
+        /------------------------------------*/
+        peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
+        /*------------------------------------/
+        | Zero Crossings                      |
+        /------------------------------------*/
+        zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    }
+
+    void reset() {
+        /*------------------------------------/
+        | Reset the feature extractors        |
+        /------------------------------------*/
+        bfcc.reset();
+        cepstrum.reset();
+        attackTime.reset();
+        barkSpecBrightness.reset();
+        barkSpec.reset();
+        mfcc.reset();
+        peakSample.reset();
+        zeroCrossing.reset();
+    }
+
+    // template <typename SampleType>
+    // void store (AudioBuffer<OtherSampleType>& buffer, short channel)
+    // {
+    //     static_assert (std::is_same<OtherSampleType, SampleType>::value,
+    //                    "The sample-type of the module must match the sample-type supplied to this store callback");
+    template <typename SampleType>
+    void store(AudioBuffer<SampleType>& buffer, short int channel) {
+        bfcc.store(buffer,channel);
+        cepstrum.store(buffer,channel);
+        attackTime.store(buffer,channel);
+        barkSpecBrightness.store(buffer,channel);
+        barkSpec.store(buffer,channel);
+        mfcc.store(buffer,channel);
+        peakSample.store(buffer,channel);
+        zeroCrossing.store(buffer,channel);
+    }
+
+    std::string getInfoString(FE::Extractor extractor) {
+        switch (extractor)
+        {
+            case ATTACKTIME:
+                return attackTime.getInfoString();
+                break;
+            case BARKSPECBRIGHTNESS:
+                return barkSpecBrightness.getInfoString();
+                break;
+            case BARKSPEC:
+                return barkSpec.getInfoString();
+                break;
+            case BFCC: 
+                return bfcc.getInfoString();
+                break;
+            case CEPSTRUM:
+                return cepstrum.getInfoString();
+                break;
+            case MFCC: 
+                return mfcc.getInfoString();
+                break;
+            case PEAKSAMPLE:
+                return peakSample.getInfoString();
+                break;
+            case ZEROCROSSING:
+                return zeroCrossing.getInfoString();
+                break;
+            default:
+                throw std::logic_error("Invalid Extractor");
+        }
+    }
+
+    void computeFeatureVector(float featureVector[])
+    {
+        int last = -1;
+        int newLast = 0;
+        /*-----------------------------------------/
+        | 01 - Attack time                         |
+        /-----------------------------------------*/
+        unsigned long int peakSampIdx = 0;
+        unsigned long int attackStartIdx = 0;
+        float attackTimeValue = 0.0f;
+        this->attackTime.compute(&peakSampIdx, &attackStartIdx, &attackTimeValue);
+
+        featureVector[0] = (float)peakSampIdx;
+        featureVector[1] = (float)attackStartIdx;
+        featureVector[2] = attackTimeValue;
+        newLast = 2;
+    #ifdef LOG_SIZES
+        info += ("attackTime [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*-----------------------------------------/
+        | 02 - Bark Spectral Brightness            |
+        /-----------------------------------------*/
+        float bsb = this->barkSpecBrightness.compute();
+
+        featureVector[3] = bsb;
+        newLast = 3;
+    #ifdef LOG_SIZES
+        info += ("barkSpecBrightness [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*-----------------------------------------/
+        | 03 - Bark Spectrum                       |
+        /-----------------------------------------*/
+        barkSpecRes = this->barkSpec.compute();
+
+        jassert(barkSpecRes.size() == BARKSPEC_SIZE);
+        for(int i=0; i<BARKSPEC_SIZE; ++i)
+        {
+            featureVector[(last+1) + i] = barkSpecRes[i];
+        }
+        newLast = last + BARKSPEC_SIZE;
+    #ifdef LOG_SIZES
+        info += ("barkSpec [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*------------------------------------------/
+        | 04 - Bark Frequency Cepstral Coefficients |
+        /------------------------------------------*/
+        bfccRes = this->bfcc.compute();
+        jassert(bfccRes.size() == BFCC_RES_SIZE);
+        for(int i=0; i<BFCC_RES_SIZE; ++i)
+        {
+            featureVector[(last+1) + i] = bfccRes[i];
+        }
+        newLast = last + BFCC_RES_SIZE;
+    #ifdef LOG_SIZES
+        info += ("bfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*------------------------------------------/
+        | 05 - Cepstrum Coefficients                |
+        /------------------------------------------*/
+        cepstrumRes = this->cepstrum.compute();
+        jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
+        for(int i=0; i<CEPSTRUM_RES_SIZE; ++i)
+        {
+            featureVector[(last+1) + i] = cepstrumRes[i];
+        }
+        newLast = last + CEPSTRUM_RES_SIZE;
+    #ifdef LOG_SIZES
+        info += ("cepstrum [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*-----------------------------------------/
+        | 06 - Mel Frequency Cepstral Coefficients |
+        /-----------------------------------------*/
+        mfccRes = this->mfcc.compute();
+        jassert(mfccRes.size() == MFCC_RES_SIZE);
+        for(int i=0; i<MFCC_RES_SIZE; ++i)
+        {
+            featureVector[(last+1) + i] = mfccRes[i];
+        }
+        newLast = last + MFCC_RES_SIZE;
+    #ifdef LOG_SIZES
+        info += ("mfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*-----------------------------------------/
+        | 07 - Peak sample                         |
+        /-----------------------------------------*/
+        std::pair<float, unsigned long int> peakSample = this->peakSample.compute();
+        float peakSampleRes = peakSample.first;
+        unsigned long int peakSampleIndex = peakSample.second;
+        featureVector[last+1] = peakSampleRes;
+        featureVector[last+2] = peakSampleIndex;
+        newLast = last + 2;
+    #ifdef LOG_SIZES
+        info += ("peakSample [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+        /*-----------------------------------------/
+        | 08 - Zero Crossings                      |
+        /-----------------------------------------*/
+        uint32 crossings = this->zeroCrossing.compute();
+        featureVector[last+1] = crossings;
+        newLast = last +1;
+    #ifdef LOG_SIZES
+        info += ("zeroCrossing [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
+    #endif
+        last = newLast;
+
+    }
 
 };
 
-void FeatureExtractors::computeFeatureVector(float featureVector[])
-{
-    int last = -1;
-    int newLast = 0;
-    /*-----------------------------------------/
-    | 01 - Attack time                         |
-    /-----------------------------------------*/
-    unsigned long int peakSampIdx = 0;
-    unsigned long int attackStartIdx = 0;
-    float attackTimeValue = 0.0f;
-    this->attackTime.compute(&peakSampIdx, &attackStartIdx, &attackTimeValue);
-
-    featureVector[0] = (float)peakSampIdx;
-    featureVector[1] = (float)attackStartIdx;
-    featureVector[2] = attackTimeValue;
-    newLast = 2;
-   #ifdef LOG_SIZES
-    info += ("attackTime [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 02 - Bark Spectral Brightness            |
-    /-----------------------------------------*/
-    float bsb = this->barkSpecBrightness.compute();
-
-    featureVector[3] = bsb;
-    newLast = 3;
-   #ifdef LOG_SIZES
-    info += ("barkSpecBrightness [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 03 - Bark Spectrum                       |
-    /-----------------------------------------*/
-    barkSpecRes = this->barkSpec.compute();
-
-    jassert(barkSpecRes.size() == BARKSPEC_SIZE);
-    for(int i=0; i<BARKSPEC_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = barkSpecRes[i];
-    }
-    newLast = last + BARKSPEC_SIZE;
-   #ifdef LOG_SIZES
-    info += ("barkSpec [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 04 - Bark Frequency Cepstral Coefficients |
-    /------------------------------------------*/
-    bfccRes = this->bfcc.compute();
-    jassert(bfccRes.size() == BFCC_RES_SIZE);
-    for(int i=0; i<BFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = bfccRes[i];
-    }
-    newLast = last + BFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("bfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 05 - Cepstrum Coefficients                |
-    /------------------------------------------*/
-    cepstrumRes = this->cepstrum.compute();
-    jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
-    for(int i=0; i<CEPSTRUM_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = cepstrumRes[i];
-    }
-    newLast = last + CEPSTRUM_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("cepstrum [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 06 - Mel Frequency Cepstral Coefficients |
-    /-----------------------------------------*/
-    mfccRes = this->mfcc.compute();
-    jassert(mfccRes.size() == MFCC_RES_SIZE);
-    for(int i=0; i<MFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = mfccRes[i];
-    }
-    newLast = last + MFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("mfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 07 - Peak sample                         |
-    /-----------------------------------------*/
-    std::pair<float, unsigned long int> peakSample = this->peakSample.compute();
-    float peakSampleRes = peakSample.first;
-    unsigned long int peakSampleIndex = peakSample.second;
-    featureVector[last+1] = peakSampleRes;
-    featureVector[last+2] = peakSampleIndex;
-    newLast = last + 2;
-   #ifdef LOG_SIZES
-    info += ("peakSample [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 08 - Zero Crossings                      |
-    /-----------------------------------------*/
-    uint32 crossings = this->zeroCrossing.compute();
-    featureVector[last+1] = crossings;
-    newLast = last +1;
-   #ifdef LOG_SIZES
-    info += ("zeroCrossing [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-}
+} 

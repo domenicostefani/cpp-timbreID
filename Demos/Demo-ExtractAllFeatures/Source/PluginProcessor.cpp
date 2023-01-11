@@ -38,6 +38,8 @@
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
+FE::FeatureExtractors<DEFINED_WINDOW_SIZE> DemoProcessor::featexts;
+
 //==============================================================================
 DemoProcessor::DemoProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -53,26 +55,19 @@ DemoProcessor::DemoProcessor()
     parameters(*this, nullptr, "PARAMETERS", createParameterLayout())
 {    
     suspendProcessing (true);
+    header = featexts.getHeader();
     rtlogger.logInfo("Initializing Onset detector");
 
     /** ADD ONSET DETECTOR LISTENER **/
     aubioOnset.addListener(this);
 
-    barkSpecRes.resize(BARKSPEC_SIZE);
-    bfccRes.resize(BFCC_RES_SIZE);
-    cepstrumRes.resize(CEPSTRUM_RES_SIZE);
-    mfccRes.resize(MFCC_RES_SIZE);
+    featexts.resizeVectors();
 
-    attackTime.setMaxSearchRange(20);
    #ifdef DO_LOG_TO_FILE
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
    #endif
 
-    // if (JUCEApplicationBase::isStandaloneApp()) TODO: reemove because I did this below
-    //     storageState.store(StorageState::idle);
-    // else
-    //     storageState.store(StorageState::store);
 
     parameters.state = ValueTree("savedParams");
     parameters.addParameterListener(STORESTATE_ID,this);
@@ -100,7 +95,7 @@ void DemoProcessor::logInCsvSpecial(std::string messagestr)
     {
         currentEntry->onsetDetectionTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
         currentEntry->featureComputationTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
-        currentEntry->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;
+        currentEntry->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;
         currentEntry->sampleRate = this->pluginSampleRate;
         currentEntry->blockSize = this->pluginBlockSize;
         currentEntry->writeMessage(messagestr.c_str());
@@ -139,40 +134,7 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
 
-    /** Prepare feature extractors **/
-
-    /*-------------------------------------/
-    | Bark Frequency Cepstral Coefficients |
-    /-------------------------------------*/
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Cepstrum Coefficients               |
-    /------------------------------------*/
-    cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Attack time                         |
-    /------------------------------------*/
-    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark spectral brightness            |
-    /------------------------------------*/
-    barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark Spectrum                       |
-    /------------------------------------*/
-    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    featexts.prepare(sampleRate,samplesPerBlock);
 
     this->sampleRate = sampleRate;
     this->samplesPerBlock = samplesPerBlock;
@@ -195,14 +157,7 @@ void DemoProcessor::releaseResources()
     /*------------------------------------/
     | Reset the feature extractors        |
     /------------------------------------*/
-    bfcc.reset();
-    cepstrum.reset();
-    attackTime.reset();
-    barkSpecBrightness.reset();
-    barkSpec.reset();
-    mfcc.reset();
-    peakSample.reset();
-    zeroCrossing.reset();
+    featexts.reset();
 
     rtlogger.logInfo("+--ReleaseResources completed");
 }
@@ -230,14 +185,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     }
 
     /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
-    bfcc.store(buffer,(short int)MONO_CHANNEL);
-    cepstrum.store(buffer,(short int)MONO_CHANNEL);
-    attackTime.store(buffer,(short int)MONO_CHANNEL);
-    barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);
-    barkSpec.store(buffer,(short int)MONO_CHANNEL);
-    mfcc.store(buffer,(short int)MONO_CHANNEL);
-    peakSample.store(buffer,(short int)MONO_CHANNEL);
-    zeroCrossing.store(buffer,(short int)MONO_CHANNEL);
+    featexts.store(buffer,(short int)MONO_CHANNEL);
 
     /** STORE THE ONSET DETECTOR BUFFER **/
     try
@@ -319,7 +267,7 @@ void DemoProcessor::onsetDetectedRoutine ()
             /--------------------*/
             currentFV->onsetDetectionTime = this->lastOnsetDetectionTime; //double
             currentFV->featureComputationTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes(); //double
-            currentFV->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;   // int
+            currentFV->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;   // int
             currentFV->sampleRate = this->pluginSampleRate;   // int
             currentFV->blockSize = this->pluginBlockSize;    // int
             /*--------------------/

@@ -70,7 +70,8 @@ public:
     /**    Feature Vector    **/
     static const unsigned int CSV_FLOAT_PRECISION = 8;
 
-    FeatureExtractors<DEFINED_WINDOW_SIZE> featexts;
+    static FE::FeatureExtractors<DEFINED_WINDOW_SIZE> featexts;
+    std::vector<std::string> header;
 
     //============================= SAVE CSV ===================================
     // TODO: check atomic::wait
@@ -78,7 +79,7 @@ public:
     // std::atomic<float> onsetMinIoi,onsetThreshold,onsetSilence;
     std::atomic<bool> clearAt{false},writeAt{false};
 
-    static const unsigned int VECTOR_SIZE = featexts.get_vector_size();
+    static const unsigned int VECTOR_SIZE = featexts.getFeVectorSize();
 
     SaveToCsv<100000,VECTOR_SIZE,CSV_FLOAT_PRECISION> csvsaver;
     int pluginSampleRate,pluginBlockSize;

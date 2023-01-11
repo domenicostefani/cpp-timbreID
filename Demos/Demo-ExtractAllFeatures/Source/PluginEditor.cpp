@@ -282,14 +282,14 @@ void DemoEditor::updateDataLabels(){
 
     this->dataLabel.setText(text,NotificationType::dontSendNotification);
 
-    this->extractorData[0].setText("attackTime\n" + processor.attackTime.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[1].setText("barkSpecBrightness\n" + processor.barkSpecBrightness.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[2].setText("barkSpec\n" + processor.barkSpec.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[3].setText("bfcc\n" + processor.bfcc.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[4].setText("cepstrum\n" + processor.cepstrum.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[5].setText("mfcc\n" + processor.mfcc.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[6].setText("peakSample\n" + processor.peakSample.getInfoString(),NotificationType::dontSendNotification);
-    this->extractorData[7].setText("zeroCrossing\n" + processor.zeroCrossing.getInfoString(),NotificationType::dontSendNotification);
+    this->extractorData[0].setText("attackTime\n" +         processor.featexts.getInfoString(FE::ATTACKTIME),         NotificationType::dontSendNotification);
+    this->extractorData[1].setText("barkSpecBrightness\n" + processor.featexts.getInfoString(FE::BARKSPECBRIGHTNESS), NotificationType::dontSendNotification);
+    this->extractorData[2].setText("barkSpec\n" +           processor.featexts.getInfoString(FE::BARKSPEC),           NotificationType::dontSendNotification);
+    this->extractorData[3].setText("bfcc\n" +               processor.featexts.getInfoString(FE::BFCC),               NotificationType::dontSendNotification);
+    this->extractorData[4].setText("cepstrum\n" +           processor.featexts.getInfoString(FE::CEPSTRUM),           NotificationType::dontSendNotification);
+    this->extractorData[5].setText("mfcc\n" +               processor.featexts.getInfoString(FE::MFCC),               NotificationType::dontSendNotification);
+    this->extractorData[6].setText("peakSample\n" +         processor.featexts.getInfoString(FE::PEAKSAMPLE),         NotificationType::dontSendNotification);
+    this->extractorData[7].setText("zeroCrossing\n" +       processor.featexts.getInfoString(FE::ZEROCROSSING),       NotificationType::dontSendNotification);
 
 }
 
