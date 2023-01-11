@@ -268,7 +268,7 @@ inline void unoptimized_discreteCosineTransform(float *output, const float *inpu
     float piOverNfilters = M_PI/numFilters; // save multiple divides below
     for(int i=0; i<numFilters; i++)
     {
-        output[i] = 0f;
+        output[i] = 0.0f;
         for(int k=0; k<numFilters; k++)
             output[i] += input[k] * cos(i * (k+0.5f) * piOverNfilters);
     }

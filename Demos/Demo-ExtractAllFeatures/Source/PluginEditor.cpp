@@ -46,10 +46,15 @@ DemoEditor::DemoEditor (DemoProcessor& p)
    #endif
 
     addAndMakeVisible(titleLabel);
+
+    std::string specs =  std::to_string(processor.samplesPerBlock)+"@"+std::to_string(int(processor.sampleRate));
+
+    std::string date =  "(2023-01-11)";
+    std::string feature_window_size = std::to_string(DEFINED_WINDOW_SIZE) + " ("+std::to_string(DEFINED_WINDOW_SIZE/processor.sampleRate*1000)+"ms)";
    #ifdef LONG_WINDOW
-    titleLabel.setText("(LONG WINDOW: 100ms) -> Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
+    titleLabel.setText(specs + "\n(LONG WINDOW: 100ms) -> Onset detector + 8 Feature Extractors "+feature_window_size+" "+date, NotificationType::dontSendNotification);
    #else
-    titleLabel.setText("Onset detector + 8 Feature Extractors + classifier", NotificationType::dontSendNotification);
+    titleLabel.setText(specs + "\nOnset detector + 8 Feature Extractors "+feature_window_size+" "+date, NotificationType::dontSendNotification);
    #endif
     titleLabel.setJustificationType(Justification::centred);
 

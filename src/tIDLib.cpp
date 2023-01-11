@@ -63,11 +63,11 @@ float bark2freq(float bark)
             freq = 53548.0f/(bark*bark - 52.56f*bark + 690.39f);
             break;
         case tIDLib::bark2freqFormula2:
-            freq = 1960f/(26.81f/(bark+0.53f) - 1f);
+            freq = 1960.0f/(26.81f/(bark+0.53f) - 1.0f);
             freq = (freq<0)?0:freq;
             break;
         default:
-            freq = 0f;
+            freq = 0.0f;
     }
 
     return(freq);
@@ -86,10 +86,10 @@ float freq2bark(float freq)
             barkFreq = 6.0f*asinh(freq/600.0f);
             break;
         case tIDLib::freq2barkFormula1:
-            barkFreq = 13f*atan(0.00076f*freq) + 3.5f*atan(powf((freq/7500f), 2));
+            barkFreq = 13.0f*atan(0.00076f*freq) + 3.5f*atan(powf((freq/7500.0f), 2));
             break;
         case tIDLib::freq2barkFormula2:
-            barkFreq = ((26.81f*freq)/(1960f+freq))-0.53f;
+            barkFreq = ((26.81f*freq)/(1960.0f+freq))-0.53f;
             if(barkFreq<2)
                 barkFreq += 0.15f*(2-barkFreq);
             else if(barkFreq>20.1f)
@@ -118,9 +118,9 @@ float mel2freq(float mel)
 {
     float freq;
 
-    freq = 700 * (exp(mel/1127f) - 1f);
+    freq = 700 * (exp(mel/1127.0f) - 1.0f);
 //    freq = 700 * (exp(mel/1127.01048f) - 1);
-    freq = (freq<0f)?0f:freq;
+    freq = (freq<0.0f)?0.0f:freq;
     return(freq);
 }
 /* ---------------- END conversion functions ---------------------- */
@@ -677,7 +677,7 @@ void initBlackmanWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i] = 0.42f - (0.5f * cos(2f*M_PI*i/n)) + (0.08f * cos(4f*M_PI*i/n));
+        window[i] = 0.42f - (0.5f * cos(2.0f*M_PI*i/n)) + (0.08f * cos(4.0f*M_PI*i/n));
 }
 
 void initCosineWindow(std::vector<float> &window)
@@ -691,14 +691,14 @@ void initHammingWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i] = 0.5f - (0.46f * cos(2f*M_PI*i/n));
+        window[i] = 0.5f - (0.46f * cos(2.0f*M_PI*i/n));
 }
 
 void initHannWindow(std::vector<float> &window)
 {
     unsigned long int n = window.size();
     for(unsigned long int i = 0; i < n; ++i)
-        window[i]  = 0.5f * (1f - cos(2f*M_PI*i/n));
+        window[i]  = 0.5f * (1.0f - cos(2.0f*M_PI*i/n));
 }
 /* ---------------- END windowing buffer functions ---------------------- */
 

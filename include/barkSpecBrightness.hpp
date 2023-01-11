@@ -348,7 +348,7 @@ public:
         if(windowSize < 4)
             throw std::invalid_argument("Window size must be 4 or greater");
 
-        unsigned long int windowHalf = windowSize*f
+        unsigned long int windowHalf = windowSize*0.5f;
 
         this->signalBuffer.resize(windowSize + this->blockSize);
         this->fftwInputVector.resize(windowSize);
