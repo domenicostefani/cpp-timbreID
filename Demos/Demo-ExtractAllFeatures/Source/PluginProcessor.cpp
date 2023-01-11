@@ -309,7 +309,7 @@ void DemoProcessor::onsetDetectedRoutine ()
             /*--------------------/
             | 1. EXTRACT FEATURES |
             /--------------------*/
-            this->computeFeatureVector(currentFV->features);
+            this->featexts.computeFeatureVector(currentFV->features);
 
             /*--------------------/
             | 2. ADD METADATA     |
@@ -332,127 +332,6 @@ void DemoProcessor::onsetDetectedRoutine ()
     {
         rtlogger.logInfo("Extractor idling");
     }
-}
-
-void DemoProcessor::computeFeatureVector(float featureVector[])
-{
-    int last = -1;
-    int newLast = 0;
-    /*-----------------------------------------/
-    | 01 - Attack time                         |
-    /-----------------------------------------*/
-    unsigned long int peakSampIdx = 0;
-    unsigned long int attackStartIdx = 0;
-    float attackTimeValue = 0.0f;
-    this->attackTime.compute(&peakSampIdx, &attackStartIdx, &attackTimeValue);
-
-    featureVector[0] = (float)peakSampIdx;
-    featureVector[1] = (float)attackStartIdx;
-    featureVector[2] = attackTimeValue;
-    newLast = 2;
-   #ifdef LOG_SIZES
-    info += ("attackTime [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 02 - Bark Spectral Brightness            |
-    /-----------------------------------------*/
-    float bsb = this->barkSpecBrightness.compute();
-
-    featureVector[3] = bsb;
-    newLast = 3;
-   #ifdef LOG_SIZES
-    info += ("barkSpecBrightness [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 03 - Bark Spectrum                       |
-    /-----------------------------------------*/
-    barkSpecRes = this->barkSpec.compute();
-
-    jassert(barkSpecRes.size() == BARKSPEC_SIZE);
-    for(int i=0; i<BARKSPEC_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = barkSpecRes[i];
-    }
-    newLast = last + BARKSPEC_SIZE;
-   #ifdef LOG_SIZES
-    info += ("barkSpec [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 04 - Bark Frequency Cepstral Coefficients |
-    /------------------------------------------*/
-    bfccRes = this->bfcc.compute();
-    jassert(bfccRes.size() == BFCC_RES_SIZE);
-    for(int i=0; i<BFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = bfccRes[i];
-    }
-    newLast = last + BFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("bfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 05 - Cepstrum Coefficients                |
-    /------------------------------------------*/
-    cepstrumRes = this->cepstrum.compute();
-    jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
-    for(int i=0; i<CEPSTRUM_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = cepstrumRes[i];
-    }
-    newLast = last + CEPSTRUM_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("cepstrum [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 06 - Mel Frequency Cepstral Coefficients |
-    /-----------------------------------------*/
-    mfccRes = this->mfcc.compute();
-    jassert(mfccRes.size() == MFCC_RES_SIZE);
-    for(int i=0; i<MFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = mfccRes[i];
-    }
-    newLast = last + MFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("mfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 07 - Peak sample                         |
-    /-----------------------------------------*/
-    std::pair<float, unsigned long int> peakSample = this->peakSample.compute();
-    float peakSampleRes = peakSample.first;
-    unsigned long int peakSampleIndex = peakSample.second;
-    featureVector[last+1] = peakSampleRes;
-    featureVector[last+2] = peakSampleIndex;
-    newLast = last + 2;
-   #ifdef LOG_SIZES
-    info += ("peakSample [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 08 - Zero Crossings                      |
-    /-----------------------------------------*/
-    uint32 crossings = this->zeroCrossing.compute();
-    featureVector[last+1] = crossings;
-    newLast = last +1;
-   #ifdef LOG_SIZES
-    info += ("zeroCrossing [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
 }
 
 void DemoProcessor::parameterChanged(const juce::String & parameterID, float newValue)
