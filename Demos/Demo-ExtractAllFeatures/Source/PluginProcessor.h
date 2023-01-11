@@ -37,7 +37,9 @@ class DemoProcessor : public AudioProcessor,
 {
 public:
 
-public:
+    double sampleRate = -1;
+    short samplesPerBlock = -1;
+
     //===================== ONSET DETECTION PARAMS =============================
 
     // More about the parameter choice at

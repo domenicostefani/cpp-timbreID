@@ -33,7 +33,7 @@ namespace tid   /* TimbreID namespace*/
 {
 
 const float weights_dB[] = {-69.9f, -60.4f, -51.4f, -43.3f, -36.6f, -30.3f, -24.3f, -19.5f, -14.8f, -10.7f, -7.5f, -4.8f, -2.6f, -0.8f, 0.0f, 0.6f, 0.5f, 0.0f, -0.1f, 0.5f, 1.5f, 3.6f, 5.9f, 6.5f, 4.2f, -2.6f, -10.2f, -10.0f, -2.8f};
-const float weights_freqs[] = {20f, 25f, 31.5f, 40f, 50f, 63f, 80f, 100f, 125f, 160f, 200f, 250f, 315f, 400f, 500f, 630f, 800f, 1000f, 1250f, 1600f, 2000f, 2500f, 3150f, 4000f, 5000f, 6300f, 8000f, 10000f, 12500f};
+const float weights_freqs[] = {20.0f, 25.0f, 31.5f, 40.0f, 50.0f, 63.0f, 80.0f, 100.0f, 125.0f, 160.0f, 200.0f, 250.0f, 315.0f, 400.0f, 500.0f, 630.0f, 800.0f, 1000.0f, 1250.0f, 1600.0f, 2000.0f, 2500.0f, 3150.0f, 4000.0f, 5000.0f, 6300.0f, 8000.0f, 10000.0f, 12500.0f};
 
 template <typename SampleType>
 class Bark : private Timer
@@ -569,8 +569,8 @@ private:
     float peakGrowth = 0.0f;
     float avgGrowth = 0.0f;
     float prevTotalGrowth = 0.0f;
-    float loThresh = 3f;
-    float hiThresh = 7f;
+    float loThresh = 3.0f;
+    float hiThresh = 7.0f;
     float minvel = 1.0f;
     /* band range: loBin through hiBin (inclusive) */
     t_filterIdx loBin;

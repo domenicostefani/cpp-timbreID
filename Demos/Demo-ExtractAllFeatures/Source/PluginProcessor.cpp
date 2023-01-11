@@ -174,6 +174,9 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     /------------------------------------*/
     zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
 
+    this->sampleRate = sampleRate;
+    this->samplesPerBlock = samplesPerBlock;
+
     rtlogger.logInfo("+--Prepare to play completed");
 }
 
