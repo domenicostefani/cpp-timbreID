@@ -29,6 +29,15 @@
 // #define LOG_LATENCY
 #define DO_LOG_TO_FILE
 
+#define DO_USE_ATTACKTIME true
+#define DO_USE_BARKSPECBRIGHTNESS true
+#define DO_USE_BARKSPEC true
+#define DO_USE_BFCC true
+#define DO_USE_CEPSTRUM true
+#define DO_USE_MFCC true
+#define DO_USE_PEAKSAMPLE true
+#define DO_USE_ZEROCROSSING true
+
 /**
 */
 class DemoProcessor : public AudioProcessor,
@@ -70,7 +79,15 @@ public:
     /**    Feature Vector    **/
     static const unsigned int CSV_FLOAT_PRECISION = 8;
 
-    static FE::FeatureExtractors<DEFINED_WINDOW_SIZE> featexts;
+    static FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING> featexts;
     std::vector<std::string> header;
 
     //============================= SAVE CSV ===================================

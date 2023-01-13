@@ -38,7 +38,16 @@
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
-FE::FeatureExtractors<DEFINED_WINDOW_SIZE> DemoProcessor::featexts;
+FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                      DO_USE_ATTACKTIME,
+                      DO_USE_BARKSPECBRIGHTNESS,
+                      DO_USE_BARKSPEC,
+                      DO_USE_BFCC,
+                      DO_USE_CEPSTRUM,
+                      DO_USE_MFCC,
+                      DO_USE_PEAKSAMPLE,
+                      DO_USE_ZEROCROSSING> DemoProcessor::featexts;
+
 
 //==============================================================================
 DemoProcessor::DemoProcessor()
@@ -61,8 +70,6 @@ DemoProcessor::DemoProcessor()
     /** ADD ONSET DETECTOR LISTENER **/
     aubioOnset.addListener(this);
 
-    featexts.resizeVectors();
-
    #ifdef DO_LOG_TO_FILE
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
@@ -74,11 +81,11 @@ DemoProcessor::DemoProcessor()
     parameters.addParameterListener(CLEAR_ID,this);
     parameters.addParameterListener(SAVEFILE_ID,this);
 
-    for (auto p : getParameters())
-    {
-        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
-            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
-    }
+    // for (auto p : getParameters())
+    // {
+    //     if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+    //         parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    // }
 
     rtlogger.logValue("HasEditor",this->hasEditor());
 
@@ -341,11 +348,11 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
         if(xml->hasTagName(parameters.state.getType()))
             parameters.state = juce::ValueTree::fromXml(*xml);
 
-    for (auto p : getParameters())
-    {
-        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
-            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
-    }
+    // for (auto p : getParameters())
+    // {
+    //     if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+    //         parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    // }
 }
 
 
