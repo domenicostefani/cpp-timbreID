@@ -49,13 +49,19 @@ DemoEditor::DemoEditor (DemoProcessor& p)
 
     std::string specs =  std::to_string(processor.samplesPerBlock)+"@"+std::to_string(int(processor.sampleRate));
 
-    std::string date =  "(2023-01-11)";
+    std::string date =  "(2023-01-18)";
     std::string feature_window_size = std::to_string(DEFINED_WINDOW_SIZE) + " ("+std::to_string(DEFINED_WINDOW_SIZE/processor.sampleRate*1000)+"ms)";
-   #ifdef LONG_WINDOW
-    titleLabel.setText(specs + "\n(LONG WINDOW: 100ms) -> Onset detector + 8 Feature Extractors "+feature_window_size+" "+date, NotificationType::dontSendNotification);
+   #ifdef WINDOWED_FEATURE_EXTRACTORS
+    specs = "Windowed " + specs;
    #else
-    titleLabel.setText(specs + "\nOnset detector + 8 Feature Extractors "+feature_window_size+" "+date, NotificationType::dontSendNotification);
+    specs = "Singlewindow! " + specs;
    #endif
+    
+
+    std::string titletext = specs + "\nOnset detector + 8 Feature Extractors "+feature_window_size+" "+date;
+
+
+    titleLabel.setText(titletext, NotificationType::dontSendNotification);
     titleLabel.setJustificationType(Justification::centred);
 
     addAndMakeVisible(dataLabel);
@@ -92,10 +98,16 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     storageStateBox.addItem("Store",1);
     storageStateBox.addItem("Idle",2);
     auto val = processor.storageState.load();
+    int selectedid = -1;
     if(val == DemoProcessor::StorageState::idle)
-        storageStateBox.setSelectedId(2);
+        selectedid = 2;
+    else if(val == DemoProcessor::StorageState::store)
+        selectedid = 1;
     else
-        storageStateBox.setSelectedId(1);
+        throw std::logic_error("val is equal to DemoProcessor::StorageState::idle: "+std::to_string(val == DemoProcessor::StorageState::idle));
+
+    storageStateBox.setSelectedId(selectedid);
+
     storageStateBox.setJustificationType(Justification::centred);
     // storageStateBox.addListener(this);
     storestateAttachment.reset(new ComboBoxAttachment(processor.parameters,processor.STORESTATE_ID,storageStateBox));
@@ -127,7 +139,7 @@ DemoEditor::~DemoEditor()
 //==============================================================================
 void DemoEditor::paint (Graphics& g)
 {
-   #ifdef LONG_WINDOW
+   #ifdef WINDOWED_FEATURE_EXTRACTORS
     g.fillAll (juce::Colour (0xffff7080));
    #else
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
@@ -136,6 +148,9 @@ void DemoEditor::paint (Graphics& g)
     this->mSampleRate = processor.getSampleRate();
     this->mBlockSize = processor.getBlockSize();
     updateDataLabels();
+
+    int v = storageStateBox.getSelectedId(); // TODO: remove
+    NULL;
 }
 
 void DemoEditor::resized()
@@ -282,14 +297,14 @@ void DemoEditor::updateDataLabels(){
 
     this->dataLabel.setText(text,NotificationType::dontSendNotification);
 
-    this->extractorData[0].setText("attackTime\n" +         processor.featexts.getInfoString(FE::ATTACKTIME),         NotificationType::dontSendNotification);
-    this->extractorData[1].setText("barkSpecBrightness\n" + processor.featexts.getInfoString(FE::BARKSPECBRIGHTNESS), NotificationType::dontSendNotification);
-    this->extractorData[2].setText("barkSpec\n" +           processor.featexts.getInfoString(FE::BARKSPEC),           NotificationType::dontSendNotification);
-    this->extractorData[3].setText("bfcc\n" +               processor.featexts.getInfoString(FE::BFCC),               NotificationType::dontSendNotification);
-    this->extractorData[4].setText("cepstrum\n" +           processor.featexts.getInfoString(FE::CEPSTRUM),           NotificationType::dontSendNotification);
-    this->extractorData[5].setText("mfcc\n" +               processor.featexts.getInfoString(FE::MFCC),               NotificationType::dontSendNotification);
-    this->extractorData[6].setText("peakSample\n" +         processor.featexts.getInfoString(FE::PEAKSAMPLE),         NotificationType::dontSendNotification);
-    this->extractorData[7].setText("zeroCrossing\n" +       processor.featexts.getInfoString(FE::ZEROCROSSING),       NotificationType::dontSendNotification);
+    this->extractorData[0].setText("attackTime\n" +         processor.featexts.getInfoString(WFE::ATTACKTIME),         NotificationType::dontSendNotification);
+    this->extractorData[1].setText("barkSpecBrightness\n" + processor.featexts.getInfoString(WFE::BARKSPECBRIGHTNESS), NotificationType::dontSendNotification);
+    this->extractorData[2].setText("barkSpec\n" +           processor.featexts.getInfoString(WFE::BARKSPEC),           NotificationType::dontSendNotification);
+    this->extractorData[3].setText("bfcc\n" +               processor.featexts.getInfoString(WFE::BFCC),               NotificationType::dontSendNotification);
+    this->extractorData[4].setText("cepstrum\n" +           processor.featexts.getInfoString(WFE::CEPSTRUM),           NotificationType::dontSendNotification);
+    this->extractorData[5].setText("mfcc\n" +               processor.featexts.getInfoString(WFE::MFCC),               NotificationType::dontSendNotification);
+    this->extractorData[6].setText("peakSample\n" +         processor.featexts.getInfoString(WFE::PEAKSAMPLE),         NotificationType::dontSendNotification);
+    this->extractorData[7].setText("zeroCrossing\n" +       processor.featexts.getInfoString(WFE::ZEROCROSSING),       NotificationType::dontSendNotification);
 
 }
 

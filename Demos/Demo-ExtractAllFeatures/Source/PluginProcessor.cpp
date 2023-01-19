@@ -38,7 +38,7 @@
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
-FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                       DO_USE_ATTACKTIME,
                       DO_USE_BARKSPECBRIGHTNESS,
                       DO_USE_BARKSPEC,
@@ -46,7 +46,11 @@ FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                       DO_USE_CEPSTRUM,
                       DO_USE_MFCC,
                       DO_USE_PEAKSAMPLE,
-                      DO_USE_ZEROCROSSING> DemoProcessor::featexts;
+                      DO_USE_ZEROCROSSING,
+                      BLOCK_SIZE,
+                      FRAME_SIZE,
+                      FRAME_INTERVAL ,
+                      ZEROPADS> DemoProcessor::featexts;
 
 
 //==============================================================================
@@ -192,7 +196,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     }
 
     /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
-    featexts.store(buffer,(short int)MONO_CHANNEL);
+    featexts.storeAndCompute(buffer,(short int)MONO_CHANNEL);
 
     /** STORE THE ONSET DETECTOR BUFFER **/
     try
@@ -267,7 +271,7 @@ void DemoProcessor::onsetDetectedRoutine ()
             /*--------------------/
             | 1. EXTRACT FEATURES |
             /--------------------*/
-            this->featexts.computeFeatureVector(currentFV->features);
+            this->featexts.computeFeatureVectors(currentFV->features);
 
             /*--------------------/
             | 2. ADD METADATA     |
@@ -353,6 +357,8 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
     //     if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
     //         parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
     // }
+    this->storageState = StorageState::idle;
+    
 }
 
 

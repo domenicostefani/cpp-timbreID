@@ -18,12 +18,19 @@
 #include "juce_timbreID.h"
 #include "postOnsetTimer.h"
 #include "csv_saver.h"
-#include "feature_extractors.h"
 
 #ifdef LONG_WINDOW
-    #define DEFINED_WINDOW_SIZE 4800
+ #define DEFINED_WINDOW_SIZE 4800
 #else
-    #define DEFINED_WINDOW_SIZE 704
+ #define DEFINED_WINDOW_SIZE 704
+#endif
+
+#define WINDOWED_FEATURE_EXTRACTORS
+
+#ifdef WINDOWED_FEATURE_EXTRACTORS
+ #include "windowed_feature_extractors.h"
+#else
+ #include "feature_extractors.h"
 #endif
 
 // #define LOG_LATENCY
@@ -37,6 +44,12 @@
 #define DO_USE_MFCC true
 #define DO_USE_PEAKSAMPLE true
 #define DO_USE_ZEROCROSSING true
+
+
+#define BLOCK_SIZE  64
+#define FRAME_SIZE  4
+#define FRAME_INTERVAL  2
+#define ZEROPADS    2
 
 /**
 */
@@ -79,6 +92,21 @@ public:
     /**    Feature Vector    **/
     static const unsigned int CSV_FLOAT_PRECISION = 8;
 
+   #ifdef WINDOWED_FEATURE_EXTRACTORS
+    static WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING,
+                                 BLOCK_SIZE,
+                                 FRAME_SIZE,
+                                 FRAME_INTERVAL ,
+                                 ZEROPADS> featexts;
+   #else
     static FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                                  DO_USE_ATTACKTIME,
                                  DO_USE_BARKSPECBRIGHTNESS,
@@ -88,6 +116,7 @@ public:
                                  DO_USE_MFCC,
                                  DO_USE_PEAKSAMPLE,
                                  DO_USE_ZEROCROSSING> featexts;
+   #endif
     std::vector<std::string> header;
 
     //============================= SAVE CSV ===================================
