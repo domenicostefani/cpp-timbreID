@@ -26,15 +26,6 @@
 
 #define MONO_CHANNEL 0
 
-#ifdef LONG_WINDOW
- #define POST_ONSET_DELAY_MS 92.2933333333 // This delay is infact then rounded to the closest multiple of the audio block period
-                                           // In the case of 92.2933333333ms at 48000Hz and 64 samples blocksizes, the closes delay is 
-                                           // 92.0ms, corresponding to 69 audio block periods
-#else
- #define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
-                                 // In the case of 6.96ms at 48000Hz and 64 samples blocksizes, the closes delay is 
-                                 // 6.66ms, corresponding to 5 audio block periods
-#endif
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
@@ -68,6 +59,7 @@ DemoProcessor::DemoProcessor()
     parameters(*this, nullptr, "PARAMETERS", createParameterLayout())
 {    
     suspendProcessing (true);
+
     header = featexts.getHeader();
     rtlogger.logInfo("Initializing Onset detector");
 
@@ -129,6 +121,9 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
+
+    this->POST_ONSET_DELAY_MS = DEFINED_WINDOW_SIZE/sampleRate*1000.0f - MEASURED_ONSET_DETECTION_DELAY_MS;
+
 
     logInCsvSpecial("StartProcessing");
 
@@ -371,11 +366,7 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 
 // Change Juce plugin name and prepend "superlong" if LONG_WINDOW is defined
-#ifdef LONG_WINDOW
- #define Plugin_final_name "superlong"
-#else
- #define Plugin_final_name JucePlugin_Name
-#endif
+#define Plugin_final_name JucePlugin_Name
 
 
 

@@ -19,12 +19,6 @@
 #include "postOnsetTimer.h"
 #include "csv_saver.h"
 
-#ifdef LONG_WINDOW
- #define DEFINED_WINDOW_SIZE 4800
-#else
- #define DEFINED_WINDOW_SIZE 704
-#endif
-
 #define WINDOWED_FEATURE_EXTRACTORS
 
 #ifdef WINDOWED_FEATURE_EXTRACTORS
@@ -51,6 +45,9 @@
 #define FRAME_INTERVAL  2
 #define ZEROPADS    2
 
+#define MEASURED_ONSET_DETECTION_DELAY_MS 7.7066666667f
+
+
 /**
 */
 class DemoProcessor : public AudioProcessor,
@@ -58,6 +55,8 @@ class DemoProcessor : public AudioProcessor,
                       private juce::AudioProcessorValueTreeState::Listener
 {
 public:
+
+    float POST_ONSET_DELAY_MS = -1.0f;
 
     double sampleRate = -1;
     short samplesPerBlock = -1;

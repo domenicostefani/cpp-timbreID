@@ -42,7 +42,7 @@ DemoEditor::DemoEditor (DemoProcessor& p)
    #ifndef COMPACT_INTERFACE
     setSize (1200, 750);
    #else
-    setSize (500, 200);
+    setSize (500, 250);
    #endif
 
     addAndMakeVisible(titleLabel);
@@ -56,9 +56,11 @@ DemoEditor::DemoEditor (DemoProcessor& p)
    #else
     specs = "Singlewindow! " + specs;
    #endif
+
+    // DEFINED_WINDOW_SIZE/this->processor.sampleRate*1000.0f - MEASURED_ONSET_DETECTION_DELAY_MS;
     
 
-    std::string titletext = specs + "\nOnset detector + 8 Feature Extractors "+feature_window_size+" "+date;
+    std::string titletext = specs + "\nOnset detector + 8 Feature Extractors "+feature_window_size+" "+date+"\nPOST_ONSET_DELAY_MS = "+std::to_string(this->processor.POST_ONSET_DELAY_MS)+"ms";
 
 
     titleLabel.setText(titletext, NotificationType::dontSendNotification);
@@ -159,7 +161,7 @@ void DemoEditor::resized()
     Rectangle<int> area = getLocalBounds();
     Rectangle<int> usable = area.reduced(10);
 
-    titleLabel.setBounds(usable.removeFromTop(boxHeight*2));
+    titleLabel.setBounds(usable.removeFromTop(boxHeight*3));
 
 
    #ifndef COMPACT_INTERFACE
@@ -226,7 +228,7 @@ void DemoEditor::performStoreClearActions()
 
     if(processor.clear.load())
     {
-        std::cout << "clearAll pressed" << std::endl;
+        //std::cout << "clearAll pressed" << std::endl;
         this->processor.csvsaver.clearEntries();
         this->processor.onsetCounterAtomic.store(0);
         processor.clear.store(false);
@@ -234,10 +236,10 @@ void DemoEditor::performStoreClearActions()
     
     if(processor.savefile.load())
     {
-        std::cout << "write pressed" << std::endl;
+        //std::cout << "write pressed" << std::endl;
         File temp = File(write.getText1()+write.getText2());
         std::string path = temp.getFullPathName().toStdString();
-        std::cout << "path " << path << std::endl;
+        //std::cout << "path " << path << std::endl;
 
         this->processor.csvsaver.writeToFile(path,processor.header);
         write.setDefaultText2(generateName(this->dirpath));

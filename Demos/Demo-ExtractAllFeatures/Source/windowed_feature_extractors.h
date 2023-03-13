@@ -18,6 +18,61 @@
 #include <JuceHeader.h>
 #include "juce_timbreID.h"
 
+namespace SCL {
+    // Class for Scalers and normalizers
+    struct Scaler{
+        Scaler() {}
+        virtual ~Scaler() {}
+        virtual void scaleFeatureVector(float to_scale[], size_t n) = 0;
+        virtual void scaleFeatureVector(std::vector<float>& to_scale) = 0;
+    };
+
+    class MinMaxScaler : public virtual Scaler{
+    public:
+        std::vector<float> original_feature_minimums;
+        std::vector<float> feature_scale;   // This is 1/(orig_max-orig_min). So scaler funciton would be (x - orig_min)/(orig_max-orig_min), but in this case just (x - orig_min)*scale. Multiplication should be faster than division
+        
+        MinMaxScaler(std::vector<float> orig_min, std::vector<float> scale) : Scaler(){
+            original_feature_minimums = orig_min;
+            feature_scale = scale;
+        }
+        
+        ~MinMaxScaler() {}
+
+        void scaleFeatureVector(float to_scale[], size_t n) {
+            for (size_t idx = 0; idx < n; ++idx)
+                to_scale[idx] = (to_scale[idx]-this->original_feature_minimums[idx]) * this->feature_scale[idx];
+        }
+        
+        void scaleFeatureVector(std::vector<float>& to_scale) {
+            scaleFeatureVector(to_scale.data(), to_scale.size());
+        }
+    };
+
+    class StandardScaler : public virtual Scaler{
+    public:
+        std::vector<float> means;
+        std::vector<float> one_over_stds;
+        
+        StandardScaler(std::vector<float> means, std::vector<float> stds) : Scaler(){
+            this->means = means;
+            this->one_over_stds = stds;
+            for (auto& val : this->one_over_stds )
+                val = 1.0/val;
+        }
+        
+        ~StandardScaler() {}
+
+        void scaleFeatureVector(float to_scale[], size_t n) {
+            for (size_t idx = 0; idx < n; ++idx)
+                to_scale[idx] = (to_scale[idx]-this->means[idx]) * this->one_over_stds[idx];
+        }
+        
+        void scaleFeatureVector(std::vector<float>& to_scale) {
+            scaleFeatureVector(to_scale.data(), to_scale.size());
+        }
+    };
+} // namespace SCL
 
 namespace WFE {
 
@@ -165,6 +220,13 @@ private:
             std::vector<std::string> tmp_header = prefixedHeader(std::to_string(i)+"_");
             whole_header.insert(whole_header.end(),tmp_header.begin(),tmp_header.end());
         }   
+    }
+
+    int findFeatureInHeader(std::string feature) {
+        for (size_t i = 0; i < whole_header.size(); ++i)
+            if (whole_header[i] == feature)
+                return i;
+        return -1;
     }
 
     std::vector<std::string> prefixedHeader(std::string prefix) {
@@ -352,6 +414,78 @@ private:
     }
 
 public:
+    std::unique_ptr<SCL::Scaler> scaler;
+
+    /**
+     * @brief Filter to output only a subset of the features that was selected during training
+     * This filter is used to reduce the number of features in output, which are fed to the classifier.
+     * During classifier training, feature selection can be used: the subset of selected features can be specified
+     * in the configuration file, and this filter will be used to output only the selected features.
+     * 
+     */
+    class FeatureFilter {
+        std::vector<size_t> indexes; // Indexes of the features to keep
+    public:
+        FeatureFilter(std::vector<size_t> indexes) : indexes(indexes) {}
+        std::vector<float> filter(const std::vector<float>& features) {
+            std::vector<float> filteredFeatures;
+            for (const auto& index : indexes) {
+                filteredFeatures.push_back(features[index]);
+            }
+            return filteredFeatures;
+        }
+
+    };
+    
+    std::unique_ptr<FeatureFilter> featureFilter;
+
+    void setFeatureSelectionFilter(std::vector<JsonConf::FeatureParser::Feature*> selectedFeatures)
+    {
+        // TODO: Implement this so that a representation of the features to keep is stored in memory
+        // And when the compute() method is called, it only computes the features that are in the filter
+        // It could check that indexes match this list, and also disable computation of some extractors, although
+        // this is lower priority.
+        size_t count = 0; // TODO: remove this
+        for (const auto& feat : selectedFeatures) { // TODO: remove this
+            std::cout << count++ << " " << feat->name << std::endl; // TODO: remove this
+        } // TODO: remove this // TODO: remove this
+        std::cout << std::flush; // TODO: remove this
+        
+        computed_feature_names = this->getHeader;
+
+        std::vector<size_t> indexes;
+        // Get indexes of the selected feature names in the computed_feature_names vector (using the header)
+        for (const auto& selectedFeature : selectedFeatures) {
+            std::string sfName = selectedFeature->name;
+            for (size_t i = 0; i < computed_feature_names.size(); ++i) {
+                if (computed_feature_names[i] == sfName) {
+                    indexes.push_back(i);
+                }
+            }
+        }
+        if (indexes.size() != selectedFeatures.size()) {
+            std::cout << "ERROR: Some selected features were not found in the computed features" << std::endl;
+            std::cout << "Selected features: " << std::endl;
+            for (const auto& selectedFeature : selectedFeatures) {
+                std::cout << selectedFeature->name << std::endl;
+            }
+            std::cout << "Computed features: " << std::endl;
+            for (const auto& computedFeature : computed_feature_names) {
+                std::cout << computedFeature << std::endl;
+            }
+            std::cout << "Indexes: " << std::endl;
+            for (const auto& index : indexes) {
+                std::cout << index << std::endl;
+            }
+            throw std::runtime_error("Some selected features were not found in the computed features");
+        }
+        this->featureFilter = std::make_unique<FeatureFilter>(indexes);
+
+    }
+
+    void setFeatureScaler(std::unique_ptr<SCL::Scaler> scaler) {
+        this->scaler = std::move(scaler);
+    }
 
     // Constructor
     FeatureExtractors() {
@@ -377,6 +511,8 @@ public:
         
         // Clear zero_block so that it is filled with zeros
         zero_block.clear();
+
+        getHeader();
     }
 
     constexpr static size_t getFeVectorSize() {
@@ -473,7 +609,7 @@ public:
     }
 
     void computeFeatureVectors(float flatFeatureMatrix[]) {
-        // Here we do not really compute all the feature vector, but we do the following:
+        // Here we do not really compute all the feature vectors, but we do the following:
         // 1. We pad the buffer with as many zeroblock as ZEROPADS says. Doing that we compute the feature vectors for only these few times
         // 2. We take the feature vectors from the buffer, one every FRAME_INTERVAL, totaling to HOWMANYFRAMES_RES
         // 3. these are all returned as a flat matrix of size HOWMANYFRAMES_RES * SINGLE_VECTOR_SIZE
@@ -482,13 +618,33 @@ public:
             storeAndCompute(zero_block, 0);
         for (int i = 0; i < HOWMANYFRAMES_RES; ++i) {
             const size_t index = i*FRAME_INTERVAL+1;
-            printf("index: %ld\n", index);
+            //printf("index: %ld\n", index);
             const float* featureVector = feature_vectors_buffer.at(index);
             for (int j = 0; j < SINGLE_VECTOR_SIZE; ++j) {
                 flatFeatureMatrix[i*SINGLE_VECTOR_SIZE+j] = featureVector[j];
             }
         }
         
+    }
+
+    void computeSelectedFeaturesAndScale(float flatFeatureMatrix[]) {
+        // Here we first call computeFeatureVectors, then we throw away the features that are not in the "selected" list
+        // At last, we scale the features using the scaler
+
+        computeFeatureVectors(flatFeatureMatrix);
+
+        // TODO: Do the filtering
+
+        const size_t flatmatrix_size = HOWMANYFRAMES_RES * SINGLE_VECTOR_SIZE;
+        // Scaling
+        if (this->scaler != nullptr) {
+            if (SCL::MinMaxScaler* sclPtr = dynamic_cast<SCL::MinMaxScaler*>(this->scaler.get()))
+                sclPtr->scaleFeatureVector(flatFeatureMatrix,flatmatrix_size);
+            else if (SCL::StandardScaler* sclPtr = dynamic_cast<SCL::StandardScaler*>(this->scaler.get()))
+                sclPtr->scaleFeatureVector(flatFeatureMatrix,flatmatrix_size);
+            else
+                throw std::logic_error("Unknown scaler type");
+        }
     }
 };
 
