@@ -18,6 +18,9 @@
 
 #include "readJsonConfig.h"
 
+
+
+
 #ifdef USE_TFLITE
  #include "liteclassifier.h"
 #endif
@@ -36,6 +39,35 @@
 #ifdef USE_TORCHSCRIPT
  #include "torch-classifier-lib.h"
 #endif
+
+
+
+
+#define WINDOWED_FEATURE_EXTRACTORS
+
+#ifdef WINDOWED_FEATURE_EXTRACTORS
+ #include "windowed_feature_extractors.h"
+#else
+ #include "feature_extractors.h"
+#endif
+
+#define DO_USE_ATTACKTIME true
+#define DO_USE_BARKSPECBRIGHTNESS true
+#define DO_USE_BARKSPEC true
+#define DO_USE_BFCC true
+#define DO_USE_CEPSTRUM true
+#define DO_USE_MFCC true
+#define DO_USE_PEAKSAMPLE true
+#define DO_USE_ZEROCROSSING true
+// - Windowing Specs
+#define BLOCK_SIZE  64
+#define FRAME_SIZE  4
+#define FRAME_INTERVAL  2
+#define ZEROPADS    2
+
+
+
+#define MEASURED_ONSET_DETECTION_DELAY_MS 7.7066666667f
 
 
 
@@ -212,6 +244,7 @@ class DemoProcessor : public AudioProcessor,
 #endif
 {
 public:
+    float POST_ONSET_DELAY_MS = -1.0f;
     //===================== ONSET DETECTION PARAMS =============================
 
    #ifdef USE_AUBIO_ONSET
@@ -261,46 +294,38 @@ public:
     //======================== FEATURE EXTRACTION ==============================
     std::unique_ptr<JsonConf::FeatureParser> featParser;    // Utility to read JSON configuration for feature extraction
 
-    tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
-    tid::AttackTime<float> attackTime;
-    tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
-                                                      BARK_SPACING,
-                                                      BARK_BOUNDARY};
-    tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
-    tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
-    tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
-
-    /**    Feature Vector    **/
+   #ifdef WINDOWED_FEATURE_EXTRACTORS
+    static WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING,
+                                 BLOCK_SIZE,
+                                 FRAME_SIZE,
+                                 FRAME_INTERVAL ,
+                                 ZEROPADS> featexts;
+   #else
+    static FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING> featexts;
+   #endif
+    // static const unsigned int WHOLE_VECTOR_SIZE = featexts.getFeVectorSize(); // TODO: remove if not needed
     std::vector<float> featureVector;
-    // attack time
-    unsigned long int rPeakSampIdx, rAttackStartIdx; 
-    float rAttackTime;
-    //  bark Spec Brightness
-    float barkSpecBrightnessVal;
-    // barkSpec
-    const int BARKSPEC_RES_SIZE = 50;
-    std::vector<float> barkSpecRes;
-    // bfcc
-    const int BFCC_RES_SIZE = 50;
-    std::vector<float> bfccRes;
-    // cepstum
-    const int CEPSTRUM_RES_SIZE = 353; // WindowSize/2+1 (It would be 513 with 1025
-    std::vector<float> cepstrumRes;
-    // mfcc
-    const int MFCC_RES_SIZE = 38;
-    std::vector<float> mfccRes;
-    // peak sample    
-    float peak;
-    unsigned long int peakIdx;
-    // Zero Crossing
-    float zeroCrossingVal;
 
     bool primeClassifier = true;
 
-    // Compose vector
-    void computeFeatureVector();
+    double sampleRate = -1;
+    short samplesPerBlock = -1;
 
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
