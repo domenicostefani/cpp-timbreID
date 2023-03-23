@@ -66,110 +66,28 @@ inline std::vector<float> getNestedFloatSciNotationVectorProperty(juce::var pars
 
 
 
+// class FeatureParser
+// {
+// public:
+//     struct Feature {
+//         std::string name;
+//         Feature(std::string featureName) : name(featureName) {
+//             // std::cout << "Constructor of Feature" << std::endl << std::flush; // TODO: remove
+//             // std::cout << " └──featureName: " << featureName << std::endl << std::flush; // TODO: remove
+//         }
+//         virtual ~Feature() = default;
+//     };
 
-enum feature_extractor_t {
-    NONE = 0,
-    ATTACK_TIME,
-    BARK_SPEC_BRIGHTNESS,
-    BARK_SPEC,
-    BFCC,
-    MFCC,
-    CEPSTRUM,
-    PEAK_SAMPLE,
-    ZERO_CROSSING,
-};
+//     std::vector<std::unique_ptr<Feature>> featureList;  
 
-const std::map<feature_extractor_t,std::string> stringPrefixes = {
-    {feature_extractor_t::ATTACK_TIME, "attackTime"},
-    {feature_extractor_t::BARK_SPEC_BRIGHTNESS, "barkSpecBrightness"},
-    {feature_extractor_t::BARK_SPEC, "barkSpec"},
-    {feature_extractor_t::BFCC, "bfcc"},
-    {feature_extractor_t::MFCC, "mfcc"},
-    {feature_extractor_t::CEPSTRUM, "cepstrum"},
-    {feature_extractor_t::PEAK_SAMPLE, "peakSample"},
-    {feature_extractor_t::ZERO_CROSSING, "zeroCrossing"}
-};
+//     FeatureParser (std::vector<std::string> readFeatures) {
+//         this->featureList.clear();
+//         for (size_t fidx = 0; fidx < readFeatures.size(); ++fidx)
+//             this->featureList.push_back(std::make_unique<Feature>(readFeatures[fidx]));
+//     }
 
-class FeatureParser
-{
-public:
-    struct Feature{
-        std::string name;
-        feature_extractor_t extractorType;
-        Feature(std::string featureName, feature_extractor_t extractorType) : name(name), extractorType(extractorType) { }
-        virtual ~Feature() = default;
-    };
-    struct VectorFeature : public Feature{
-        size_t index;
-        VectorFeature(std::string featureName, feature_extractor_t extractorType, size_t index) : Feature(name,extractorType), index(index) {}
-    };
-    struct NamedFeature : public Feature{
-        std::string valuename;
-        NamedFeature(std::string featureName, feature_extractor_t extractorType, std::string valuename) : Feature(name,extractorType), valuename(valuename) {}
-    };
-    
-    inline feature_extractor_t getExtractorFromPrefix(std::string prefix) const
-    {
-        feature_extractor_t current_extractor = feature_extractor_t::NONE;
-        for (const auto& [kExtractor, vPrefix] : stringPrefixes)
-            if (prefix == vPrefix)
-                current_extractor = kExtractor;
-        if (current_extractor == feature_extractor_t::NONE)
-            throw std::logic_error(prefix + " name is not correctly written, or it does not come from a known feature extractor");
-        return current_extractor;
-    }
-
-    std::vector<Feature*> featureList;
-    std::set<feature_extractor_t> precomputationList;
-
-    
-
-    FeatureParser (std::vector<std::string> readFeatures)
-    {
-        this->featureList.clear();
-        this->precomputationList.clear();
-
-        for (const auto& featureName : readFeatures)
-        {
-            const std::regex numberedf_regex("([A-Za-z]+)\\_([0-9]+)");
-            const std::regex namedf_regex("([A-Za-z]+)\\_([a-zA-Z]+)");
-            const std::regex simplef_regex("[A-Za-z]+");
-
-            feature_extractor_t currentExtractor = feature_extractor_t::NONE;;
-
-            std::smatch base_match;
-            if (std::regex_match(featureName, base_match, numberedf_regex)) {    // Numbered feature
-                if (base_match.size() == 3) {
-                    size_t currentIndex = std::stoi(base_match[2].str());
-                    currentIndex -= 1;  // TODO: comment about 1 based arrays
-                    // std::cout << "Numbered Feature, extractor:'"<< base_match[1].str() <<"' index:" << currentIndex << "\n";
-                    currentExtractor = getExtractorFromPrefix(base_match[1].str());
-                    this->featureList.push_back(new VectorFeature(featureName,currentExtractor,currentIndex));
-                }
-            } else if (std::regex_match(featureName, base_match, namedf_regex)) {    // Named feature
-                if (base_match.size() == 3) {
-                    std::string extractorName = base_match[2].str();
-                    // std::cout << "Named Feature, extractor:'"<< base_match[1].str() <<"' name:'" << name << "'\n";
-                    currentExtractor = getExtractorFromPrefix(base_match[1].str());
-                    this->featureList.push_back(new NamedFeature(featureName,currentExtractor,extractorName));
-                }
-            } else if (std::regex_match(featureName, base_match, simplef_regex)) {    // Single value Feature
-                // std::cout << "Simple Feature, extractor:'"<< featureName << "'\n";
-                currentExtractor = getExtractorFromPrefix(featureName);
-                this->featureList.push_back(new Feature(featureName,currentExtractor));
-            } else
-                throw std::logic_error("Feature "+featureName+"could not be parsed");
-            
-            this->precomputationList.insert(currentExtractor);
-        }
-    }
-
-    ~FeatureParser()
-    {
-        for (auto pointer : this->featureList)
-            delete pointer;
-    }
-};
+//     ~FeatureParser() {}
+// };
 
 
 } //namespace JsonConf

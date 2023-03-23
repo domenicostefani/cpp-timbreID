@@ -19,10 +19,14 @@
 #include "readJsonConfig.h"
 
 
+#define WINDOWED_FEATURE_EXTRACTION
 
+#ifdef USE_TFLITE_LEGACY
+ #include "liteclassifier.h"
+#endif
 
 #ifdef USE_TFLITE
- #include "liteclassifier.h"
+ #include "tflitewrapper.h"
 #endif
 
 #ifdef USE_RTNEURAL_CTIME
@@ -87,7 +91,7 @@
 
 
 // #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
-#define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
+// #define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
 
 #define STOP_OSC
 
@@ -108,7 +112,8 @@ struct ClassificationData{
     using predictions_t = ClassifierArrayQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
     // Run flag, to start and stop the classification thread
     std::atomic<bool> run;
-    std::atomic<int> i;    
+    std::atomic<int> i;
+    std::atomic<size_t> nRows = -1, nCols = -1;
 };
 
 class ClassificationThread : public juce::Thread
@@ -148,9 +153,15 @@ public:
     }
    #endif
 
-    void setFeatureNumber(size_t featureNumber)
+    void set1DinputSize(size_t featureNumber)
     {
         this->cdata->featureBuffer.reserveVectorSize(featureNumber);
+    }
+
+    void set2DinputSize(size_t nRows, size_t nCols) {
+        this->cdata->nRows = nRows;
+        this->cdata->nCols = nCols;
+        this->cdata->featureBuffer.reserveVectorSize(nRows*nCols);
     }
 
     void run() override
@@ -165,7 +176,17 @@ public:
             if (cdata->featureBuffer.read(readFeatures)) // Read from feature queue
             {
                 static ClassificationData::predictions_t towritePredictions;
-                classify(*tclassifier,&(readFeatures[0]), readFeatures.size(),&(towritePredictions[0]), towritePredictions.size());
+                // 1D input
+                // classify(*tclassifier,&(readFeatures[0]), readFeatures.size(),&(towritePredictions[0]), towritePredictions.size());
+
+                // 2D input
+                if (cdata->nRows == -1 || cdata->nCols == -1) throw std::logic_error("Invalid input size");
+                classifyFlat2D(*tclassifier,\
+                    readFeatures.data(),\
+                    cdata->nRows,\
+                    cdata->nCols,\
+                    towritePredictions.data(),\
+                    towritePredictions.size(), false);
                #ifndef STOP_OSC
                 if(isOSCconnected)
                 {
@@ -291,9 +312,6 @@ public:
     PostOnsetTimer postOnsetTimer;
     void onsetDetectedRoutine();
 
-    //======================== FEATURE EXTRACTION ==============================
-    std::unique_ptr<JsonConf::FeatureParser> featParser;    // Utility to read JSON configuration for feature extraction
-
    #ifdef WINDOWED_FEATURE_EXTRACTORS
     static WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                                  DO_USE_ATTACKTIME,
@@ -321,6 +339,8 @@ public:
    #endif
     // static const unsigned int WHOLE_VECTOR_SIZE = featexts.getFeVectorSize(); // TODO: remove if not needed
     std::vector<float> featureVector;
+    int filteredFeatureMatrix_nrows = -1, filteredFeatureMatrix_ncols = -1;
+
 
     bool primeClassifier = true;
 
@@ -330,7 +350,7 @@ public:
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
     
-    const std::string NN_CONFIG_JSON_PATH = "/udata/guitarTechClassifier.json";
+    const std::string NN_CONFIG_JSON_PATH = "/udata/phase3experiment.json";
     std::string MODEL_PATH =  "";
 
     std::array<float, CData::N_CLASSES> classificationOutputVector;
@@ -390,7 +410,7 @@ public:
    #endif
     std::unique_ptr<FileLogger> fileLogger; // Logger that writes RT entries to file SAFELY (Outside rt thread
     std::string LOG_PATH = "/tmp/";
-    std::string LOG_FILENAME = "guitarTimbreClassifier";
+    std::string LOG_FILENAME = "phase3-ExpGuiTecClas-";
     const int64 highResFrequency = Time::getHighResolutionTicksPerSecond();
 
     /**

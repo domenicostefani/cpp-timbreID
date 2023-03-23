@@ -20,6 +20,8 @@
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
+
+
 WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                       DO_USE_ATTACKTIME,
                       DO_USE_BARKSPECBRIGHTNESS,
@@ -159,62 +161,84 @@ DemoProcessor::DemoProcessor()
 
     /** SET UP FEATURE COMPUTATION **/
     std::vector<std::string> selectedFeatures = JsonConf::getNestedStringVectorProperty(parsedJson, "features","selected_features");    // Read JSON
-    featParser = std::make_unique<JsonConf::FeatureParser>(selectedFeatures);   // Prepare list
-    // Log everything
-    std::string precList = "[ ";
-    for (const JsonConf::feature_extractor_t item : featParser->precomputationList)
-        precList += JsonConf::stringPrefixes.at(item) + " ";
-    precList += "]";
-    rtlogger.logValue("Feature Extraction configuration read from file: ",precList.c_str());
 
-    rtlogger.logInfo("Feature List: ");
-    for (const JsonConf::FeatureParser::Feature* item : featParser->featureList) {
-        const JsonConf::FeatureParser::VectorFeature* vectorFeature = dynamic_cast<const JsonConf::FeatureParser::VectorFeature*>((JsonConf::FeatureParser::Feature*)item);
-        const JsonConf::FeatureParser::NamedFeature* namedFeature = dynamic_cast<const JsonConf::FeatureParser::NamedFeature*>((JsonConf::FeatureParser::Feature*)item);
-        if (vectorFeature != nullptr)
-            rtlogger.logInfo((JsonConf::stringPrefixes.at(vectorFeature->extractorType) + "[" + std::to_string(vectorFeature->index) + "] ").c_str());
-        else if (namedFeature != nullptr)
-            rtlogger.logInfo(((JsonConf::stringPrefixes.at(namedFeature->extractorType)) + ("->") + (namedFeature->valuename) + " ").c_str());
-        else 
-            rtlogger.logInfo(((JsonConf::stringPrefixes.at(item->extractorType)) + " ").c_str());
-    }
+    // std::string precList = "[ ";
+    // for (const auto& feat : selectedFeatures)
+    // {
+    //     precList += feat + " ";
+    //     rtlogger.logValue("-",feat.c_str());
+    //     logPollingRoutine();
+    // }
+    // precList += "]";
+    rtlogger.logValue("# Features read from file: ",selectedFeatures.size());
+
+    // rtlogger.logInfo(("Feature List (length:"+std::to_string(selectedFeatures.size())+"): ").c_str());
+    // for (size_t fidx = 0; fidx < selectedFeatures.size(); ++fidx) {
+    //     const auto& item = selectedFeatures[fidx];
+    //     if (item != nullptr) {
+    //         rtlogger.logInfo(("Feature "+std::to_string(fidx+1)+"/"+std::to_string(selectedFeatures.size())+"  "+item->name).c_str());
+    //         logPollingRoutine();
+    //     } else {
+    //         rtlogger.logInfo("NULL");
+    //         logPollingRoutine();
+    //         throw std::logic_error("FeatureParser returned a NULL feature");
+    //     }
+    // }
     // !! VERY IMPORTANT !! resize the feature vector to the target size, otherwise it will not work with [] indexing. Push_back or other operation that will cause dyamic allocation cannot be used.
-    this->featureVector.resize(featParser->featureList.size());
-    this->featexts.setFeatureSelectionFilter(featParser->featureList);
+    this->featureVector.resize(selectedFeatures.size());
+    rtlogger.logValue("featureVector resized to: ",selectedFeatures.size());
 
-    std::string doFilterSelectedFeatures = JsonConf::getNestedStringProperty(parsedJson, "scaler","enable");
-    if (doFilterSelectedFeatures == "true") {
+    this->featexts.setFeatureSelectionFilter(selectedFeatures, this->filteredFeatureMatrix_nrows, this->filteredFeatureMatrix_ncols);
+    // this->featureVector.resize(filteredFeatureMatrix_ncols);
+    if (selectedFeatures.size() != filteredFeatureMatrix_nrows * filteredFeatureMatrix_ncols)
+        throw std::logic_error("Feature selection filter returned a different number of features than the number of selected features");
+
+
+    rtlogger.logInfo(("Feature selection filter set, result is a "+std::to_string(filteredFeatureMatrix_nrows)+"x"+std::to_string(filteredFeatureMatrix_ncols)+" flat matrix ("+std::to_string(selectedFeatures.size())+")").c_str());
+
+    std::string doScaleSelectedFeatures = JsonConf::getNestedStringProperty(parsedJson, "scaler","enable");
+    // std::cout << "doScaleSelectedFeatures: " << doScaleSelectedFeatures << std::endl << std::flush;
+    rtlogger.logValue("doScaleSelectedFeatures: ",doScaleSelectedFeatures.c_str());
+    if (doScaleSelectedFeatures == "true") {
         std::string scalerType = JsonConf::getNestedStringProperty(parsedJson, "scaler","type");
         if (scalerType == "minmax") {
+            rtlogger.logInfo("Using MinMax feature scaler");
             std::vector<float> scaler_orig_mins = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","orig_mins");
             std::vector<float> scaler_scale = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","scale");
             featexts.setFeatureScaler(std::make_unique<SCL::MinMaxScaler>(scaler_orig_mins, scaler_scale));
-            if ((scaler_orig_mins.size() != scaler_scale.size()) || (scaler_orig_mins.size() != featParser->featureList.size())) {
-                std::cerr << "Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " << scaler_orig_mins.size() << " " << scaler_scale.size() << " " << featParser->featureList.size() <<  ")" << std::endl << std::flush;
-                throw new std::invalid_argument("Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_orig_mins.size()) + " " + std::to_string(scaler_scale.size()) + " " + std::to_string(featParser->featureList.size()) +  ")");
+            if ((scaler_orig_mins.size() != scaler_scale.size()) || (scaler_orig_mins.size() != selectedFeatures.size())) {
+                std::cerr << "Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " << scaler_orig_mins.size() << " " << scaler_scale.size() << " " << selectedFeatures.size() <<  ")" << std::endl << std::flush;
+                throw new std::invalid_argument("Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_orig_mins.size()) + " " + std::to_string(scaler_scale.size()) + " " + std::to_string(selectedFeatures.size()) +  ")");
+            } else
+            {
+                rtlogger.logInfo(("Scaler configuration is valid. "+std::to_string(scaler_orig_mins.size())+" min values were read from config file. "+std::to_string(scaler_scale.size())+" scale values were read and the selected features are " +std::to_string(selectedFeatures.size())+".").c_str());
             }
         } else if (scalerType == "standard") {
+            rtlogger.logInfo("Using Standard feature scaler");
             std::vector<float> scaler_means = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","mean");
             std::vector<float> scaler_stds = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","std");
             featexts.setFeatureScaler(std::make_unique<SCL::StandardScaler>(scaler_means, scaler_stds));
-            if ((scaler_means.size() != scaler_stds.size()) || (scaler_means.size() != featParser->featureList.size())) {
-                std::cerr << "Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " << scaler_means.size() << " " << scaler_stds.size() << " " << featParser->featureList.size() <<  ")" << std::endl << std::flush;
-                throw new std::invalid_argument("Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_means.size()) + " " + std::to_string(scaler_stds.size()) + " " + std::to_string(featParser->featureList.size()) +  ")");
+            if ((scaler_means.size() != scaler_stds.size()) || (scaler_means.size() != selectedFeatures.size())) {
+                std::cerr << "Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " << scaler_means.size() << " " << scaler_stds.size() << " " << selectedFeatures.size() <<  ")" << std::endl << std::flush;
+                throw new std::invalid_argument("Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_means.size()) + " " + std::to_string(scaler_stds.size()) + " " + std::to_string(selectedFeatures.size()) +  ")");
             }
         } else {
             std::cerr << "Invalid value for \"type\" in JSON config (only \"minmax\" is supported right now)" << std::endl << std::flush;
             throw new std::invalid_argument("Invalid value for \"type\" in JSON config (only \"minmax\" is supported right now)");
         }
-    } else if (doFilterSelectedFeatures != "false") {
+    } else if (doScaleSelectedFeatures != "false") {
         std::cerr << "Invalid value for \"enable\" in JSON config (use either \"true\" or \"false\")" << std::endl << std::flush;
     }
 
     // Set the number of features to the classification thread (if not sequential
 
     
-   #ifndef SEQUENTIAL_CLASSIFICATION
-    this->classificationThread.setFeatureNumber(featParser->featureList.size());
-   #endif
+  #ifndef SEQUENTIAL_CLASSIFICATION
+//    #ifdef WINDOWED_FEATURE_EXTRACTION
+//         // set2DinputSize(selectedFeatures.size(), WINDOW_SIZE); @TODO:fiz
+//    #else
+        this->classificationThread.set1DinputSize(selectedFeatures.size());
+  #endif
 
 
 
@@ -225,10 +249,18 @@ DemoProcessor::DemoProcessor()
     rtlogger.logInfo(message);   
     double modelLoadTime = juce::Time::getMillisecondCounterHiRes();
    #endif
-    DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH);
+    // DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, true); // true = verbose cout
+    DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, false); // true = verbose cout
+    if (DemoProcessor::timbreClassifier == NULL) {
+        std::cerr << "Error: Classifier object could not be created" << std::endl << std::flush;
+        rtlogger.logInfo("Classifier object could not be created");
+        throw std::logic_error("Classifier object could not be created");
+    }
    #ifndef FAST_MODE_1
     rtlogger.logValue("Classifier object instantiated at time:  ",juce::Time::getMillisecondCounterHiRes());
+    std::cout << "Classifier object instantiated at time:  " << juce::Time::getMillisecondCounterHiRes() << std::endl << std::flush;
     rtlogger.logValue("(Classifier object created in ",(juce::Time::getMillisecondCounterHiRes()-modelLoadTime),"ms");
+    std::cout << "(Classifier object created in " << (juce::Time::getMillisecondCounterHiRes()-modelLoadTime) << "ms)" << std::endl << std::flush;
    #endif
 
     suspendProcessing (false);
@@ -345,8 +377,13 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     if (this->primeClassifier)
     {
         primeClassifier = false;
-        this->featexts.computeFeatureVectors(featureVector.data());
-        classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size());
+        this->featexts.computeSelectedFeaturesAndScale(featureVector.data());
+        // classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size());
+        classifyFlat2D(DemoProcessor::timbreClassifier,featureVector.data(),\
+                       this->filteredFeatureMatrix_nrows,\
+                       this->filteredFeatureMatrix_ncols,\
+                       classificationOutputVector.data(),\
+                       classificationOutputVector.size(), false);
     }
 
 
@@ -495,7 +532,7 @@ void DemoProcessor::onsetDetectedRoutine ()
     /*--------------------/
     | 1. EXTRACT FEATURES |
     /--------------------*/
-    this->featexts.computeFeatureVectors(featureVector.data());
+    this->featexts.computeSelectedFeaturesAndScale(featureVector.data());
     
 
   #ifndef FAST_MODE_1
@@ -516,7 +553,6 @@ void DemoProcessor::onsetDetectedRoutine ()
    #endif
   #endif
 
-   
     this->chrono_start = std::chrono::high_resolution_clock::now();
    #ifndef SEQUENTIAL_CLASSIFICATION
     DemoProcessor::classificationData.featureBuffer.write(featureVector);    // Write the feature vector to a ring buffer, for parallel classification
@@ -526,7 +562,12 @@ void DemoProcessor::onsetDetectedRoutine ()
     // Contrary to what was hinted in the JUCE forum, this causes mode switches in Xenomai so it is not rt safe. 
     // Old line: classificationThread.notify();
    #else
-    classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size()); // Execute inference with the Interpreter of choice (see PluginProcessor.h)
+    // classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size()); // Execute inference with the Interpreter of choice (see PluginProcessor.h)
+    classifyFlat2D(DemoProcessor::timbreClassifier,featureVector.data(),\
+                       this->filteredFeatureMatrix_nrows,\
+                       this->filteredFeatureMatrix_ncols,\
+                       classificationOutputVector.data(),\
+                       classificationOutputVector.size(), false);
     this->chrono_end = std::chrono::high_resolution_clock::now();
     this->classf_end = juce::Time::getMillisecondCounterHiRes();
     classificationFinished();
@@ -600,12 +641,12 @@ void DemoProcessor::classificationFinished()
     // 6)   Pick Near Bridge (Playing toward the bridge/saddle)
     // 7)   Pick Over the Soundhole (Playing over the sound hole)
 
-#ifndef DEBUG_WITH_SPIKE
+   #ifndef DEBUG_WITH_SPIKE
     if(prediction == 0)
         sinewt.playNote( 1200 );
     else
         sinewt.playNote( 440 );
-#endif
+   #endif
 
 }
 

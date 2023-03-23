@@ -435,55 +435,80 @@ public:
             return filteredFeatures;
         }
 
+        size_t size() const {
+            return indexes.size();
+        }
+
+        void filterRealtime(const std::vector<float>& features_in, std::vector<float>& features_out) {
+            if (features_out.size() != indexes.size())
+                throw std::runtime_error("FeatureFilter::filterRealtime: features_out size mismatch");
+            if (features_in.size() != features_out.size())
+                throw std::runtime_error("FeatureFilter::filterRealtime: features_in size mismatch");
+            features_out.clear();
+            for (const auto& index : indexes) {
+                features_out.push_back(features_in[index]);
+            }
+        }
+
     };
     
     std::unique_ptr<FeatureFilter> featureFilter;
 
-    void setFeatureSelectionFilter(std::vector<JsonConf::FeatureParser::Feature*> selectedFeatures)
+    /**
+     * @brief Set the Feature Selection Filter object
+     * When called, this function sets the feature selection filter for the computed features.
+     * This is used when feature selection was applied before training, and inference requires a matching
+     * selection process.
+     * A list of selected features is meant to be copied from the training script or output_folder/info.txt
+     * and copied to the json config file at NN_CONFIG_JSON_PATH ("/udata/phase3experiment.json").
+     * (REMEMBER to change single quotes to double quotes because of the json format)
+     * 
+     * Here, the list of feature names extracted from the json config is read, and the indexes (relative to 
+     * the computed flat matrix of features) are stored in the featureFilter object.
+     * 
+     * @param selectedFeatures the list of selected features (from the json config file)
+     */
+    void setFeatureSelectionFilter(const std::vector<std::unique_ptr<JsonConf::FeatureParser::Feature>>& selectedFeatures)
     {
-        // TODO: Implement this so that a representation of the features to keep is stored in memory
-        // And when the compute() method is called, it only computes the features that are in the filter
-        // It could check that indexes match this list, and also disable computation of some extractors, although
-        // this is lower priority.
         size_t count = 0; // TODO: remove this
         for (const auto& feat : selectedFeatures) { // TODO: remove this
             std::cout << count++ << " " << feat->name << std::endl; // TODO: remove this
         } // TODO: remove this // TODO: remove this
         std::cout << std::flush; // TODO: remove this
         
-        computed_feature_names = this->getHeader;
+        // std::vector<std::string> computed_feature_names = this->getHeader();
 
-        std::vector<size_t> indexes;
-        // Get indexes of the selected feature names in the computed_feature_names vector (using the header)
-        for (const auto& selectedFeature : selectedFeatures) {
-            std::string sfName = selectedFeature->name;
-            for (size_t i = 0; i < computed_feature_names.size(); ++i) {
-                if (computed_feature_names[i] == sfName) {
-                    indexes.push_back(i);
-                }
-            }
-        }
-        if (indexes.size() != selectedFeatures.size()) {
-            std::cout << "ERROR: Some selected features were not found in the computed features" << std::endl;
-            std::cout << "Selected features: " << std::endl;
-            for (const auto& selectedFeature : selectedFeatures) {
-                std::cout << selectedFeature->name << std::endl;
-            }
-            std::cout << "Computed features: " << std::endl;
-            for (const auto& computedFeature : computed_feature_names) {
-                std::cout << computedFeature << std::endl;
-            }
-            std::cout << "Indexes: " << std::endl;
-            for (const auto& index : indexes) {
-                std::cout << index << std::endl;
-            }
-            throw std::runtime_error("Some selected features were not found in the computed features");
-        }
-        this->featureFilter = std::make_unique<FeatureFilter>(indexes);
+        // std::vector<size_t> indexes;
+        // // Get indexes of the selected feature names in the computed_feature_names vector (using the header)
+        // for (const auto& selectedFeature : selectedFeatures) {
+        //     std::string sfName = selectedFeature->name;
+        //     for (size_t i = 0; i < computed_feature_names.size(); ++i) {
+        //         if (computed_feature_names[i] == sfName) {
+        //             indexes.push_back(i);
+        //         }
+        //     }
+        // }
+        // if (indexes.size() != selectedFeatures.size()) {
+        //     std::cout << "ERROR: Some selected features were not found in the computed features" << std::endl;
+        //     std::cout << "Selected features: " << std::endl;
+        //     for (const auto& selectedFeature : selectedFeatures) {
+        //         std::cout << selectedFeature->name << std::endl;
+        //     }
+        //     std::cout << "Computed features: " << std::endl;
+        //     for (const auto& computedFeature : computed_feature_names) {
+        //         std::cout << computedFeature << std::endl;
+        //     }
+        //     std::cout << "Indexes: " << std::endl;
+        //     for (const auto& index : indexes) {
+        //         std::cout << index << std::endl;
+        //     }
+        //     throw std::runtime_error("Some selected features were not found in the computed features");
+        // }
+        // this->featureFilter = std::make_unique<FeatureFilter>(indexes);
 
     }
 
-    void setFeatureScaler(std::unique_ptr<SCL::Scaler> scaler) {
+    void setFeatureScaler(std::unique_ptr<SCL::Scaler>& scaler) {
         this->scaler = std::move(scaler);
     }
 
@@ -630,12 +655,17 @@ public:
     void computeSelectedFeaturesAndScale(float flatFeatureMatrix[]) {
         // Here we first call computeFeatureVectors, then we throw away the features that are not in the "selected" list
         // At last, we scale the features using the scaler
+        const size_t flatmatrix_size = HOWMANYFRAMES_RES * SINGLE_VECTOR_SIZE;
 
         computeFeatureVectors(flatFeatureMatrix);
 
         // TODO: Do the filtering
+        if (this->featureFilter != nullptr)
+            this->featureFilter->filterFeatureVector(flatFeatureMatrix,flatmatrix_size);
+        else
+            throw std::logic_error("Feature filter was NOT set with setFeatureSelectionFilter");
+        
 
-        const size_t flatmatrix_size = HOWMANYFRAMES_RES * SINGLE_VECTOR_SIZE;
         // Scaling
         if (this->scaler != nullptr) {
             if (SCL::MinMaxScaler* sclPtr = dynamic_cast<SCL::MinMaxScaler*>(this->scaler.get()))
