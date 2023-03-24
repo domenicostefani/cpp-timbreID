@@ -64,30 +64,4 @@ inline std::vector<float> getNestedFloatSciNotationVectorProperty(juce::var pars
     return res;
 }
 
-
-
-// class FeatureParser
-// {
-// public:
-//     struct Feature {
-//         std::string name;
-//         Feature(std::string featureName) : name(featureName) {
-//             // std::cout << "Constructor of Feature" << std::endl << std::flush; // TODO: remove
-//             // std::cout << " └──featureName: " << featureName << std::endl << std::flush; // TODO: remove
-//         }
-//         virtual ~Feature() = default;
-//     };
-
-//     std::vector<std::unique_ptr<Feature>> featureList;  
-
-//     FeatureParser (std::vector<std::string> readFeatures) {
-//         this->featureList.clear();
-//         for (size_t fidx = 0; fidx < readFeatures.size(); ++fidx)
-//             this->featureList.push_back(std::make_unique<Feature>(readFeatures[fidx]));
-//     }
-
-//     ~FeatureParser() {}
-// };
-
-
 } //namespace JsonConf

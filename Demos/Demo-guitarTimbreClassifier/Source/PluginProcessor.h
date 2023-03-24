@@ -337,7 +337,6 @@ public:
                                  DO_USE_PEAKSAMPLE,
                                  DO_USE_ZEROCROSSING> featexts;
    #endif
-    // static const unsigned int WHOLE_VECTOR_SIZE = featexts.getFeVectorSize(); // TODO: remove if not needed
     std::vector<float> featureVector;
     int filteredFeatureMatrix_nrows = -1, filteredFeatureMatrix_ncols = -1;
 

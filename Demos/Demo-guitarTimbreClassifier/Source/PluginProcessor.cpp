@@ -20,7 +20,7 @@
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
 
-
+#define DEBUG_WITH_SPIKE
 
 WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
                       DO_USE_ATTACKTIME,
@@ -144,7 +144,6 @@ DemoProcessor::DemoProcessor()
                 std::cerr << "Invalid message type in JSON config (use either \"all\" or \"best\")" << std::endl << std::flush;
             }
            #ifndef SEQUENTIAL_CLASSIFICATION
-            //TODO: Check out this and what happens sequentially
             this->classificationThread.setOSCmessage(oscMsg);
            #endif
         }
@@ -234,10 +233,11 @@ DemoProcessor::DemoProcessor()
 
     
   #ifndef SEQUENTIAL_CLASSIFICATION
-//    #ifdef WINDOWED_FEATURE_EXTRACTION
-//         // set2DinputSize(selectedFeatures.size(), WINDOW_SIZE); @TODO:fiz
-//    #else
+   #ifdef WINDOWED_FEATURE_EXTRACTION
+        this->classificationThread.set2DinputSize(filteredFeatureMatrix_nrows, filteredFeatureMatrix_ncols);
+   #else
         this->classificationThread.set1DinputSize(selectedFeatures.size());
+   #endif
   #endif
 
 
@@ -400,6 +400,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    buffer.clear (1, 0, buffer.getNumSamples());
+    // std::cout << buffer.getReadPointer(0)[0] << std::endl;
+
 
     /** LOG THE DIFFERENT TIMESTAMPS FOR LATENCY COMPUTATION **/
   #ifndef FAST_MODE_1
@@ -447,6 +450,8 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     bool readPred = DemoProcessor::classificationData.predictionBuffer.read(classificationOutputVector); // read predictions from rt thread when available
     if (readPred) // if a value was read
     {
+        rtlogger.logInfo("Classification Finished");
+        rtlogger.logValue("Classification output: ",classificationOutputVector[0]);
         classificationFinished();
     }
    #endif
@@ -548,13 +553,14 @@ void DemoProcessor::onsetDetectedRoutine ()
     /----------------------------------*/
   #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
+    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection}");
     this->classf_start = juce::Time::getMillisecondCounterHiRes();
    #endif
   #endif
 
     this->chrono_start = std::chrono::high_resolution_clock::now();
    #ifndef SEQUENTIAL_CLASSIFICATION
+    rtlogger.logInfo("Triggering classification (writing feature vector to buffer)");
     DemoProcessor::classificationData.featureBuffer.write(featureVector);    // Write the feature vector to a ring buffer, for parallel classification
     // Note to self:
     // Here I tried to use juce::Thread::notify() to wake up the classification thread
