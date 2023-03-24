@@ -119,7 +119,6 @@ public:
     std::vector<std::string> header;
 
     //============================= SAVE CSV ===================================
-    // TODO: check atomic::wait
     // float oldOnsetMinIoi,oldOnsetThreshold,oldOnsetSilence;
     // std::atomic<float> onsetMinIoi,onsetThreshold,onsetSilence;
     std::atomic<bool> clearAt{false},writeAt{false};

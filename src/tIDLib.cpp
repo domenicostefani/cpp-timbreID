@@ -308,7 +308,7 @@ t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_bin
 }
 
 //Original wbrent comment
-// TODO: this should probably take in a pointer to x->x_filterbank, resize it to sizeFilterFreqs-2, then write the filter bound freqs in x_filterbank.filterFreqs[0] and [1]. Then x_filterbank can be passed to _createFilterbank with the filter bound freqs known, and no need for a separate x_filterFreqs buffer
+// TO-DO: this should probably take in a pointer to x->x_filterbank, resize it to sizeFilterFreqs-2, then write the filter bound freqs in x_filterbank.filterFreqs[0] and [1]. Then x_filterbank can be passed to _createFilterbank with the filter bound freqs known, and no need for a separate x_filterFreqs buffer
 // resizes the filterFreqs array and fills it with the Hz values for the Bark filter boundaries. Reports the new number of Bark frequency band boundaries based on the desired spacing. The size of the corresponding filterbank would be sizeFilterFreqs-2
 t_filterIdx getBarkBoundFreqs(std::vector<float> &filterFreqs, float spacing, float sr)
 {
@@ -580,7 +580,6 @@ void peakSample(std::vector<float> &input, unsigned long int *peakIdx, float *pe
     }
 }
 
-//TODO: check why sometimes the returned index is greater than the max (Original pd module seems to do that too)
 unsigned long int findAttackStartSamp(std::vector<float> &input, float sampDeltaThresh, unsigned short int numSampsThresh)
 {
     unsigned long int startSamp = ULONG_MAX;

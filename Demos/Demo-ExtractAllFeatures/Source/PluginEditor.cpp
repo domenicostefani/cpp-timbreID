@@ -150,9 +150,6 @@ void DemoEditor::paint (Graphics& g)
     this->mSampleRate = processor.getSampleRate();
     this->mBlockSize = processor.getBlockSize();
     updateDataLabels();
-
-    int v = storageStateBox.getSelectedId(); // TODO: remove
-    NULL;
 }
 
 void DemoEditor::resized()

@@ -142,7 +142,7 @@ public:
         this->numFilters = temp_numFilters;
         this->sizeFilterFreqs = temp_sizeFilterFreqs;
         std::swap(this->filterFreqs,temp_filterFreqs);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size()); //TODO:move
+        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
 
         this->coefficientsVector.resize(this->numFilters);
         this->dctPlan.precomputeBasis(this->numFilters);

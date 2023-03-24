@@ -340,7 +340,7 @@ private:
         onsetListeners.call([this] (Listener& l) { l.onsetDetected (this); });
     }
 
-    std::string getStringMethod() //TODO: consider returning char string
+    std::string getStringMethod()
     {
         std::string res;
 

@@ -36,7 +36,6 @@
           <FILE id="MkSBg8" name="tIDLib.cpp" compile="1" resource="0" file="../../src/tIDLib.cpp"/>
         </GROUP>
         <FILE id="shJpUf" name="juce_timbreID.h" compile="0" resource="0" file="../../juce_timbreID.h"/>
-        <FILE id="h8ctkC" name="TODO.txt" compile="0" resource="1" file="../../TODO.txt"/>
       </GROUP>
       <FILE id="PdkDkS" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>

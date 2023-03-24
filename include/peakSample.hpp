@@ -130,7 +130,6 @@ public:
     /**
      * \deprecated
      * Kept for compatibility, probably bad in RT context
-     * TODO: check
     */
     std::pair<float, unsigned long int> compute()
     {
