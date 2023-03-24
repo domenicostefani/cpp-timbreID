@@ -269,7 +269,7 @@ private:
         assert(n ==  this->blockSize);
 
         // shift signal buffer contents N positions back
-    	for(uint64 i=0; i<maxSearchRange; ++i)
+    	for(uint64_t i=0; i<maxSearchRange; ++i)
     		signalBuffer[i] = signalBuffer[i+n];
 
     	// write new block to end of signal buffer.
@@ -284,7 +284,7 @@ private:
     //==============================================================================
     double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
     uint32_t blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
-    uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
+    uint64_t analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     /** minimum sample threshold for finding onset */
     unsigned short int numSampsThresh= 10;

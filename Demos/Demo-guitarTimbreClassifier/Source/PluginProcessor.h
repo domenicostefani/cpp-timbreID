@@ -379,8 +379,8 @@ public:
    #ifdef MEASURE_COMPUTATION_LATENCY
     double latencyTime = 0, classf_start = 0, classf_end = 0;
     std::chrono::time_point<std::chrono::high_resolution_clock> chrono_start, chrono_end;
-    uint64 logProcessblock_counter = 0, logProcessblock_fixedCounter = 0;
-    const uint64 logProcessblock_period = 48000/64 * 5; // Log every 5 second the duration of the processblock routine (SampleRate/BlockSize)
+    uint64_t logProcessblock_counter = 0, logProcessblock_fixedCounter = 0;
+    const uint64_t logProcessblock_period = 48000/64 * 5; // Log every 5 second the duration of the processblock routine (SampleRate/BlockSize)
    #endif
 
     /**    Logging    **/

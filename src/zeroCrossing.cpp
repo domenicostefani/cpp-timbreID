@@ -1,12 +1,12 @@
 /*
 
-peakSample - Bridge-header between Juce and the TimbreID peakSample method
+zeroCrossing - Bridge-header between Juce and the TimbreID zeroCrossing method
 - Originally part of timbreID (Pd library module) by William Brent
-- Ported for JUCE usage by Domenico Stefani, 26th March 2020
+- Ported for JUCE usage by Domenico Stefani, 24th March 2020
   (domenico.stefani96@gmail.com)
 
-Porting from peakSample~.c:
- -> https://github.com/wbrent/timbreID/blob/master/src/peakSample~.c/
+Porting from zeroCrossing~.c:
+ -> https://github.com/wbrent/timbreID/blob/master/src/zeroCrossing~.c/
 
 **** Original LICENCE disclaimer ahead ****
 
@@ -24,35 +24,32 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "tIDLib.hpp"
 #include <vector>
-
-#include <cfloat>   // FLT_MAX
-#include <climits>  // ULONG_MAX
-#include <stdexcept>
 #include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
 
 template <typename SampleType>
-class PeakSample
+class ZeroCrossing
 {
 public:
 
     //==============================================================================
-    /** Creates a PeakSample module with default parameters. */
-    PeakSample(){ resizeBuffers(); reset(); }
+    /** Creates a zeroCrossing module with default parameters. */
+    ZeroCrossing(){ resizeBuffers(); reset(); }
 
-    PeakSample(unsigned long int windowSize){
+    ZeroCrossing(unsigned long int windowSize)
+    {
         this->analysisWindowSize = windowSize;
         resizeBuffers();
         reset();
     }
 
-    /** Creates a copy of another PeakSample module. */
-    PeakSample (const PeakSample&) = default;
+    /** Creates a copy of another zeroCrossing module. */
+    ZeroCrossing (const ZeroCrossing&) = default;
 
     /** Move constructor */
-    PeakSample (PeakSample&&) = default;
+    ZeroCrossing (ZeroCrossing&&) = default;
 
     //==============================================================================
     /** Initialization of the module */
@@ -81,7 +78,7 @@ public:
     void store (AudioBuffer<OtherSampleType>& buffer, short channel)
     {
         static_assert (std::is_same<OtherSampleType, SampleType>::value,
-                       "The sample-type of the PeakSample module must match the sample-type supplied to this store callback");
+                       "The sample-type of the zeroCrossing module must match the sample-type supplied to this store callback");
 
         short numChannels = buffer.getNumChannels();
 
@@ -91,15 +88,13 @@ public:
     }
     //==============================================================================
 
-    void compute(float &_peak, unsigned long int &_peakIdx)
+    uint32_t compute()
     {
        #if ASYNC_FEATURE_EXTRACTION
         uint32_t currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
-
         uint32_t offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
-
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
         if(offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
@@ -109,41 +104,26 @@ public:
        #endif
 
     	// construct analysis window using offsetSample as the end of the window
-        for(uint64 i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
+        for(uint64_t i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
             this->analysisBuffer[i] = (float)this->signalBuffer[j];
 
+        uint32_t crossings = 0;
+
         assert(this->analysisBuffer.size() == this->analysisWindowSize);
+        crossings = tIDLib::zeroCrossingRate(analysisBuffer);
 
-    	_peak = -FLT_MAX;
-    	_peakIdx = ULONG_MAX;
-
-        for(int i = 0; i < analysisWindowSize; ++i)
-    	{
-    		float thisSample = fabs(this->analysisBuffer[i]);
-    		if(thisSample > _peak)
-    		{
-    			_peak = thisSample;
-    			_peakIdx = i;
-    		}
-    	}
-    }
-
-    /**
-     * \deprecated
-     * Kept for compatibility, probably bad in RT context
-    */
-    std::pair<float, unsigned long int> compute()
-    {
-        float peak;
-        unsigned long int peakIdx;
-        this->compute(peak,peakIdx);
-        return std::make_pair(peak,peakIdx);
+        return crossings;
     }
 
     void setWindowSize(uint32_t windowSize)
     {
+        if(windowSize < tIDLib::MINWINDOWSIZE)
+    	{
+    		throw std::invalid_argument("window size must be "+std::to_string(tIDLib::MINWINDOWSIZE)+" or greater");
+    	}
         this->analysisWindowSize = windowSize;
         resizeBuffers();
+        reset();
     }
 
     uint32_t getWindowSize() const
@@ -177,8 +157,8 @@ private:
 
     void resizeBuffers()
     {
-        signalBuffer.resize(analysisWindowSize + blockSize,SampleType{0});
-        analysisBuffer.resize(analysisWindowSize,0.0f);
+        signalBuffer.resize(analysisWindowSize + blockSize, SampleType{0});
+        analysisBuffer.resize(analysisWindowSize, 0.0f);
     }
 
     void storeAudioBlock (const SampleType* input, size_t n) noexcept
@@ -186,13 +166,12 @@ private:
         assert(n ==  this->blockSize);
 
         // shift signal buffer contents N positions back
-    	for(uint64 i=0; i<analysisWindowSize; ++i)
+    	for(uint64_t i=0; i<analysisWindowSize; ++i)
     		signalBuffer[i] = signalBuffer[i+n];
 
     	// write new block to end of signal buffer.
     	for(size_t i=0; i<n; ++i)
     		signalBuffer[analysisWindowSize+i] = input[i];
-
        #if ASYNC_FEATURE_EXTRACTION
         this->lastStoreTime = tid::Time::currentTimeMillis();
        #endif
@@ -201,7 +180,7 @@ private:
     //==============================================================================
     double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
     uint32_t blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
-    uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
+    uint64_t analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     std::vector<SampleType> signalBuffer;
     std::vector<float> analysisBuffer;
@@ -209,9 +188,8 @@ private:
    #if ASYNC_FEATURE_EXTRACTION
     uint32_t lastStoreTime = tid::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
    #endif
-
     //==============================================================================
-    JUCE_LEAK_DETECTOR (PeakSample)
+    JUCE_LEAK_DETECTOR (ZeroCrossing)
 };
 
 } // namespace tid
