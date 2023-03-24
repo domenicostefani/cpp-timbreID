@@ -24,32 +24,28 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <assert.h>
 
-namespace tid   /* TimbreID namespace*/
+namespace tid /* TimbreID namespace*/
 {
-unsigned long int Bin2freq::sampleRate = tIDLib::SAMPLERATEDEFAULT;
+double Bin2freq::sampleRate = (double)tIDLib::SAMPLERATEDEFAULT;
 unsigned long int Bin2freq::windowSize = tIDLib::WINDOWSIZEDEFAULT;
 
 /* ------------------------ bin2freq -------------------------------- */
 float Bin2freq::calculate(float bin)
 {
-	if(bin>=0.0f && bin<(float)Bin2freq::windowSize)
-		return tIDLib::bin2freq(bin, (float)Bin2freq::windowSize, (float)Bin2freq::sampleRate);
-	else
-        throw std::domain_error("bin2freq: bin number must be between 0 and " + std::to_string(Bin2freq::windowSize-1));
+    if (bin >= 0.0f && bin < (float)Bin2freq::windowSize)
+        return tIDLib::bin2freq(bin, (float)Bin2freq::windowSize, Bin2freq::sampleRate);
+    else
+        throw std::domain_error("bin2freq: bin number must be between 0 and " + std::to_string(Bin2freq::windowSize - 1));
 }
 
-void Bin2freq::setWinSampRate(long int windowSize, long int sampleRate) // TODO: Is long good here? I'm losing the size of the unsigned but it is less bug-prone since now we can chech wether the arg is negative
+void Bin2freq::setWinSampRate(long int windowSize, double sampleRate)
 {
-    if(windowSize <= 0)
-    {
+    if (windowSize <= 0)
         throw std::invalid_argument("Window size cannot be <= 0");
-    }
-    if(sampleRate <= 0)
-    {
+    if (sampleRate <= 0)
         throw std::invalid_argument("Sample rate cannot be <= 0");
-    }
-	Bin2freq::windowSize = windowSize;
-	Bin2freq::sampleRate = sampleRate;
+    Bin2freq::windowSize = windowSize;
+    Bin2freq::sampleRate = sampleRate;
 }
 
 unsigned long int Bin2freq::getWindowSize()

@@ -97,10 +97,7 @@ private:
             onsetLed.switchOn();
         updateDataLabels();
 
-        int onsetCounter = -1;
-        // do { //TODO: figure out why I did this
-            onsetCounter = processor.onsetCounterAtomic.load(std::memory_order_relaxed);  // get value atomically
-        // } while (onsetCounter==-1);
+        int onsetCounter = processor.onsetCounterAtomic.load(std::memory_order_relaxed);  // get value atomically
 
         updateOnsetCounter(onsetCounter);
         performStoreClearActions();

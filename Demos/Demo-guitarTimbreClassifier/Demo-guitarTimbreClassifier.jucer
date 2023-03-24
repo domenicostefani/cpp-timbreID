@@ -52,8 +52,24 @@
       <FILE id="tDLe8Z" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="pyx13z" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="EMoMXN" name="ClassifierFifoQueue.h" compile="0" resource="0"
-            file="Source/ClassifierFifoQueue.h"/>
+      <FILE id="wP25uV" name="ClassifierArrayFifoQueue.h" compile="0" resource="0"
+            file="Source/ClassifierArrayFifoQueue.h"/>
+      <FILE id="D99JfA" name="ClassifierVectorFifoQueue.h" compile="0" resource="0"
+            file="Source/ClassifierVectorFifoQueue.h"/>
+      <FILE id="VjpAgP" name="minmaxScaler.cpp" compile="1" resource="0"
+            file="Source/minmaxScaler.cpp"/>
+      <FILE id="sjk4qS" name="modelA-guitarTechClassifier.json" compile="0"
+            resource="1" file="Source/modelA-guitarTechClassifier.json"/>
+      <FILE id="XJEuh9" name="modelB-guitarTechClassifier.json" compile="0"
+            resource="1" file="Source/modelB-guitarTechClassifier.json"/>
+      <FILE id="Fwoz3X" name="modelC-guitarTechClassifier.json" compile="0"
+            resource="1" file="Source/modelC-guitarTechClassifier.json"/>
+      <FILE id="QPyfIm" name="postOnsetTimer.h" compile="0" resource="0"
+            file="Source/postOnsetTimer.h"/>
+      <FILE id="Up3l9l" name="squaredSineWavetable.h" compile="0" resource="0"
+            file="Source/squaredSineWavetable.h"/>
+      <FILE id="d62E5F" name="windowed_feature_extractors.h" compile="0"
+            resource="0" file="Source/windowed_feature_extractors.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
@@ -313,6 +329,118 @@
                        headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
                        headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/704_w_TFLITE" extraDefs="USE_TFLITE&#10;DEFINED_WINDOW_SIZE=704"
+                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio&#10;ruy&#10;flatbuffers&#10;farmhash&#10;fft2d_fftsg2d&#10;fft2d_fftsg "
+                userNotes="For some reason, tflite build this way does require to include all dependencies in here, manually.&#10;To ease the process, I created symlinks to the deps in the same folder of libtflite, but this will break !!!!!!">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Debug-phase3classifier-704" enablePluginBinaryCopyStep="1"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Release-phase3classifier-704" enablePluginBinaryCopyStep="1"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/2112_w_TFLITE" extraDefs="USE_TFLITE&#10;DEFINED_WINDOW_SIZE=2112"
+                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio&#10;ruy&#10;flatbuffers&#10;farmhash&#10;fft2d_fftsg2d&#10;fft2d_fftsg "
+                userNotes="For some reason, tflite build this way does require to include all dependencies in here, manually.&#10;To ease the process, I created symlinks to the deps in the same folder of libtflite, but this will break !!!!!!">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Debug-phase3classifier-2112" enablePluginBinaryCopyStep="0"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Release-phase3classifier-2112" enablePluginBinaryCopyStep="0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/3456_w_TFLITE" extraDefs="USE_TFLITE&#10;DEFINED_WINDOW_SIZE=3456"
+                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio&#10;ruy&#10;flatbuffers&#10;farmhash&#10;fft2d_fftsg2d&#10;fft2d_fftsg "
+                userNotes="For some reason, tflite build this way does require to include all dependencies in here, manually.&#10;To ease the process, I created symlinks to the deps in the same folder of libtflite, but this will break !!!!!!">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Debug-phase3classifier-3456" enablePluginBinaryCopyStep="0"/>
+        <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Release-phase3classifier-3456" enablePluginBinaryCopyStep="0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_osc"/>
+        <MODULEPATH id="juce_gui_extra"/>
+        <MODULEPATH id="juce_gui_basics"/>
+        <MODULEPATH id="juce_graphics"/>
+        <MODULEPATH id="juce_events"/>
+        <MODULEPATH id="juce_data_structures"/>
+        <MODULEPATH id="juce_cryptography"/>
+        <MODULEPATH id="juce_core"/>
+        <MODULEPATH id="juce_audio_utils"/>
+        <MODULEPATH id="juce_audio_processors"/>
+        <MODULEPATH id="juce_audio_plugin_client"/>
+        <MODULEPATH id="juce_audio_formats"/>
+        <MODULEPATH id="juce_audio_devices"/>
+        <MODULEPATH id="juce_audio_basics"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/4800_w_TFLITE" extraDefs="USE_TFLITE&#10;DEFINED_WINDOW_SIZE=4800"
+                externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio&#10;ruy&#10;flatbuffers&#10;farmhash&#10;fft2d_fftsg2d&#10;fft2d_fftsg "
+                userNotes="For some reason, tflite build this way does require to include all dependencies in here, manually.&#10;To ease the process, I created symlinks to the deps in the same folder of libtflite, but this will break !!!!!!">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"
+                       targetName="Debug-phase3classifier-4800" enablePluginBinaryCopyStep="0"
+                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/include"
+                       targetName="Release-phase3classifier-4800" enablePluginBinaryCopyStep="0"
+                       libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper_2_5_3/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;/home/cimil-01/Develop/deep-classf-runtime-wrappers/TFLiteWrapper2.5.3/build-elk/tensorflow-lite/"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_osc"/>

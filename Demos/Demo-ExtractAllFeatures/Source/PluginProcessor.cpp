@@ -26,17 +26,23 @@
 
 #define MONO_CHANNEL 0
 
-#ifdef LONG_WINDOW
- #define POST_ONSET_DELAY_MS 92.2933333333 // This delay is infact then rounded to the closest multiple of the audio block period
-                                           // In the case of 92.2933333333ms at 48000Hz and 64 samples blocksizes, the closes delay is 
-                                           // 92.0ms, corresponding to 69 audio block periods
-#else
- #define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
-                                 // In the case of 6.96ms at 48000Hz and 64 samples blocksizes, the closes delay is 
-                                 // 6.66ms, corresponding to 5 audio block periods
-#endif
 
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
+
+WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                      DO_USE_ATTACKTIME,
+                      DO_USE_BARKSPECBRIGHTNESS,
+                      DO_USE_BARKSPEC,
+                      DO_USE_BFCC,
+                      DO_USE_CEPSTRUM,
+                      DO_USE_MFCC,
+                      DO_USE_PEAKSAMPLE,
+                      DO_USE_ZEROCROSSING,
+                      BLOCK_SIZE,
+                      FRAME_SIZE,
+                      FRAME_INTERVAL ,
+                      ZEROPADS> DemoProcessor::featexts;
+
 
 //==============================================================================
 DemoProcessor::DemoProcessor()
@@ -53,37 +59,29 @@ DemoProcessor::DemoProcessor()
     parameters(*this, nullptr, "PARAMETERS", createParameterLayout())
 {    
     suspendProcessing (true);
+
+    header = featexts.getHeader();
     rtlogger.logInfo("Initializing Onset detector");
 
     /** ADD ONSET DETECTOR LISTENER **/
     aubioOnset.addListener(this);
 
-    barkSpecRes.resize(BARKSPEC_SIZE);
-    bfccRes.resize(BFCC_RES_SIZE);
-    cepstrumRes.resize(CEPSTRUM_RES_SIZE);
-    mfccRes.resize(MFCC_RES_SIZE);
-
-    attackTime.setMaxSearchRange(20);
    #ifdef DO_LOG_TO_FILE
     /** START POLLING ROUTINE THAT WRITES TO FILE ALL THE LOG ENTRIES **/
     pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
    #endif
 
-    // if (JUCEApplicationBase::isStandaloneApp()) TODO: reemove because I did this below
-    //     storageState.store(StorageState::idle);
-    // else
-    //     storageState.store(StorageState::store);
 
     parameters.state = ValueTree("savedParams");
     parameters.addParameterListener(STORESTATE_ID,this);
     parameters.addParameterListener(CLEAR_ID,this);
     parameters.addParameterListener(SAVEFILE_ID,this);
 
-    for (auto p : getParameters())
-    {
-        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
-            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
-    }
+    // for (auto p : getParameters())
+    // {
+    //     if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+    //         parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    // }
 
     rtlogger.logValue("HasEditor",this->hasEditor());
 
@@ -100,7 +98,7 @@ void DemoProcessor::logInCsvSpecial(std::string messagestr)
     {
         currentEntry->onsetDetectionTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
         currentEntry->featureComputationTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
-        currentEntry->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;
+        currentEntry->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;
         currentEntry->sampleRate = this->pluginSampleRate;
         currentEntry->blockSize = this->pluginBlockSize;
         currentEntry->writeMessage(messagestr.c_str());
@@ -124,6 +122,9 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
 
+    this->POST_ONSET_DELAY_MS = DEFINED_WINDOW_SIZE/sampleRate*1000.0f - MEASURED_ONSET_DETECTION_DELAY_MS;
+
+
     logInCsvSpecial("StartProcessing");
 
     this->pluginSampleRate = (int)sampleRate;
@@ -139,40 +140,7 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     postOnsetTimer.prepare(sampleRate,samplesPerBlock);
    #endif
 
-    /** Prepare feature extractors **/
-
-    /*-------------------------------------/
-    | Bark Frequency Cepstral Coefficients |
-    /-------------------------------------*/
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Cepstrum Coefficients               |
-    /------------------------------------*/
-    cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Attack time                         |
-    /------------------------------------*/
-    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark spectral brightness            |
-    /------------------------------------*/
-    barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark Spectrum                       |
-    /------------------------------------*/
-    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    featexts.prepare(sampleRate,samplesPerBlock);
 
     this->sampleRate = sampleRate;
     this->samplesPerBlock = samplesPerBlock;
@@ -195,14 +163,7 @@ void DemoProcessor::releaseResources()
     /*------------------------------------/
     | Reset the feature extractors        |
     /------------------------------------*/
-    bfcc.reset();
-    cepstrum.reset();
-    attackTime.reset();
-    barkSpecBrightness.reset();
-    barkSpec.reset();
-    mfcc.reset();
-    peakSample.reset();
-    zeroCrossing.reset();
+    featexts.reset();
 
     rtlogger.logInfo("+--ReleaseResources completed");
 }
@@ -230,14 +191,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     }
 
     /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
-    bfcc.store(buffer,(short int)MONO_CHANNEL);
-    cepstrum.store(buffer,(short int)MONO_CHANNEL);
-    attackTime.store(buffer,(short int)MONO_CHANNEL);
-    barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);
-    barkSpec.store(buffer,(short int)MONO_CHANNEL);
-    mfcc.store(buffer,(short int)MONO_CHANNEL);
-    peakSample.store(buffer,(short int)MONO_CHANNEL);
-    zeroCrossing.store(buffer,(short int)MONO_CHANNEL);
+    featexts.storeAndCompute(buffer,(short int)MONO_CHANNEL);
 
     /** STORE THE ONSET DETECTOR BUFFER **/
     try
@@ -312,14 +266,14 @@ void DemoProcessor::onsetDetectedRoutine ()
             /*--------------------/
             | 1. EXTRACT FEATURES |
             /--------------------*/
-            this->computeFeatureVector(currentFV->features);
+            this->featexts.computeFeatureVectors(currentFV->features);
 
             /*--------------------/
             | 2. ADD METADATA     |
             /--------------------*/
             currentFV->onsetDetectionTime = this->lastOnsetDetectionTime; //double
             currentFV->featureComputationTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes(); //double
-            currentFV->featureExtractionWindowSize = FEATUREEXT_WINDOW_SIZE;   // int
+            currentFV->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;   // int
             currentFV->sampleRate = this->pluginSampleRate;   // int
             currentFV->blockSize = this->pluginBlockSize;    // int
             /*--------------------/
@@ -335,127 +289,6 @@ void DemoProcessor::onsetDetectedRoutine ()
     {
         rtlogger.logInfo("Extractor idling");
     }
-}
-
-void DemoProcessor::computeFeatureVector(float featureVector[])
-{
-    int last = -1;
-    int newLast = 0;
-    /*-----------------------------------------/
-    | 01 - Attack time                         |
-    /-----------------------------------------*/
-    unsigned long int peakSampIdx = 0;
-    unsigned long int attackStartIdx = 0;
-    float attackTimeValue = 0.0f;
-    this->attackTime.compute(&peakSampIdx, &attackStartIdx, &attackTimeValue);
-
-    featureVector[0] = (float)peakSampIdx;
-    featureVector[1] = (float)attackStartIdx;
-    featureVector[2] = attackTimeValue;
-    newLast = 2;
-   #ifdef LOG_SIZES
-    info += ("attackTime [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 02 - Bark Spectral Brightness            |
-    /-----------------------------------------*/
-    float bsb = this->barkSpecBrightness.compute();
-
-    featureVector[3] = bsb;
-    newLast = 3;
-   #ifdef LOG_SIZES
-    info += ("barkSpecBrightness [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 03 - Bark Spectrum                       |
-    /-----------------------------------------*/
-    barkSpecRes = this->barkSpec.compute();
-
-    jassert(barkSpecRes.size() == BARKSPEC_SIZE);
-    for(int i=0; i<BARKSPEC_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = barkSpecRes[i];
-    }
-    newLast = last + BARKSPEC_SIZE;
-   #ifdef LOG_SIZES
-    info += ("barkSpec [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 04 - Bark Frequency Cepstral Coefficients |
-    /------------------------------------------*/
-    bfccRes = this->bfcc.compute();
-    jassert(bfccRes.size() == BFCC_RES_SIZE);
-    for(int i=0; i<BFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = bfccRes[i];
-    }
-    newLast = last + BFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("bfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*------------------------------------------/
-    | 05 - Cepstrum Coefficients                |
-    /------------------------------------------*/
-    cepstrumRes = this->cepstrum.compute();
-    jassert(cepstrumRes.size() == CEPSTRUM_RES_SIZE);
-    for(int i=0; i<CEPSTRUM_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = cepstrumRes[i];
-    }
-    newLast = last + CEPSTRUM_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("cepstrum [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 06 - Mel Frequency Cepstral Coefficients |
-    /-----------------------------------------*/
-    mfccRes = this->mfcc.compute();
-    jassert(mfccRes.size() == MFCC_RES_SIZE);
-    for(int i=0; i<MFCC_RES_SIZE; ++i)
-    {
-        featureVector[(last+1) + i] = mfccRes[i];
-    }
-    newLast = last + MFCC_RES_SIZE;
-   #ifdef LOG_SIZES
-    info += ("mfcc [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 07 - Peak sample                         |
-    /-----------------------------------------*/
-    std::pair<float, unsigned long int> peakSample = this->peakSample.compute();
-    float peakSampleRes = peakSample.first;
-    unsigned long int peakSampleIndex = peakSample.second;
-    featureVector[last+1] = peakSampleRes;
-    featureVector[last+2] = peakSampleIndex;
-    newLast = last + 2;
-   #ifdef LOG_SIZES
-    info += ("peakSample [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
-    /*-----------------------------------------/
-    | 08 - Zero Crossings                      |
-    /-----------------------------------------*/
-    uint32 crossings = this->zeroCrossing.compute();
-    featureVector[last+1] = crossings;
-    newLast = last +1;
-   #ifdef LOG_SIZES
-    info += ("zeroCrossing [" + std::to_string(last+1) + ", " + std::to_string(newLast) + "]\n");
-   #endif
-    last = newLast;
-
 }
 
 void DemoProcessor::parameterChanged(const juce::String & parameterID, float newValue)
@@ -514,11 +347,13 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
         if(xml->hasTagName(parameters.state.getType()))
             parameters.state = juce::ValueTree::fromXml(*xml);
 
-    for (auto p : getParameters())
-    {
-        if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
-            parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
-    }
+    // for (auto p : getParameters())
+    // {
+    //     if (auto param = dynamic_cast<AudioProcessorParameterWithID*> (p))
+    //         parameterChanged (param->paramID, *parameters.getRawParameterValue (param->paramID));
+    // }
+    this->storageState = StorageState::idle;
+    
 }
 
 
@@ -531,11 +366,7 @@ void DemoProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 
 // Change Juce plugin name and prepend "superlong" if LONG_WINDOW is defined
-#ifdef LONG_WINDOW
- #define Plugin_final_name "superlong"
-#else
- #define Plugin_final_name JucePlugin_Name
-#endif
+#define Plugin_final_name JucePlugin_Name
 
 
 

@@ -142,7 +142,7 @@ public:
         this->numFilters = temp_numFilters;
         this->sizeFilterFreqs = temp_sizeFilterFreqs;
         std::swap(this->filterFreqs,temp_filterFreqs);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size()); //TODO:move
+        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
 
         this->coefficientsVector.resize(this->numFilters);
         this->dctPlan.precomputeBasis(this->numFilters);
@@ -164,12 +164,9 @@ public:
                        "The sample-type of the module must match the sample-type supplied to this store callback");
 
         short numChannels = buffer.getNumChannels();
-        jassert(channel < numChannels);
-        jassert(channel >= 0);
-        jassert(numChannels > 0);
 
         if(channel < 0 || channel >= numChannels)
-            throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
+            throw std::invalid_argument("Channel index has to be between 0 and "+std::to_string(numChannels-1)+" (found "+std::to_string(channel)+" instead)");
         return storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
 

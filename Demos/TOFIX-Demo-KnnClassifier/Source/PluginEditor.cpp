@@ -64,7 +64,6 @@ DemoEditor::DemoEditor (DemoProcessor& p)
 
     addAndMakeVisible(featureNumber);
     featureNumber.setLabelText("# Features Used:");
-    // featureNumber.setDefaultText("25"); TODO this seems to cause issues
     featureNumber.addListener(this);
 
     addAndMakeVisible(bfccInfo);

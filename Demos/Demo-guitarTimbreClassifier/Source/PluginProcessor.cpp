@@ -17,10 +17,24 @@
 #include <chrono>
 
 #define MONO_CHANNEL 0
-#define POST_ONSET_DELAY_MS 6.96 // This delay is infact then rounded to the closest multiple of the audio block period
-                                 // In the case of 6.96ms at 48000Hz and 64 samples blocksizes, the closes delay is 
-                                 // 6.66ms, corresponding to 5 audio block periods
+
 #define DO_DELAY_ONSET // If not defined there is NO delay between onset detection and feature extraction
+
+#define DEBUG_WITH_SPIKE
+
+WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                      DO_USE_ATTACKTIME,
+                      DO_USE_BARKSPECBRIGHTNESS,
+                      DO_USE_BARKSPEC,
+                      DO_USE_BFCC,
+                      DO_USE_CEPSTRUM,
+                      DO_USE_MFCC,
+                      DO_USE_PEAKSAMPLE,
+                      DO_USE_ZEROCROSSING,
+                      BLOCK_SIZE,
+                      FRAME_SIZE,
+                      FRAME_INTERVAL ,
+                      ZEROPADS> DemoProcessor::featexts;
 
 #ifndef SEQUENTIAL_CLASSIFICATION
  CData::ClassificationData DemoProcessor::classificationData;
@@ -47,6 +61,7 @@ DemoProcessor::DemoProcessor()
 #endif
 {
     suspendProcessing (true);
+
   #ifndef FAST_MODE_1
    rtlogger.logInfo("Initializing Onset detector");
    pollingTimer.startLogRoutine(100); // Call every 0.1 seconds
@@ -71,12 +86,6 @@ DemoProcessor::DemoProcessor()
     /** ADD ONSET DETECTOR LISTENER **/
     bark.addListener(this);
    #endif
-
-    /** ALLOCATE MEMORY FOR TMP VECTORS **/
-    barkSpecRes.resize(BARKSPEC_RES_SIZE);
-    bfccRes.resize(BFCC_RES_SIZE);
-    cepstrumRes.resize(CEPSTRUM_RES_SIZE);
-    mfccRes.resize(MFCC_RES_SIZE);
 
     juce::var parsedJson;
     try
@@ -132,10 +141,9 @@ DemoProcessor::DemoProcessor()
             }
             else
             {
-                std::cerr << "Invalid message type in JSON config (use either 'all' or 'best')" << std::endl << std::flush;
+                std::cerr << "Invalid message type in JSON config (use either \"all\" or \"best\")" << std::endl << std::flush;
             }
            #ifndef SEQUENTIAL_CLASSIFICATION
-            //TODO: Check out this and what happens sequentially
             this->classificationThread.setOSCmessage(oscMsg);
            #endif
         }
@@ -152,30 +160,85 @@ DemoProcessor::DemoProcessor()
 
     /** SET UP FEATURE COMPUTATION **/
     std::vector<std::string> selectedFeatures = JsonConf::getNestedStringVectorProperty(parsedJson, "features","selected_features");    // Read JSON
-    featParser = std::make_unique<JsonConf::FeatureParser>(selectedFeatures);   // Prepare list
-    // Log everything
-    std::string precList = "[ ";
-    for (const JsonConf::feature_extractor_t item : featParser->precomputationList)
-        precList += JsonConf::stringPrefixes.at(item) + " ";
-    precList += "]";
-    rtlogger.logValue("Feature Extraction configuration read from file: ",precList.c_str());
 
-    rtlogger.logInfo("Feature List: ");
-    for (const JsonConf::FeatureParser::Feature* item : featParser->featureList) {
-        const JsonConf::FeatureParser::VectorFeature* vectorFeature = dynamic_cast<const JsonConf::FeatureParser::VectorFeature*>((JsonConf::FeatureParser::Feature*)item);
-        const JsonConf::FeatureParser::NamedFeature* namedFeature = dynamic_cast<const JsonConf::FeatureParser::NamedFeature*>((JsonConf::FeatureParser::Feature*)item);
-        if (vectorFeature != nullptr)
-            rtlogger.logInfo((JsonConf::stringPrefixes.at(vectorFeature->extractorType) + "[" + std::to_string(vectorFeature->index) + "] ").c_str());
-        else if (namedFeature != nullptr)
-            rtlogger.logInfo(((JsonConf::stringPrefixes.at(namedFeature->extractorType)) + ("->") + (namedFeature->valuename) + " ").c_str());
-        else 
-            rtlogger.logInfo(((JsonConf::stringPrefixes.at(item->extractorType)) + " ").c_str());
-    }
+    // std::string precList = "[ ";
+    // for (const auto& feat : selectedFeatures)
+    // {
+    //     precList += feat + " ";
+    //     rtlogger.logValue("-",feat.c_str());
+    //     logPollingRoutine();
+    // }
+    // precList += "]";
+    rtlogger.logValue("# Features read from file: ",selectedFeatures.size());
+
+    // rtlogger.logInfo(("Feature List (length:"+std::to_string(selectedFeatures.size())+"): ").c_str());
+    // for (size_t fidx = 0; fidx < selectedFeatures.size(); ++fidx) {
+    //     const auto& item = selectedFeatures[fidx];
+    //     if (item != nullptr) {
+    //         rtlogger.logInfo(("Feature "+std::to_string(fidx+1)+"/"+std::to_string(selectedFeatures.size())+"  "+item->name).c_str());
+    //         logPollingRoutine();
+    //     } else {
+    //         rtlogger.logInfo("NULL");
+    //         logPollingRoutine();
+    //         throw std::logic_error("FeatureParser returned a NULL feature");
+    //     }
+    // }
     // !! VERY IMPORTANT !! resize the feature vector to the target size, otherwise it will not work with [] indexing. Push_back or other operation that will cause dyamic allocation cannot be used.
-    this->featureVector.resize(featParser->featureList.size());
-   #ifndef SEQUENTIAL_CLASSIFICATION
-    this->classificationThread.setFeatureNumber(featParser->featureList.size());
+    this->featureVector.resize(selectedFeatures.size());
+    rtlogger.logValue("featureVector resized to: ",selectedFeatures.size());
+
+    this->featexts.setFeatureSelectionFilter(selectedFeatures, this->filteredFeatureMatrix_nrows, this->filteredFeatureMatrix_ncols);
+    // this->featureVector.resize(filteredFeatureMatrix_ncols);
+    if (selectedFeatures.size() != filteredFeatureMatrix_nrows * filteredFeatureMatrix_ncols)
+        throw std::logic_error("Feature selection filter returned a different number of features than the number of selected features");
+
+
+    rtlogger.logInfo(("Feature selection filter set, result is a "+std::to_string(filteredFeatureMatrix_nrows)+"x"+std::to_string(filteredFeatureMatrix_ncols)+" flat matrix ("+std::to_string(selectedFeatures.size())+")").c_str());
+
+    std::string doScaleSelectedFeatures = JsonConf::getNestedStringProperty(parsedJson, "scaler","enable");
+    // std::cout << "doScaleSelectedFeatures: " << doScaleSelectedFeatures << std::endl << std::flush;
+    rtlogger.logValue("doScaleSelectedFeatures: ",doScaleSelectedFeatures.c_str());
+    if (doScaleSelectedFeatures == "true") {
+        std::string scalerType = JsonConf::getNestedStringProperty(parsedJson, "scaler","type");
+        if (scalerType == "minmax") {
+            rtlogger.logInfo("Using MinMax feature scaler");
+            std::vector<float> scaler_orig_mins = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","orig_mins");
+            std::vector<float> scaler_scale = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","scale");
+            featexts.setFeatureScaler(std::make_unique<SCL::MinMaxScaler>(scaler_orig_mins, scaler_scale));
+            if ((scaler_orig_mins.size() != scaler_scale.size()) || (scaler_orig_mins.size() != selectedFeatures.size())) {
+                std::cerr << "Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " << scaler_orig_mins.size() << " " << scaler_scale.size() << " " << selectedFeatures.size() <<  ")" << std::endl << std::flush;
+                throw new std::invalid_argument("Invalid scaler configuration in JSON config (orig_mins, scale and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_orig_mins.size()) + " " + std::to_string(scaler_scale.size()) + " " + std::to_string(selectedFeatures.size()) +  ")");
+            } else
+            {
+                rtlogger.logInfo(("Scaler configuration is valid. "+std::to_string(scaler_orig_mins.size())+" min values were read from config file. "+std::to_string(scaler_scale.size())+" scale values were read and the selected features are " +std::to_string(selectedFeatures.size())+".").c_str());
+            }
+        } else if (scalerType == "standard") {
+            rtlogger.logInfo("Using Standard feature scaler");
+            std::vector<float> scaler_means = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","mean");
+            std::vector<float> scaler_stds = JsonConf::getNestedFloatSciNotationVectorProperty(parsedJson, "scaler","std");
+            featexts.setFeatureScaler(std::make_unique<SCL::StandardScaler>(scaler_means, scaler_stds));
+            if ((scaler_means.size() != scaler_stds.size()) || (scaler_means.size() != selectedFeatures.size())) {
+                std::cerr << "Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " << scaler_means.size() << " " << scaler_stds.size() << " " << selectedFeatures.size() <<  ")" << std::endl << std::flush;
+                throw new std::invalid_argument("Invalid scaler configuration in JSON config (means, stds and selected_features vectors must have the same size, instead they are respectively " + std::to_string(scaler_means.size()) + " " + std::to_string(scaler_stds.size()) + " " + std::to_string(selectedFeatures.size()) +  ")");
+            }
+        } else {
+            std::cerr << "Invalid value for \"type\" in JSON config (only \"minmax\" is supported right now)" << std::endl << std::flush;
+            throw new std::invalid_argument("Invalid value for \"type\" in JSON config (only \"minmax\" is supported right now)");
+        }
+    } else if (doScaleSelectedFeatures != "false") {
+        std::cerr << "Invalid value for \"enable\" in JSON config (use either \"true\" or \"false\")" << std::endl << std::flush;
+    }
+
+    // Set the number of features to the classification thread (if not sequential
+
+    
+  #ifndef SEQUENTIAL_CLASSIFICATION
+   #ifdef WINDOWED_FEATURE_EXTRACTION
+        this->classificationThread.set2DinputSize(filteredFeatureMatrix_nrows, filteredFeatureMatrix_ncols);
+   #else
+        this->classificationThread.set1DinputSize(selectedFeatures.size());
    #endif
+  #endif
 
 
 
@@ -186,10 +249,18 @@ DemoProcessor::DemoProcessor()
     rtlogger.logInfo(message);   
     double modelLoadTime = juce::Time::getMillisecondCounterHiRes();
    #endif
-    DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH);
+    // DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, true); // true = verbose cout
+    DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, false); // true = verbose cout
+    if (DemoProcessor::timbreClassifier == NULL) {
+        std::cerr << "Error: Classifier object could not be created" << std::endl << std::flush;
+        rtlogger.logInfo("Classifier object could not be created");
+        throw std::logic_error("Classifier object could not be created");
+    }
    #ifndef FAST_MODE_1
     rtlogger.logValue("Classifier object instantiated at time:  ",juce::Time::getMillisecondCounterHiRes());
+    std::cout << "Classifier object instantiated at time:  " << juce::Time::getMillisecondCounterHiRes() << std::endl << std::flush;
     rtlogger.logValue("(Classifier object created in ",(juce::Time::getMillisecondCounterHiRes()-modelLoadTime),"ms");
+    std::cout << "(Classifier object created in " << (juce::Time::getMillisecondCounterHiRes()-modelLoadTime) << "ms)" << std::endl << std::flush;
    #endif
 
     suspendProcessing (false);
@@ -211,6 +282,8 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     rtlogger.logInfo("+--Prepare to play called");
     rtlogger.logInfo("+  Setting up onset detector");
    #endif
+   
+    this->POST_ONSET_DELAY_MS = DEFINED_WINDOW_SIZE/sampleRate*1000.0f - MEASURED_ONSET_DETECTION_DELAY_MS;
 
     /** INIT ONSET DETECTOR MODULE**/
    #ifdef USE_AUBIO_ONSET
@@ -227,39 +300,10 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
    #endif
 
     /** PREPARE FEATURE EXTRACTORS **/
+    featexts.prepare(sampleRate,samplesPerBlock);
 
-    /*------------------------------------/
-    | Attack time                         |
-    /------------------------------------*/
-    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark spectral brightness            |
-    /------------------------------------*/
-    barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark Spectrum                       |
-    /------------------------------------*/
-    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Bark Frequency Cepstral Coefficients|
-    /------------------------------------*/
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Cepstrum Coefficients               |
-    /------------------------------------*/
-    cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
-    /*------------------------------------/
-    | Zero Crossings                      |
-    /------------------------------------*/
-    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    this->sampleRate = sampleRate;
+    this->samplesPerBlock = samplesPerBlock;
 
     sinewt.prepareToPlay(sampleRate);
     squaredsinewt.prepareToPlay(sampleRate);   
@@ -267,9 +311,6 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
    #ifndef FAST_MODE_1
     rtlogger.logInfo("+--Prepare to play completed");
    #endif
-
-    // this->computeFeatureVector();
-    // classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size());
 }
 
 void DemoProcessor::releaseResources()
@@ -292,14 +333,7 @@ void DemoProcessor::releaseResources()
     /*------------------------------------/
     | Reset the feature extractors        |
     /------------------------------------*/
-    bfcc.reset();
-    cepstrum.reset();
-    attackTime.reset();
-    barkSpecBrightness.reset();
-    barkSpec.reset();
-    mfcc.reset();
-    peakSample.reset();
-    zeroCrossing.reset();
+    featexts.reset();
 
    #ifndef FAST_MODE_1
     rtlogger.logInfo("+--ReleaseResources completed");
@@ -343,8 +377,13 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     if (this->primeClassifier)
     {
         primeClassifier = false;
-        this->computeFeatureVector();
-        classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size());
+        this->featexts.computeSelectedFeaturesAndScale(featureVector.data());
+        // classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size());
+        classifyFlat2D(DemoProcessor::timbreClassifier,featureVector.data(),\
+                       this->filteredFeatureMatrix_nrows,\
+                       this->filteredFeatureMatrix_ncols,\
+                       classificationOutputVector.data(),\
+                       classificationOutputVector.size(), false);
     }
 
 
@@ -360,6 +399,9 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+
+    buffer.clear (1, 0, buffer.getNumSamples());
+    // std::cout << buffer.getReadPointer(0)[0] << std::endl;
 
 
     /** LOG THE DIFFERENT TIMESTAMPS FOR LATENCY COMPUTATION **/
@@ -380,14 +422,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
         onsetDetectedRoutine();
 
     /** STORE THE BUFFER FOR FEATURE EXTRACTION **/
-    bfcc.store(buffer,(short int)MONO_CHANNEL);
-    cepstrum.store(buffer,(short int)MONO_CHANNEL);
-    attackTime.store(buffer,(short int)MONO_CHANNEL);
-    barkSpecBrightness.store(buffer,(short int)MONO_CHANNEL);
-    barkSpec.store(buffer,(short int)MONO_CHANNEL);
-    mfcc.store(buffer,(short int)MONO_CHANNEL);
-    peakSample.store(buffer,(short int)MONO_CHANNEL);
-    zeroCrossing.store(buffer,(short int)MONO_CHANNEL);
+    featexts.storeAndCompute(buffer,(short int)MONO_CHANNEL);
 
     /** STORE THE ONSET DETECTOR BUFFER **/
     try
@@ -415,6 +450,8 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     bool readPred = DemoProcessor::classificationData.predictionBuffer.read(classificationOutputVector); // read predictions from rt thread when available
     if (readPred) // if a value was read
     {
+        rtlogger.logInfo("Classification Finished");
+        rtlogger.logValue("Classification output: ",classificationOutputVector[0]);
         classificationFinished();
     }
    #endif
@@ -500,14 +537,7 @@ void DemoProcessor::onsetDetectedRoutine ()
     /*--------------------/
     | 1. EXTRACT FEATURES |
     /--------------------*/
-    try //TODO: remove
-    { //TODO: remove
-        this->computeFeatureVector();
-    } //TODO: remove
-    catch(const std::exception& e) //TODO: remove
-    { //TODO: remove
-        std::cerr << e.what() << '\n'; //TODO: remove
-    } //TODO: remove
+    this->featexts.computeSelectedFeaturesAndScale(featureVector.data());
     
 
   #ifndef FAST_MODE_1
@@ -523,14 +553,14 @@ void DemoProcessor::onsetDetectedRoutine ()
     /----------------------------------*/
   #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection");
+    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection}");
     this->classf_start = juce::Time::getMillisecondCounterHiRes();
    #endif
   #endif
 
-   
     this->chrono_start = std::chrono::high_resolution_clock::now();
    #ifndef SEQUENTIAL_CLASSIFICATION
+    rtlogger.logInfo("Triggering classification (writing feature vector to buffer)");
     DemoProcessor::classificationData.featureBuffer.write(featureVector);    // Write the feature vector to a ring buffer, for parallel classification
     // Note to self:
     // Here I tried to use juce::Thread::notify() to wake up the classification thread
@@ -538,7 +568,12 @@ void DemoProcessor::onsetDetectedRoutine ()
     // Contrary to what was hinted in the JUCE forum, this causes mode switches in Xenomai so it is not rt safe. 
     // Old line: classificationThread.notify();
    #else
-    classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size()); // Execute inference with the Interpreter of choice (see PluginProcessor.h)
+    // classify(DemoProcessor::timbreClassifier,&(featureVector[0]), featureVector.size(),&(classificationOutputVector[0]), classificationOutputVector.size()); // Execute inference with the Interpreter of choice (see PluginProcessor.h)
+    classifyFlat2D(DemoProcessor::timbreClassifier,featureVector.data(),\
+                       this->filteredFeatureMatrix_nrows,\
+                       this->filteredFeatureMatrix_ncols,\
+                       classificationOutputVector.data(),\
+                       classificationOutputVector.size(), false);
     this->chrono_end = std::chrono::high_resolution_clock::now();
     this->classf_end = juce::Time::getMillisecondCounterHiRes();
     classificationFinished();
@@ -612,151 +647,15 @@ void DemoProcessor::classificationFinished()
     // 6)   Pick Near Bridge (Playing toward the bridge/saddle)
     // 7)   Pick Over the Soundhole (Playing over the sound hole)
 
-#ifndef DEBUG_WITH_SPIKE
+   #ifndef DEBUG_WITH_SPIKE
     if(prediction == 0)
         sinewt.playNote( 1200 );
     else
         sinewt.playNote( 440 );
-#endif
+   #endif
 
 }
 
-void DemoProcessor::computeFeatureVector()
-{
-    jassert(featureVector.size() == featParser->featureList.size());
-
-    /*----------------------------------------------------------------------------------------------------------/
-    |  1. Run all the feature extractors needed (not all features will be needed in the end, that is phase 2)   |
-    /*---------------------------------------------------------------------------------------------------------*/
-    for (const JsonConf::feature_extractor_t featureExtractorToRun : featParser->precomputationList) {
-        switch (featureExtractorToRun)
-        {
-            case JsonConf::feature_extractor_t::ATTACK_TIME:
-                /*------------------------------------/
-                | Attack time                         |
-                /------------------------------------*/
-                attackTime.compute(&rPeakSampIdx,&rAttackStartIdx,&rAttackTime);
-                break;
-            case JsonConf::feature_extractor_t::BARK_SPEC_BRIGHTNESS:
-                /*------------------------------------/
-                | Bark Spectral Brightness            |
-                /------------------------------------*/
-                this->barkSpecBrightnessVal = barkSpecBrightness.compute();
-                break;
-            case JsonConf::feature_extractor_t::BARK_SPEC:
-                /*------------------------------------/
-                | Bark Spectrum                       |
-                /------------------------------------*/
-                barkSpecRes = barkSpec.compute();
-                if (barkSpecRes.size() != BARKSPEC_RES_SIZE)
-                    throw std::logic_error("Incorrect result vector size for barkSpec");
-                break;
-            case JsonConf::feature_extractor_t::BFCC:
-                /*-------------------------------------/
-                | Bark Frequency Cepstral Coefficients |
-                /-------------------------------------*/
-                bfccRes = bfcc.compute();
-                if (bfccRes.size() != BFCC_RES_SIZE)
-                    throw std::logic_error("Incorrect result vector size for bfcc");
-                break;
-            case JsonConf::feature_extractor_t::MFCC:
-                mfcc.compute();
-                mfccRes = this->mfcc.compute();
-                if (mfccRes.size() != MFCC_RES_SIZE)
-                    throw std::logic_error("Incorrect result vector size for mfcc");
-                break;
-            case JsonConf::feature_extractor_t::CEPSTRUM:
-                /*-------------------------------------/
-                | Cepstrum Coefficients                |
-                /-------------------------------------*/
-                cepstrumRes = this->cepstrum.compute();
-                if (cepstrumRes.size() != CEPSTRUM_RES_SIZE)
-                    throw std::logic_error("Incorrect result vector size for Cepstrum");
-                break;
-            case JsonConf::feature_extractor_t::PEAK_SAMPLE:
-                /*------------------------------------/
-                | Peak sample                         |
-                /------------------------------------*/
-                peakSample.compute(this->peak,this->peakIdx);
-                break;
-            case JsonConf::feature_extractor_t::ZERO_CROSSING:
-                this->zeroCrossingVal = zeroCrossing.compute();
-                break;
-        }
-    }
-
-    // /*----------------------------------------------------------------------------------------------------------/
-    // |  2. Fill the feature vector following the JSON configuration instructions                                 |
-    // /*---------------------------------------------------------------------------------------------------------*/
-
-    for (size_t idx = 0; idx < featParser->featureList.size(); ++idx) {
-        const JsonConf::FeatureParser::Feature* item  = featParser->featureList[idx];
-
-        const JsonConf::FeatureParser::NamedFeature* namedFeature = dynamic_cast<const JsonConf::FeatureParser::NamedFeature*>((JsonConf::FeatureParser::Feature*)item);
-        const JsonConf::FeatureParser::VectorFeature* vectorFeature = dynamic_cast<const JsonConf::FeatureParser::VectorFeature*>((JsonConf::FeatureParser::Feature*)item);
-
-        switch (item ->extractorType)
-        {
-            case JsonConf::feature_extractor_t::ATTACK_TIME:
-                // std::cout << "Adding ATTACK_TIME feature" << std::endl;
-                if (namedFeature == nullptr)
-                    throw std::logic_error("Error extracting NamedFeature ATTACK_TIME");
-                if (namedFeature->valuename == "peaksamp")
-                    NULL; //this->featureVector[idx] = rPeakSampIdx;
-                else if (namedFeature->valuename == "attackStartIdx")
-                    NULL; //this->featureVector[idx] = rAttackStartIdx;
-                else if (namedFeature->valuename == "value")
-                    NULL; //this->featureVector[idx] = rAttackTime;
-                else
-                    throw std::logic_error("Error extracting NamedFeature ATTACK_TIME: feature name unknown ("+namedFeature->valuename+")");
-                break;
-            case JsonConf::feature_extractor_t::BARK_SPEC_BRIGHTNESS:
-                // std::cout << "Adding BARK_SPEC_BRIGHTNESS feature" << std::endl;
-                this->featureVector[idx] = this->barkSpecBrightnessVal;
-                break;
-            case JsonConf::feature_extractor_t::BARK_SPEC:
-                // std::cout << "Adding BARK_SPEC feature" << std::endl;
-                if (vectorFeature->index >= barkSpecRes.size())
-                    throw std::logic_error("Error extracting BARK_SPEC: index requested is greater than the maximum value("+std::to_string(vectorFeature->index)+">"+std::to_string(barkSpecRes.size()-1)+")");
-                this->featureVector[idx] = this->barkSpecRes[vectorFeature->index];
-                break;
-            case JsonConf::feature_extractor_t::BFCC:
-                // std::cout << "Adding BFCC feature" << std::endl;
-                if (vectorFeature->index >= bfccRes.size())
-                    throw std::logic_error("Error extracting Feature BFCC: index requested is greater than the maximum value("+std::to_string(vectorFeature->index)+">"+std::to_string(bfccRes.size()-1)+")");
-                this->featureVector[idx] = this->bfccRes[vectorFeature->index];
-                break;
-            case JsonConf::feature_extractor_t::MFCC:
-                // std::cout << "Adding MFCC feature" << std::endl;
-                if (vectorFeature->index >= mfccRes.size())
-                    throw std::logic_error("Error extracting Feature MFCC: index requested is greater than the maximum value("+std::to_string(vectorFeature->index)+">"+std::to_string(mfccRes.size()-1)+")");
-                this->featureVector[idx] = this->mfccRes[vectorFeature->index];
-                break;
-            case JsonConf::feature_extractor_t::CEPSTRUM:
-                // std::cout << "Adding CEPSTRUM feature" << std::endl;
-                if (vectorFeature->index >= cepstrumRes.size())
-                    throw std::logic_error("Error extracting Feature CEPSTRUM: index requested is greater than the maximum value("+std::to_string(vectorFeature->index)+">"+std::to_string(cepstrumRes.size()-1)+")");
-                this->featureVector[idx] = this->cepstrumRes[vectorFeature->index];
-                break;
-            case JsonConf::feature_extractor_t::PEAK_SAMPLE:
-                if (namedFeature == nullptr)
-                    throw std::logic_error("Error extracting PEAK_SAMPLE");
-                if (namedFeature->valuename == "value")
-                    this->featureVector[idx] = peak;
-                else if (namedFeature->valuename == "index")
-                    this->featureVector[idx] = peakIdx;
-                else
-                    throw std::logic_error("Error extracting NamedFeature PEAK_SAMPLE: feature name unknown ("+namedFeature->valuename+")");
-                break;
-            case JsonConf::feature_extractor_t::ZERO_CROSSING:
-                // std::cout << "Adding ZERO_CROSSING feature" << std::endl;
-                this->featureVector[idx] = this->zeroCrossingVal;
-                break;
-        }
-    }
-
-
-}
 
 /*    JUCE stuff ahead, not relevant to the demo    */
 

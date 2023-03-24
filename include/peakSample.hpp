@@ -83,11 +83,9 @@ public:
                        "The sample-type of the PeakSample module must match the sample-type supplied to this store callback");
 
         short numChannels = buffer.getNumChannels();
-        jassert(channel < numChannels);
-        jassert(channel >= 0);
 
         if(channel < 0 || channel >= numChannels)
-            throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
+            throw std::invalid_argument("Channel index has to be between 0 and "+std::to_string(numChannels-1)+" (found "+std::to_string(channel)+" instead)");
         storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
     }
     //==============================================================================
@@ -132,7 +130,6 @@ public:
     /**
      * \deprecated
      * Kept for compatibility, probably bad in RT context
-     * TODO: check
     */
     std::pair<float, unsigned long int> compute()
     {

@@ -48,7 +48,7 @@ public:
 private:
     bool ledState = false;
 
-    void timerCallback() override //Todo: try to move to private and change inheritance
+    void timerCallback() override 
     {
         Timer::stopTimer();
         ledState = false;

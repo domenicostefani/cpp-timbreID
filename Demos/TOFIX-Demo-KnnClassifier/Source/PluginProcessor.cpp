@@ -147,7 +147,7 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
     {
        #ifdef DO_DELAY_ONSET
         //This is an assumption on the magnitude of the samplesFromPeak
-        unsigned int samplesFromPeak = this->bark.getHop() * 2; //TODO: fix as soon as the bark mods are confirmed
+        unsigned int samplesFromPeak = this->bark.getHop() * 2;
 
         float delayMsec = (bfcc.getWindowSize()-samplesFromPeak) / this->getSampleRate() * 1000;
         float realtimeThresh = MAXIMUM_LATENCY_MSEC - (samplesFromPeak/this->getSampleRate() * 1000);

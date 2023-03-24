@@ -18,8 +18,15 @@
 
 #include "readJsonConfig.h"
 
-#ifdef USE_TFLITE
+
+#define WINDOWED_FEATURE_EXTRACTION
+
+#ifdef USE_TFLITE_LEGACY
  #include "liteclassifier.h"
+#endif
+
+#ifdef USE_TFLITE
+ #include "tflitewrapper.h"
 #endif
 
 #ifdef USE_RTNEURAL_CTIME
@@ -39,6 +46,35 @@
 
 
 
+
+#define WINDOWED_FEATURE_EXTRACTORS
+
+#ifdef WINDOWED_FEATURE_EXTRACTORS
+ #include "windowed_feature_extractors.h"
+#else
+ #include "feature_extractors.h"
+#endif
+
+#define DO_USE_ATTACKTIME true
+#define DO_USE_BARKSPECBRIGHTNESS true
+#define DO_USE_BARKSPEC true
+#define DO_USE_BFCC true
+#define DO_USE_CEPSTRUM true
+#define DO_USE_MFCC true
+#define DO_USE_PEAKSAMPLE true
+#define DO_USE_ZEROCROSSING true
+// - Windowing Specs
+#define BLOCK_SIZE  64
+#define FRAME_SIZE  4
+#define FRAME_INTERVAL  2
+#define ZEROPADS    2
+
+
+
+#define MEASURED_ONSET_DETECTION_DELAY_MS 7.7066666667f
+
+
+
 #include "postOnsetTimer.h"
 #include "ClassifierArrayFifoQueue.h"    // Lock-free queue that can store whole std::array elements
 #include "ClassifierVectorFifoQueue.h"   // Same but with vectors, for runtime-defined size
@@ -55,7 +91,7 @@
 
 
 // #define FAST_MODE_1 // In fast mode 1, logs and other operations are suppressed.
-#define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
+// #define DEBUG_WITH_SPIKE    // if defined, a spike is added to the signal output at both the time of onset detection and that of classification termination 
 
 #define STOP_OSC
 
@@ -76,7 +112,8 @@ struct ClassificationData{
     using predictions_t = ClassifierArrayQueue<N_CLASSES,CLASSIFICATION_FIFO_BUFFER>::ElementType;
     // Run flag, to start and stop the classification thread
     std::atomic<bool> run;
-    std::atomic<int> i;    
+    std::atomic<int> i;
+    std::atomic<size_t> nRows = -1, nCols = -1;
 };
 
 class ClassificationThread : public juce::Thread
@@ -116,9 +153,15 @@ public:
     }
    #endif
 
-    void setFeatureNumber(size_t featureNumber)
+    void set1DinputSize(size_t featureNumber)
     {
         this->cdata->featureBuffer.reserveVectorSize(featureNumber);
+    }
+
+    void set2DinputSize(size_t nRows, size_t nCols) {
+        this->cdata->nRows = nRows;
+        this->cdata->nCols = nCols;
+        this->cdata->featureBuffer.reserveVectorSize(nRows*nCols);
     }
 
     void run() override
@@ -133,7 +176,17 @@ public:
             if (cdata->featureBuffer.read(readFeatures)) // Read from feature queue
             {
                 static ClassificationData::predictions_t towritePredictions;
-                classify(*tclassifier,&(readFeatures[0]), readFeatures.size(),&(towritePredictions[0]), towritePredictions.size());
+                // 1D input
+                // classify(*tclassifier,&(readFeatures[0]), readFeatures.size(),&(towritePredictions[0]), towritePredictions.size());
+
+                // 2D input
+                if (cdata->nRows == -1 || cdata->nCols == -1) throw std::logic_error("Invalid input size");
+                classifyFlat2D(*tclassifier,\
+                    readFeatures.data(),\
+                    cdata->nRows,\
+                    cdata->nCols,\
+                    towritePredictions.data(),\
+                    towritePredictions.size(), false);
                #ifndef STOP_OSC
                 if(isOSCconnected)
                 {
@@ -212,6 +265,7 @@ class DemoProcessor : public AudioProcessor,
 #endif
 {
 public:
+    float POST_ONSET_DELAY_MS = -1.0f;
     //===================== ONSET DETECTION PARAMS =============================
 
    #ifdef USE_AUBIO_ONSET
@@ -258,54 +312,44 @@ public:
     PostOnsetTimer postOnsetTimer;
     void onsetDetectedRoutine();
 
-    //======================== FEATURE EXTRACTION ==============================
-    std::unique_ptr<JsonConf::FeatureParser> featParser;    // Utility to read JSON configuration for feature extraction
-
-    tid::Bfcc<float> bfcc{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Cepstrum<float> cepstrum{FEATUREEXT_WINDOW_SIZE};
-    tid::AttackTime<float> attackTime;
-    tid::BarkSpecBrightness<float> barkSpecBrightness{FEATUREEXT_WINDOW_SIZE,
-                                                      BARK_SPACING,
-                                                      BARK_BOUNDARY};
-    tid::BarkSpec<float> barkSpec{FEATUREEXT_WINDOW_SIZE, BARK_SPACING};
-    tid::Mfcc<float> mfcc{FEATUREEXT_WINDOW_SIZE, MEL_SPACING};
-    tid::PeakSample<float> peakSample{FEATUREEXT_WINDOW_SIZE};
-    tid::ZeroCrossing<float> zeroCrossing{FEATUREEXT_WINDOW_SIZE};
-
-    /**    Feature Vector    **/
+   #ifdef WINDOWED_FEATURE_EXTRACTORS
+    static WFE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING,
+                                 BLOCK_SIZE,
+                                 FRAME_SIZE,
+                                 FRAME_INTERVAL ,
+                                 ZEROPADS> featexts;
+   #else
+    static FE::FeatureExtractors<DEFINED_WINDOW_SIZE,
+                                 DO_USE_ATTACKTIME,
+                                 DO_USE_BARKSPECBRIGHTNESS,
+                                 DO_USE_BARKSPEC,
+                                 DO_USE_BFCC,
+                                 DO_USE_CEPSTRUM,
+                                 DO_USE_MFCC,
+                                 DO_USE_PEAKSAMPLE,
+                                 DO_USE_ZEROCROSSING> featexts;
+   #endif
     std::vector<float> featureVector;
-    // attack time
-    unsigned long int rPeakSampIdx, rAttackStartIdx; 
-    float rAttackTime;
-    //  bark Spec Brightness
-    float barkSpecBrightnessVal;
-    // barkSpec
-    const int BARKSPEC_RES_SIZE = 50;
-    std::vector<float> barkSpecRes;
-    // bfcc
-    const int BFCC_RES_SIZE = 50;
-    std::vector<float> bfccRes;
-    // cepstum
-    const int CEPSTRUM_RES_SIZE = 353; // WindowSize/2+1 (It would be 513 with 1025
-    std::vector<float> cepstrumRes;
-    // mfcc
-    const int MFCC_RES_SIZE = 38;
-    std::vector<float> mfccRes;
-    // peak sample    
-    float peak;
-    unsigned long int peakIdx;
-    // Zero Crossing
-    float zeroCrossingVal;
+    int filteredFeatureMatrix_nrows = -1, filteredFeatureMatrix_ncols = -1;
+
 
     bool primeClassifier = true;
 
-    // Compose vector
-    void computeFeatureVector();
+    double sampleRate = -1;
+    short samplesPerBlock = -1;
 
     //========================== CLASSIFICATION ================================
     static ClassifierPtr timbreClassifier; // Tensorflow interpreter
     
-    const std::string NN_CONFIG_JSON_PATH = "/udata/guitarTechClassifier.json";
+    const std::string NN_CONFIG_JSON_PATH = "/udata/phase3experiment.json";
     std::string MODEL_PATH =  "";
 
     std::array<float, CData::N_CLASSES> classificationOutputVector;
@@ -365,7 +409,7 @@ public:
    #endif
     std::unique_ptr<FileLogger> fileLogger; // Logger that writes RT entries to file SAFELY (Outside rt thread
     std::string LOG_PATH = "/tmp/";
-    std::string LOG_FILENAME = "guitarTimbreClassifier";
+    std::string LOG_FILENAME = "phase3-ExpGuiTecClas-";
     const int64 highResFrequency = Time::getHighResolutionTicksPerSecond();
 
     /**
