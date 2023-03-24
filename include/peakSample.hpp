@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cfloat>   // FLT_MAX
 #include <climits>  // ULONG_MAX
 #include <stdexcept>
+#include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -111,7 +112,7 @@ public:
         for(uint64 i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
             this->analysisBuffer[i] = (float)this->signalBuffer[j];
 
-        jassert(this->analysisBuffer.size() == this->analysisWindowSize);
+        assert(this->analysisBuffer.size() == this->analysisWindowSize);
 
     	_peak = -FLT_MAX;
     	_peakIdx = ULONG_MAX;
@@ -182,7 +183,7 @@ private:
 
     void storeAudioBlock (const SampleType* input, size_t n) noexcept
     {
-        jassert(n ==  this->blockSize);
+        assert(n ==  this->blockSize);
 
         // shift signal buffer contents N positions back
     	for(uint64 i=0; i<analysisWindowSize; ++i)

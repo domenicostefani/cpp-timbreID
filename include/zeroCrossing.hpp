@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "tIDLib.hpp"
 #include <vector>
+#include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -108,7 +109,7 @@ public:
 
         uint32_t crossings = 0;
 
-        jassert(this->analysisBuffer.size() == this->analysisWindowSize);
+        assert(this->analysisBuffer.size() == this->analysisWindowSize);
         crossings = tIDLib::zeroCrossingRate(analysisBuffer);
 
         return crossings;
@@ -162,7 +163,7 @@ private:
 
     void storeAudioBlock (const SampleType* input, size_t n) noexcept
     {
-        jassert(n ==  this->blockSize);
+        assert(n ==  this->blockSize);
 
         // shift signal buffer contents N positions back
     	for(uint64 i=0; i<analysisWindowSize; ++i)

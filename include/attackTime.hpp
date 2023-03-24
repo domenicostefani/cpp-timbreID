@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "tIDLib.hpp"
 #include <vector>
+#include <cassert>
 
 #include <climits>  // ULONG_MAX
 
@@ -265,7 +266,7 @@ private:
 
     void storeAudioBlock (const SampleType* input, size_t n) noexcept
     {
-        jassert(n ==  this->blockSize);
+        assert(n ==  this->blockSize);
 
         // shift signal buffer contents N positions back
     	for(uint64 i=0; i<maxSearchRange; ++i)

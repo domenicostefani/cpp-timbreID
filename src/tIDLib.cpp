@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 #include <cfloat>   // FLT_MAX
 #include <climits>  // ULONG_MAX
+#include <cassert>
 
 namespace tIDLib
 {
@@ -303,7 +304,7 @@ t_binIdx nearestBinIndex(float target, const float *binFreqs, t_binIdx n)
 
 t_binIdx nearestBinIndex(float target, const std::vector<float> &binFreqs, t_binIdx n)
 {
-    jassert(binFreqs.size() >= n);
+    assert(binFreqs.size() >= n);
     return nearestBinIndex(target, &binFreqs[0], n);
 }
 
@@ -416,9 +417,9 @@ void createFilterbank(const std::vector<float> &filterFreqs,
         peakIdx = nearestBinIndex(filterFreqs[ffi], binFreqs, windowHalfPlus1);
         finishIdx = nearestBinIndex(filterFreqs[ffi+1], binFreqs, windowHalfPlus1);
 
-        jassert(startIdx<=finishIdx);
-        jassert(peakIdx<=finishIdx);
-        jassert(startIdx<=peakIdx);
+        assert(startIdx<=finishIdx);
+        assert(peakIdx<=finishIdx);
+        assert(startIdx<=peakIdx);
 
         // resize this filter
         t_binIdx filterWidth = finishIdx-startIdx + 1;
@@ -616,7 +617,7 @@ unsigned long int findAttackStartSamp(std::vector<float> &input, float sampDelta
 // this could also return the location of the zero crossing
 unsigned int zeroCrossingRate(const std::vector<float>& buffer)
 {
-    jassert(buffer.size() > 0);
+    assert(buffer.size() > 0);
 
     unsigned int crossings = 0;
 

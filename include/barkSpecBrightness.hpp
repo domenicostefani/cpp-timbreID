@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 #include "fftw3.h"
 #include <stdexcept>
+#include <cassert>
 
 #define DEFAULTBOUNDARY 8.5
 
@@ -155,7 +156,7 @@ public:
         this->barkSpacing = barkSpacing;
 
         this->sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
-        jassert(sizeFilterFreqs == this->filterFreqs.size());
+        assert(sizeFilterFreqs == this->filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         this->numFilters = this->sizeFilterFreqs-2;
@@ -534,14 +535,14 @@ private:
         float* fftwIn = &fftwInputVector[0];
         this->fftwPlan = fftwf_plan_dft_r2c_1d(this->analysisWindowSize, fftwIn, this->fftwOut, FFTWPLANNERFLAG);
 
-        jassert(fftwInputVector.size() == analysisWindowSize);
+        assert(fftwInputVector.size() == analysisWindowSize);
 
         // we're supposed to initialize the input array after we create the plan
         for(unsigned long int i=0; i<this->analysisWindowSize; ++i)
             this->fftwInputVector[i] = 0.0f;
 
         this->sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
+        assert(this->sizeFilterFreqs == this->filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         this->numFilters = this->sizeFilterFreqs-2;
@@ -563,7 +564,7 @@ private:
     */
     void storeAudioBlock(const SampleType* input, size_t n) noexcept
     {
-        jassert(n ==  this->blockSize);
+        assert(n ==  this->blockSize);
 
         // shift signal buffer contents back.
         for(unsigned long int i = 0; i < this->analysisWindowSize; ++i)

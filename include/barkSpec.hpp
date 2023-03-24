@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 #include "fftw3.h"
 #include <stdexcept>
+#include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -126,7 +127,7 @@ public:
         this->barkSpacing = barkSpacing;
 
         this->sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
-        jassert(sizeFilterFreqs == this->filterFreqs.size());
+        assert(sizeFilterFreqs == this->filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         this->numFilters = this->sizeFilterFreqs-2;
@@ -539,7 +540,7 @@ private:
             this->fftwInputVector[i] = 0.0f;
 
         this->sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
+        assert(this->sizeFilterFreqs == this->filterFreqs.size());
 
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter

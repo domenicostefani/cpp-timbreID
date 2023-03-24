@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "tIDLib.hpp"
 #include "fftw3.h"
 #include <stdexcept>
+#include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -131,7 +132,7 @@ public:
         std::vector<float> temp_filterFreqs;
 
         temp_sizeFilterFreqs = tIDLib::getMelBoundFreqs(temp_filterFreqs, temp_melSpacing, this->sampleRate);
-        jassert(temp_sizeFilterFreqs == temp_filterFreqs.size());
+        assert(temp_sizeFilterFreqs == temp_filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         temp_numFilters = temp_sizeFilterFreqs-2;
@@ -142,7 +143,7 @@ public:
         this->numFilters = temp_numFilters;
         this->sizeFilterFreqs = temp_sizeFilterFreqs;
         std::swap(this->filterFreqs,temp_filterFreqs);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
+        assert(this->sizeFilterFreqs == this->filterFreqs.size());
 
         this->coefficientsVector.resize(this->numFilters);
         this->dctPlan.precomputeBasis(this->numFilters);
@@ -469,7 +470,7 @@ private:
             this->fftwInputVector[i] = 0.0;
 
         this->sizeFilterFreqs = tIDLib::getMelBoundFreqs(this->filterFreqs, this->melSpacing, this->sampleRate);
-        jassert(this->sizeFilterFreqs == this->filterFreqs.size());
+        assert(this->sizeFilterFreqs == this->filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         this->numFilters = this->sizeFilterFreqs-2;

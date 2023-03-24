@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "tIDLib.hpp"
 #include "fftw3.h"
+#include <cassert>
 
 #define DEBUGLOG_SUBFOLDER "tIDLib-bark"
 #define DEBUGLOG_FILENAME "debug_log_"
@@ -188,9 +189,9 @@ public:
                        "The sample-type of the Bark module must match the sample-type supplied to this store callback");
 
         short numChannels = buffer.getNumChannels();
-        jassert(channel < numChannels);
-        jassert(channel >= 0);
-        jassert(numChannels > 0);
+        assert(channel < numChannels);
+        assert(channel >= 0);
+        assert(numChannels > 0);
 
         if(channel < 0 || channel >= numChannels)
             throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
@@ -708,7 +709,7 @@ private:
 
         sizeFilterFreqs = tIDLib::getBarkBoundFreqs(this->filterFreqs, this->barkSpacing, this->sampleRate);
 
-        jassert(sizeFilterFreqs == this->filterFreqs.size());
+        assert(sizeFilterFreqs == this->filterFreqs.size());
 
         // sizeFilterFreqs-2 is the correct number of filters, since we don't count the start point of the first filter, or the finish point of the last filter
         this->numFilters = this->sizeFilterFreqs-2;
@@ -733,7 +734,7 @@ private:
 
     GrowthData storeAudioBlock(const SampleType* input, size_t n)
     {
-        jassert(n ==  this->blockSize);
+        assert(n ==  this->blockSize);
 
         GrowthData growthData;
         unsigned long int window, windowHalf;

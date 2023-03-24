@@ -17,6 +17,7 @@
 
 #include <JuceHeader.h>
 #include "juce_timbreID.h"
+#include <cassert>
 
 
 namespace FE {
@@ -265,7 +266,7 @@ public:
             /-----------------------------------------*/
             barkSpecRes = this->barkSpec.compute();
 
-            jassert(barkSpecRes.size() == _BARKSPEC_RES_SIZE);
+            assert(barkSpecRes.size() == _BARKSPEC_RES_SIZE);
             for(int i=0; i<_BARKSPEC_RES_SIZE; ++i)
             {
                 featureVector[(last+1) + i] = barkSpecRes[i];
@@ -282,7 +283,7 @@ public:
             | 04 - Bark Frequency Cepstral Coefficients |
             /------------------------------------------*/
             bfccRes = this->bfcc.compute();
-            jassert(bfccRes.size() == _BFCC_RES_SIZE);
+            assert(bfccRes.size() == _BFCC_RES_SIZE);
             for(int i=0; i<_BFCC_RES_SIZE; ++i)
             {
                 featureVector[(last+1) + i] = bfccRes[i];
@@ -299,7 +300,7 @@ public:
             | 05 - Cepstrum Coefficients                |
             /------------------------------------------*/
             cepstrumRes = this->cepstrum.compute();
-            jassert(cepstrumRes.size() == _CEPSTRUM_RES_SIZE);
+            assert(cepstrumRes.size() == _CEPSTRUM_RES_SIZE);
             for(int i=0; i<_CEPSTRUM_RES_SIZE; ++i)
             {
                 featureVector[(last+1) + i] = cepstrumRes[i];
@@ -316,7 +317,7 @@ public:
             | 06 - Mel Frequency Cepstral Coefficients |
             /-----------------------------------------*/
             mfccRes = this->mfcc.compute();
-            jassert(mfccRes.size() == _MFCC_RES_SIZE);
+            assert(mfccRes.size() == _MFCC_RES_SIZE);
             for(int i=0; i<_MFCC_RES_SIZE; ++i)
             {
                 featureVector[(last+1) + i] = mfccRes[i];

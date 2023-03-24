@@ -12,6 +12,7 @@ Date: 25th August 2020
 #pragma once
 
 #include <aubio.h>
+#include <cassert>
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -176,9 +177,9 @@ public:
         static_assert (std::is_same<OtherSampleType, SampleType>::value,
                        "The sample-type of the Onset module must match the sample-type supplied to this store callback");
         short numChannels = buffer.getNumChannels();
-        jassert(channel < numChannels);
-        jassert(channel >= 0);
-        jassert(numChannels > 0);
+        assert(channel < numChannels);
+        assert(channel >= 0);
+        assert(numChannels > 0);
 
         if(channel < 0 || channel >= numChannels)
             throw std::invalid_argument("Channel index has to be between 0 and " + std::to_string(numChannels));
@@ -276,7 +277,7 @@ private:
             signalBuffer[this->dspTick+i] = input[i];
 
         int numSamples = this->dspTick + n;
-        jassert(numSamples < this->blockSize + this->hopSize);
+        assert(numSamples < this->blockSize + this->hopSize);
         int turns = numSamples/hopSize;
 
        #ifdef VERBOSE_PERFORM
