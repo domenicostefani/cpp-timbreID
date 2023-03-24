@@ -127,13 +127,13 @@ public:
         unsigned long int windowHalf = this->analysisWindowSize * 0.5f;
 
        #if ASYNC_FEATURE_EXTRACTION
-        uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        uint32 offsetSample = roundf((currentTime / 1000.0f) * this->sampleRate);
+        uint32_t currentTime = tid::Time::getTimeSince(this->lastStoreTime);
+        uint32_t offsetSample = roundf((currentTime / 1000.0f) * this->sampleRate);
         if (offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
        #else
         if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
-        uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
+        uint32_t offsetSample = (uint32_t)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
         // construct analysis window using offsetSample as the end of the window
@@ -252,7 +252,7 @@ public:
      * Window size is not required to be a power of two.
      * @param windowSize the size of the window
     */
-    void setWindowSize(uint32 windowSize)
+    void setWindowSize(uint32_t windowSize)
     {
         if (windowSize < tIDLib::MINWINDOWSIZE)
             throw std::invalid_argument("Window size must be " + std::to_string(tIDLib::MINWINDOWSIZE) + " or greater");
@@ -380,7 +380,7 @@ private:
             this->signalBuffer[this->analysisWindowSize + i] = input[i];
 
        #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = juce::Time::currentTimeMillis();
+        this->lastStoreTime = tid::Time::currentTimeMillis();
        #endif
     }
 
@@ -395,7 +395,7 @@ private:
         this->spectrumTypeUsed = tIDLib::SpectrumType::magnitudeSpectrum;
         this->cepstrumTypeUsed = tIDLib::CepstrumType::magnitudeCepstrum;
        #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = juce::Time::currentTimeMillis();
+        this->lastStoreTime = tid::Time::currentTimeMillis();
        #endif
         this->spectrumOffset = false;
 
@@ -456,7 +456,7 @@ private:
     bool spectrumOffset;
 
    #if ASYNC_FEATURE_EXTRACTION
-    uint32 lastStoreTime; // replaces x_lastDspTime
+    uint32_t lastStoreTime; // replaces x_lastDspTime
    #endif
 
     std::vector<SampleType> signalBuffer;

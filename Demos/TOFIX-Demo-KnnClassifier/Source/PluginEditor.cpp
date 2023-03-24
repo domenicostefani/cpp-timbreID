@@ -328,16 +328,16 @@ void DemoEditor::buttonClicked (Button * button)
         std::vector<std::string> indexesVec = splitString(indexes,',');
         std::cout << "done the split" << "\n";
 
-        uint32 numClusters = indexesVec.size() -1;
+        uint32_t numClusters = indexesVec.size() -1;
 
-        uint32 clusterIdx = 0;
-        uint32 lowIdx = std::stoi(indexesVec[0]);
+        uint32_t clusterIdx = 0;
+        uint32_t lowIdx = std::stoi(indexesVec[0]);
 
         for(size_t i = 1; i < indexesVec.size(); ++i)
         {
             std::string s = indexesVec[i];
             std::cout << "> '" << s << "'\n";
-            uint32 highIdx = std::stoi(s);
+            uint32_t highIdx = std::stoi(s);
 
 
             std::cout << "> manualCluster(" << numClusters << "," << clusterIdx << "," << lowIdx << "," << highIdx-1 << ")\n";

@@ -37,7 +37,7 @@ DemoProcessor::~DemoProcessor(){}
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // PREPARE THE MODULE
-    peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
+    peakSample.prepare(sampleRate, (uint32_t)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()
@@ -68,7 +68,7 @@ std::pair<float, unsigned long int> DemoProcessor::computePeakSample(){
 /**
  * Utility method
 */
-uint32 DemoProcessor::getWindowSize(){
+uint32_t DemoProcessor::getWindowSize(){
     return peakSample.getWindowSize();
 }
 

@@ -86,7 +86,7 @@ public:
     const std::string LOG_FILENAME = "headlessKnn";
     const std::string LOG_EXTENSION = ".log";
 
-    uint32 logCounter = 0;
+    uint32_t logCounter = 0;
 
 
 private:

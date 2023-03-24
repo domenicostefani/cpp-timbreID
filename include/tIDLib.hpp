@@ -26,12 +26,12 @@ typedef unsigned int t_instanceIdx;
  * relation to the time of computation.
  * 
  * This should remain disabled (FALSE) for the following reasons:
- *  - Modules currently use juce::Time::currentTimeMillis() which IS NOT A STEADY CLOCK (https://forum.juce.com/t/time-currenttimemillis-goes-back-in-time-sometimes/16440/6)
+ *  - Modules currently use tid::Time::currentTimeMillis() which IS NOT A STEADY CLOCK (https://forum.juce.com/t/time-currenttimemillis-goes-back-in-time-sometimes/16440/6)
  *    Time::getMillisecondCounter() or Time::getMillisecondCounterHiRes() should be used instead (AT LEAST, check next bullet point).
  *  - IT IS ONLY FOR REAL TIME : If it is needed to run the modules quicker than real time (render in DAW), even JUCE's steady timers 
  *                               should be avoided since time intervals lose their relationship with samples in offline contexts.
  *  - Small block sizes and high samplerates reduce the relevance of this nuance (64samples at 48kHz is ~1.33ms), rendering this less useful.
- *  * More: juce::Time::currentTimeMillis() causes catastrophic failure on the real-time OS Xenomai (Elk Audio OS).
+ *  * More: tid::Time::currentTimeMillis() causes catastrophic failure on the real-time OS Xenomai (Elk Audio OS).
  */
 #define ASYNC_FEATURE_EXTRACTION false
 

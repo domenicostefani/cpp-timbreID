@@ -67,7 +67,7 @@ void DemoEditor::buttonClicked (Button * button){
     if(button == &this->computeButton)
     {
         bgColor = Colours::aliceblue;
-        uint32 crossings = processor.computeZeroCrossing();
+        uint32_t crossings = processor.computeZeroCrossing();
         std::cout << "crossings: " << crossings << std::endl;
         this->mCrossings = crossings;
         updateDataLabel();

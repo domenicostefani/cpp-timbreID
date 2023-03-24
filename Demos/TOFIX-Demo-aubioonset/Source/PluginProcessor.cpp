@@ -53,7 +53,7 @@ void DemoaubioonsetAudioProcessor::processBlock (AudioBuffer<float>& buffer, Mid
 
 void DemoaubioonsetAudioProcessor::onsetDetected (tid::aubio::Onset<float> *)
 {
-    std::cout << ("Onset Detected " + std::to_string(juce::Time::getApproximateMillisecondCounter())) << "\n";
+    std::cout << ("Onset Detected " + std::to_string(tid::Time::getApproximateMillisecondCounter())) << "\n";
 
 }
 

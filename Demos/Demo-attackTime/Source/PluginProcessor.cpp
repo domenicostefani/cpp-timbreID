@@ -37,7 +37,7 @@ DemoProcessor::~DemoProcessor(){}
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // PREPARE THE MODULE
-    attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
+    attackTime.prepare(sampleRate, (uint32_t)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()

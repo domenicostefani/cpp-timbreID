@@ -55,7 +55,7 @@ public:
 
     //==============================================================================
     /** Initialization of the module */
-    void prepare (double sampleRate, uint32 blockSize) noexcept
+    void prepare (double sampleRate, uint32_t blockSize) noexcept
     {
         if((sampleRate != this->sampleRate) || (blockSize != this->blockSize))
         {
@@ -72,7 +72,7 @@ public:
         std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
         std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
        #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = juce::Time::currentTimeMillis();
+        this->lastStoreTime = tid::Time::currentTimeMillis();
        #endif
     }
 
@@ -93,18 +93,18 @@ public:
     void compute(float &_peak, unsigned long int &_peakIdx)
     {
        #if ASYNC_FEATURE_EXTRACTION
-        uint32 currentTime = tid::Time::getTimeSince(this->lastStoreTime);
+        uint32_t currentTime = tid::Time::getTimeSince(this->lastStoreTime);
         if(currentTime > blockSize*sampleRate)
             throw std::logic_error("Clock measure may have overflowed");
 
-        uint32 offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+        uint32_t offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
 
         // If the period was too long, we cap the maximum number of samples, which is @blockSize
         if(offsetSample >= this->blockSize)
             offsetSample = this->blockSize - 1;
        #else
         if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
-        uint32 offsetSample = (uint32)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
+        uint32_t offsetSample = (uint32_t)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
        #endif
 
     	// construct analysis window using offsetSample as the end of the window
@@ -139,13 +139,13 @@ public:
         return std::make_pair(peak,peakIdx);
     }
 
-    void setWindowSize(uint32 windowSize)
+    void setWindowSize(uint32_t windowSize)
     {
         this->analysisWindowSize = windowSize;
         resizeBuffers();
     }
 
-    uint32 getWindowSize() const
+    uint32_t getWindowSize() const
     {
         return this->analysisWindowSize;
     }
@@ -193,20 +193,20 @@ private:
     		signalBuffer[analysisWindowSize+i] = input[i];
 
        #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = juce::Time::currentTimeMillis();
+        this->lastStoreTime = tid::Time::currentTimeMillis();
        #endif
     }
 
     //==============================================================================
     double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
-    uint32 blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
+    uint32_t blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
     uint64 analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
 
     std::vector<SampleType> signalBuffer;
     std::vector<float> analysisBuffer;
 
    #if ASYNC_FEATURE_EXTRACTION
-    uint32 lastStoreTime = juce::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
+    uint32_t lastStoreTime = tid::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
    #endif
 
     //==============================================================================

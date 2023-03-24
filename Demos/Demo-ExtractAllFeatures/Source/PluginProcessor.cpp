@@ -96,8 +96,8 @@ void DemoProcessor::logInCsvSpecial(std::string messagestr)
         rtlogger.logInfo("ERROR: csv buffer full");
     else
     {
-        currentEntry->onsetDetectionTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
-        currentEntry->featureComputationTime = sampleCounter; // juce::Time::getMillisecondCounterHiRes();
+        currentEntry->onsetDetectionTime = sampleCounter; // tid::Time::getMillisecondCounterHiRes();
+        currentEntry->featureComputationTime = sampleCounter; // tid::Time::getMillisecondCounterHiRes();
         currentEntry->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;
         currentEntry->sampleRate = this->pluginSampleRate;
         currentEntry->blockSize = this->pluginBlockSize;
@@ -229,7 +229,7 @@ void DemoProcessor::onsetDetected (tid::aubio::Onset<float> *aubioOnset){
     if(aubioOnset == &this->aubioOnset)
     {
         this->onsetMonitorState.exchange(true);
-        this->lastOnsetDetectionTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes();
+        this->lastOnsetDetectionTime = sampleCounter; //tid::Time::getMillisecondCounterHiRes();
        #ifdef DO_DELAY_ONSET
         if(postOnsetTimer.isIdle())
         {
@@ -272,7 +272,7 @@ void DemoProcessor::onsetDetectedRoutine ()
             | 2. ADD METADATA     |
             /--------------------*/
             currentFV->onsetDetectionTime = this->lastOnsetDetectionTime; //double
-            currentFV->featureComputationTime = sampleCounter; //juce::Time::getMillisecondCounterHiRes(); //double
+            currentFV->featureComputationTime = sampleCounter; //tid::Time::getMillisecondCounterHiRes(); //double
             currentFV->featureExtractionWindowSize = DEFINED_WINDOW_SIZE;   // int
             currentFV->sampleRate = this->pluginSampleRate;   // int
             currentFV->blockSize = this->pluginBlockSize;    // int

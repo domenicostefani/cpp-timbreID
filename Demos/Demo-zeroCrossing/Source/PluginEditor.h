@@ -43,7 +43,7 @@ private:
 
     double mSampleRate = 0;
     int mBlockSize = 0;
-    uint32 mCrossings = 0;
+    uint32_t mCrossings = 0;
 
     void updateDataLabel();
     void updateResLabel();

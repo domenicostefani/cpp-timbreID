@@ -33,7 +33,7 @@ public:
     }
 
     void processBlock(AudioBuffer<float>& buffer,int channel = 0) {
-        uint32 startSample = 0;
+        uint32_t startSample = 0;
         for (int sample = 0; sample < buffer.getNumSamples();++sample) {
             float* const bufferWritePtr = buffer.getWritePointer(channel, startSample);
             const float* bufferReadPtr = buffer.getReadPointer(channel, startSample);

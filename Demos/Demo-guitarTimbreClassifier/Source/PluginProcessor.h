@@ -373,7 +373,7 @@ public:
   #ifndef FAST_MODE_1
     /**    Debugging    */
    #ifdef DEBUG_WHICH_CHANNEL
-    uint32 logCounter = 0;  //To debug which channel to use
+    uint32_t logCounter = 0;  //To debug which channel to use
    #endif
     /**    Profiling    **/
    #ifdef MEASURE_COMPUTATION_LATENCY

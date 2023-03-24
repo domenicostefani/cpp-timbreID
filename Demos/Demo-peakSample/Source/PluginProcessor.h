@@ -60,7 +60,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     std::pair<float, unsigned long int> computePeakSample();
-    uint32 getWindowSize();
+    uint32_t getWindowSize();
 private:
     const unsigned long int WINDOW_SIZE = 1024;
     tid::PeakSample<float> peakSample{WINDOW_SIZE};

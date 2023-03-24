@@ -132,7 +132,7 @@ public:
     //============================== OTHER =====================================
     /**    Debugging    */
    #ifdef DEBUG_WHICH_CHANNEL
-    uint32 logCounter = 0;  //To debug which channel to use
+    uint32_t logCounter = 0;  //To debug which channel to use
    #endif
 
     /**    Logging    **/

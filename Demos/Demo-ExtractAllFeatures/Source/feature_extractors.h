@@ -145,14 +145,14 @@ public:
 
     void prepare(double sampleRate, unsigned int samplesPerBlock) {
         /** Prepare feature extractors **/
-        bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-        cepstrum.prepare(sampleRate, (uint32)samplesPerBlock);
-        attackTime.prepare(sampleRate, (uint32)samplesPerBlock);
-        barkSpecBrightness.prepare(sampleRate, (uint32)samplesPerBlock);
-        barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
-        mfcc.prepare(sampleRate, (uint32)samplesPerBlock);
-        peakSample.prepare(sampleRate, (uint32)samplesPerBlock);
-        zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+        bfcc.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        cepstrum.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        attackTime.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        barkSpecBrightness.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        barkSpec.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        mfcc.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        peakSample.prepare(sampleRate, (uint32_t)samplesPerBlock);
+        zeroCrossing.prepare(sampleRate, (uint32_t)samplesPerBlock);
     }
 
     void reset() {
@@ -348,7 +348,7 @@ public:
             /*-----------------------------------------/
             | 08 - Zero Crossings                      |
             /-----------------------------------------*/
-            uint32 crossings = this->zeroCrossing.compute();
+            uint32_t crossings = this->zeroCrossing.compute();
             featureVector[last+1] = crossings;
             newLast = last +1;
            #ifdef LOG_SIZES

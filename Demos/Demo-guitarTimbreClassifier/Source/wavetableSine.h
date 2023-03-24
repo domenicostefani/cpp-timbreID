@@ -45,7 +45,7 @@ public:
     }
 
     void processBlock(AudioBuffer<float>& buffer) {
-        uint32 startSample = 0;
+        uint32_t startSample = 0;
         phase = phaseAtBufferStart;
         for (int sample = 0; sample < buffer.getNumSamples();++sample) {
             updateFrequency();
@@ -86,7 +86,7 @@ private:
         phaseAtBufferStart,
         increment,
         frequency;
-    uint32 samplesPerBlock;
+    uint32_t samplesPerBlock;
     double amplitude, newFrequency = 440;
     int sampleRate;
 

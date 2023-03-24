@@ -247,7 +247,7 @@ DemoProcessor::DemoProcessor()
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
     snprintf(message,sizeof(message),"Model path set to '%s'",MODEL_PATH.c_str());
     rtlogger.logInfo(message);   
-    double modelLoadTime = juce::Time::getMillisecondCounterHiRes();
+    double modelLoadTime = tid::Time::getMillisecondCounterHiRes();
    #endif
     // DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, true); // true = verbose cout
     DemoProcessor::timbreClassifier = createClassifier(MODEL_PATH, false); // true = verbose cout
@@ -257,10 +257,10 @@ DemoProcessor::DemoProcessor()
         throw std::logic_error("Classifier object could not be created");
     }
    #ifndef FAST_MODE_1
-    rtlogger.logValue("Classifier object instantiated at time:  ",juce::Time::getMillisecondCounterHiRes());
-    std::cout << "Classifier object instantiated at time:  " << juce::Time::getMillisecondCounterHiRes() << std::endl << std::flush;
-    rtlogger.logValue("(Classifier object created in ",(juce::Time::getMillisecondCounterHiRes()-modelLoadTime),"ms");
-    std::cout << "(Classifier object created in " << (juce::Time::getMillisecondCounterHiRes()-modelLoadTime) << "ms)" << std::endl << std::flush;
+    rtlogger.logValue("Classifier object instantiated at time:  ",tid::Time::getMillisecondCounterHiRes());
+    std::cout << "Classifier object instantiated at time:  " << tid::Time::getMillisecondCounterHiRes() << std::endl << std::flush;
+    rtlogger.logValue("(Classifier object created in ",(tid::Time::getMillisecondCounterHiRes()-modelLoadTime),"ms");
+    std::cout << "(Classifier object created in " << (tid::Time::getMillisecondCounterHiRes()-modelLoadTime) << "ms)" << std::endl << std::flush;
    #endif
 
     suspendProcessing (false);
@@ -291,7 +291,7 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         aubioOnset.setAdaptiveWhitening(false);
     aubioOnset.prepare(sampleRate,samplesPerBlock);
    #else
-    bark.prepare(sampleRate, (uint32)samplesPerBlock);
+    bark.prepare(sampleRate, (uint32_t)samplesPerBlock);
    #endif
 
     /** INIT POST ONSET TIMER **/
@@ -494,7 +494,7 @@ void DemoProcessor::onsetDetected (tid::Bark<float> * bark)
 #endif
       #ifndef FAST_MODE_1
        #ifdef MEASURE_COMPUTATION_LATENCY
-        latencyTime = juce::Time::getMillisecondCounterHiRes();
+        latencyTime = tid::Time::getMillisecondCounterHiRes();
        #endif
       #endif
 
@@ -529,8 +529,8 @@ void DemoProcessor::onsetDetectedRoutine ()
 
     /** LOG BEGINNING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("Feature extraction started at ",juce::Time::getMillisecondCounterHiRes());
-    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
+    rtlogger.logValue("Feature extraction started at ",tid::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(",(tid::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
   #endif
 
@@ -543,8 +543,8 @@ void DemoProcessor::onsetDetectedRoutine ()
   #ifndef FAST_MODE_1
     /** LOG ENDING OF FEATURE EXTRACTION **/
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("Feature extraction stopped at ",juce::Time::getMillisecondCounterHiRes());
-    rtlogger.logValue("(Feature extraction stopped ",(juce::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
+    rtlogger.logValue("Feature extraction stopped at ",tid::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("(Feature extraction stopped ",(tid::Time::getMillisecondCounterHiRes() - latencyTime),"ms after onset detection)");
    #endif
   #endif
 
@@ -553,8 +553,8 @@ void DemoProcessor::onsetDetectedRoutine ()
     /----------------------------------*/
   #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
-    rtlogger.logValue("(",(juce::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection}");
-    this->classf_start = juce::Time::getMillisecondCounterHiRes();
+    rtlogger.logValue("(",(tid::Time::getMillisecondCounterHiRes()-latencyTime),"ms after onset detection}");
+    this->classf_start = tid::Time::getMillisecondCounterHiRes();
    #endif
   #endif
 
@@ -575,7 +575,7 @@ void DemoProcessor::onsetDetectedRoutine ()
                        classificationOutputVector.data(),\
                        classificationOutputVector.size(), false);
     this->chrono_end = std::chrono::high_resolution_clock::now();
-    this->classf_end = juce::Time::getMillisecondCounterHiRes();
+    this->classf_end = tid::Time::getMillisecondCounterHiRes();
     classificationFinished();
    #endif
 }
@@ -587,7 +587,7 @@ void DemoProcessor::classificationFinished()
    #ifdef MEASURE_COMPUTATION_LATENCY
     #ifndef SEQUENTIAL_CLASSIFICATION
         this->chrono_end = std::chrono::high_resolution_clock::now();
-        this->classf_end = juce::Time::getMillisecondCounterHiRes();
+        this->classf_end = tid::Time::getMillisecondCounterHiRes();
     #endif
     rtlogger.logValue("Classification started at ",this->classf_start);
     rtlogger.logValue("Classification stopped at ",this->classf_end);
@@ -602,9 +602,9 @@ void DemoProcessor::classificationFinished()
     char message[tid::RealTimeLogger::LogEntry::MESSAGE_LENGTH];
   
    #ifdef DEBUG_WITH_SPIKE
-    rtlogger.logValue("CreatingLogSignal started at",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("CreatingLogSignal started at",tid::Time::getMillisecondCounterHiRes());
     squaredsinewt.playHalfwave();
-    rtlogger.logValue("CreatingLogSignal stopped at",juce::Time::getMillisecondCounterHiRes());
+    rtlogger.logValue("CreatingLogSignal stopped at",tid::Time::getMillisecondCounterHiRes());
    #endif
 
     // Simple argmax

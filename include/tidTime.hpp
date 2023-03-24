@@ -6,9 +6,9 @@ namespace tid   /* TimbreID namespace*/
 class Time
 {
 public:
-    static uint32 getTimeSince(uint32 lastTime)
+    static uint32_t getTimeSince(uint32_t lastTime)
     {
-        return (juce::Time::currentTimeMillis() - lastTime);
+        return (tid::Time::currentTimeMillis() - lastTime);
     }
 };
 

@@ -107,8 +107,8 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     /** PREPARE THE BARK MODULEs **/
     this->jLogger->logMessage("prepareToPlay() was called");
-    bark.prepare(sampleRate, (uint32)samplesPerBlock);
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+    bark.prepare(sampleRate, (uint32_t)samplesPerBlock);
+    bfcc.prepare(sampleRate, (uint32_t)samplesPerBlock);
     sinewt.prepareToPlay(sampleRate);
 }
 

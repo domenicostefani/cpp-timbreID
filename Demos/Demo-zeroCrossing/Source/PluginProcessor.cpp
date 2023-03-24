@@ -37,7 +37,7 @@ DemoProcessor::~DemoProcessor(){}
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // PREPARE THE MODULE
-    zeroCrossing.prepare(sampleRate, (uint32)samplesPerBlock);
+    zeroCrossing.prepare(sampleRate, (uint32_t)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()
@@ -60,7 +60,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
 /**
  * Utility method
 */
-uint32 DemoProcessor::computeZeroCrossing(){
+uint32_t DemoProcessor::computeZeroCrossing(){
     // COMPUTE THE NUMBER OF CROSSING IN THE ANALYSIS BUFFER
     return zeroCrossing.compute();
 }
@@ -68,7 +68,7 @@ uint32 DemoProcessor::computeZeroCrossing(){
 /**
  * Utility method
 */
-uint32 DemoProcessor::getWindowSize(){
+uint32_t DemoProcessor::getWindowSize(){
     return zeroCrossing.getWindowSize();
 }
 

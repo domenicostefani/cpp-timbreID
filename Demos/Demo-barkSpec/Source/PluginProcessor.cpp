@@ -34,7 +34,7 @@ DemoProcessor::~DemoProcessor(){    /*DESTRUCTOR*/        }
 void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     /** PREPARE THE BARK MODULE **/
-    barkSpec.prepare(sampleRate, (uint32)samplesPerBlock);
+    barkSpec.prepare(sampleRate, (uint32_t)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()

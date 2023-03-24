@@ -63,11 +63,11 @@ void DemoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     aubioOnset.prepare(sampleRate,samplesPerBlock); // Important step
    #else
     /** PREPARE THE BARK MODULEs **/
-    bark.prepare(sampleRate, (uint32)samplesPerBlock);
+    bark.prepare(sampleRate, (uint32_t)samplesPerBlock);
    #endif
 
     rtlogger.logInfo("Setting up BFCC extractor");
-    bfcc.prepare(sampleRate, (uint32)samplesPerBlock);
+    bfcc.prepare(sampleRate, (uint32_t)samplesPerBlock);
 }
 
 void DemoProcessor::releaseResources()

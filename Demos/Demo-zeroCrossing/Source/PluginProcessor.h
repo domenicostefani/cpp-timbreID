@@ -59,8 +59,8 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    uint32 computeZeroCrossing();
-    uint32 getWindowSize();
+    uint32_t computeZeroCrossing();
+    uint32_t getWindowSize();
 private:
     unsigned long int WINDOW_SIZE = 1024;
     tid::ZeroCrossing<float> zeroCrossing{WINDOW_SIZE};
