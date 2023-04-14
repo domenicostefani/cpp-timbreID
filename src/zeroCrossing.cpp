@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 */
 
-#include "tIDLib.hpp"
+#include "tIDLib.h"
 #include <vector>
 #include <cassert>
 

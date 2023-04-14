@@ -36,16 +36,16 @@ include_directories(test PRIVATE "libs/")
 
 add_library(${LIB_NAME}
     src/attackTime.cpp
-    src/barkSpecBrightness.cpp
-    src/barkSpec.cpp
-    src/bfcc.cpp
-    src/bin2freq.cpp
-    src/cepstrum.cpp
-    src/freq2bin.cpp
-    src/mfcc.cpp
-    src/peakSample.cpp
-    src/tIDLib.cpp
-    src/zeroCrossing.cpp
+    # src/barkSpecBrightness.cpp
+    # src/barkSpec.cpp
+    # src/bfcc.cpp
+    # src/bin2freq.cpp
+    # src/cepstrum.cpp
+    # src/freq2bin.cpp
+    # src/mfcc.cpp
+    # src/peakSample.cpp
+    # src/tIDLib.cpp
+    # src/zeroCrossing.cpp
 )
 target_link_libraries(${LIB_NAME}
     fftw3f

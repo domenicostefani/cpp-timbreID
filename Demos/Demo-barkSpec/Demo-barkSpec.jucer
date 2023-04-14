@@ -38,7 +38,7 @@
       <FILE id="AofiyE" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
       <FILE id="oLO7w8" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
       <FILE id="TpIWkI" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
-      <FILE id="ZaEZF8" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
+      <FILE id="ZaEZF8" name="tIDLib.h" compile="0" resource="0" file="../../include/tIDLib.h"/>
       <FILE id="UmO6PC" name="tidRTLog.hpp" compile="0" resource="0" file="../../include/tidRTLog.hpp"/>
       <FILE id="RWZq1n" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
       <FILE id="Il9ppJ" name="zeroCrossing.hpp" compile="0" resource="0"

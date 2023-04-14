@@ -127,7 +127,7 @@ public:
 //     std::unique_ptr<FileLogger> fileLogger; // Logger that writes RT entries to file SAFELY (Outside rt thread
 //     std::string LOG_PATH = "/tmp/";
 //     std::string LOG_FILENAME = "KnnClassifierDemo";
-//     const int64 highResFrequency = Time::getHighResolutionTicksPerSecond();
+//     const int64_thighResFrequency = Time::getHighResolutionTicksPerSecond();
 
 //     /**
 //      * Timer that calls a function every @interval milliseconds.

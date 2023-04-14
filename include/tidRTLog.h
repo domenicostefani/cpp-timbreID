@@ -15,10 +15,9 @@
 
 #pragma once
 
-#include <JuceHeader.h>
 #include <cstring>  // For strncpy
 #include <memory>   // For unique_ptr
-#include "choc/choc_SingleReaderSingleWriterFIFO.h"  // Jules' thread safe fifo buffer implementation
+#include "choc/containers/choc_SingleReaderSingleWriterFIFO.h"  // Jules' thread safe fifo buffer implementation
 
 namespace tid   /* TimbreID namespace*/
 {
@@ -32,7 +31,7 @@ public:
     /** Entry in the log */
     struct LogEntry {
         static const int MESSAGE_LENGTH = 240;       // Length of messages in the fifo buffer
-        int64 timeAtStart,  // Intended to log time intervals
+        int64_ttimeAtStart,  // Intended to log time intervals
             timeAtEnd;    // Intended to log time intervals
         char message[MESSAGE_LENGTH+1];
     };
@@ -42,7 +41,7 @@ public:
                                        this->name = name;};
     ~RealTimeLogger() { };
 
-    bool logInfo(const char message[], int64 timeAtStart, int64 timeAtEnd);
+    bool logInfo(const char message[], int64_ttimeAtStart, int64_ttimeAtEnd);
     bool logInfo(const char message[], const char suffix[]=nullptr);
 
     bool logValue(const char message[], int value, const char suffix[]=nullptr);
@@ -60,7 +59,7 @@ private:
 };
 
 /** Add message to the log buffer */
-inline bool RealTimeLogger::logInfo(const char message[], int64 timeAtStart, int64 timeAtEnd)
+inline bool RealTimeLogger::logInfo(const char message[], int64_ttimeAtStart, int64_ttimeAtEnd)
 {
     LogEntry logEntry;
     logEntry.timeAtStart = timeAtStart;

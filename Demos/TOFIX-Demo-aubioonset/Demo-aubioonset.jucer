@@ -25,7 +25,7 @@
           <FILE id="UjeYeT" name="mel2freq.hpp" compile="0" resource="0" file="../../include/mel2freq.hpp"/>
           <FILE id="eaj1TB" name="mfcc.hpp" compile="0" resource="0" file="../../include/mfcc.hpp"/>
           <FILE id="HCNPxP" name="peakSample.hpp" compile="0" resource="0" file="../../include/peakSample.hpp"/>
-          <FILE id="Hbgwpv" name="tIDLib.hpp" compile="0" resource="0" file="../../include/tIDLib.hpp"/>
+          <FILE id="Hbgwpv" name="tIDLib.h" compile="0" resource="0" file="../../include/tIDLib.h"/>
           <FILE id="qM5ErA" name="tidTime.hpp" compile="0" resource="0" file="../../include/tidTime.hpp"/>
           <FILE id="EpW1Ks" name="zeroCrossing.hpp" compile="0" resource="0"
                 file="../../include/zeroCrossing.hpp"/>

@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #pragma once
 
-#include "tIDLib.hpp"
+#include "tIDLib.h"
 #include "fftw3.h"
 #include <cassert>
 

@@ -407,7 +407,7 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     /** LOG THE DIFFERENT TIMESTAMPS FOR LATENCY COMPUTATION **/
   #ifndef FAST_MODE_1
    #ifdef MEASURE_COMPUTATION_LATENCY
-    int64 timeAtBlockStart = 0;
+    int64_ttimeAtBlockStart = 0;
     if (++logProcessblock_counter >= logProcessblock_period)
     {
         logProcessblock_fixedCounter += logProcessblock_counter; // Add the number of processed blocks to the total
