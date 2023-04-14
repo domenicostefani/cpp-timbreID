@@ -31,6 +31,7 @@ FetchContent_MakeAvailable(googletest)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(test PRIVATE "include/")
+include_directories(test PRIVATE "libs/")
 
 
 add_library(${LIB_NAME}

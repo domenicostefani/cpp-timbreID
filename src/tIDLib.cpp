@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #include "tIDLib.hpp"
 
-#include <JuceHeader.h>
 #include <cmath>
 #include <vector>
 #include <cfloat>   // FLT_MAX
