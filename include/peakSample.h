@@ -22,6 +22,13 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #pragma once
 
+#include "tIDLib.h"
+#include <vector>
+#include <cfloat>   // FLT_MAX
+#include <climits>  // ULONG_MAX
+#include <stdexcept>
+#include <cassert>
+
 namespace tid   /* TimbreID namespace*/
 {
 

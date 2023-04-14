@@ -271,4 +271,7 @@ void AttackTime<SampleType>::storeAudioBlock (const SampleType* input, size_t n)
     #endif
 }
 
+
+template class AttackTime<float>;
+template class AttackTime<double>;
 } // namespace tid

@@ -1,5 +1,11 @@
 #pragma once
 
+
+#include "tIDLib.h"
+#include "fftw3.h"
+#include <stdexcept>
+#include <cassert>
+
 namespace tid
 {
 

@@ -22,6 +22,11 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #pragma once
 
+#include "tIDLib.h"
+#include "fftw3.h"
+#include <stdexcept>
+#include <cassert>
+
 #define DEFAULTBOUNDARY 8.5 //TODO: handle this
 
 namespace tid

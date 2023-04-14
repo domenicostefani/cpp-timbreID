@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
-project(TFliteWrapper C CXX)
 set(LIB_NAME timbreid)
+project(${LIB_NAME} C CXX)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -36,16 +36,14 @@ include_directories(test PRIVATE "libs/")
 
 add_library(${LIB_NAME}
     src/attackTime.cpp
-    # src/barkSpecBrightness.cpp
-    # src/barkSpec.cpp
-    # src/bfcc.cpp
-    # src/bin2freq.cpp
-    # src/cepstrum.cpp
-    # src/freq2bin.cpp
-    # src/mfcc.cpp
-    # src/peakSample.cpp
-    # src/tIDLib.cpp
-    # src/zeroCrossing.cpp
+    src/barkSpecBrightness.cpp
+    src/barkSpec.cpp
+    src/bfcc.cpp
+    src/cepstrum.cpp
+    src/mfcc.cpp
+    src/peakSample.cpp
+    src/tIDLib.cpp
+    src/zeroCrossing.cpp
 )
 target_link_libraries(${LIB_NAME}
     fftw3f
@@ -68,7 +66,7 @@ target_link_libraries(${LIB_NAME}
 # )
 
 
-
+enable_testing()
 
 
 
@@ -81,10 +79,10 @@ add_executable(base_tests
 )
 target_link_libraries(base_tests
     gtest_main
-)
-target_link_libraries(base_tests
     ${LIB_NAME}
 )
+# target_link_libraries(base_tests
+# )
 
 include(GoogleTest)
 gtest_discover_tests(base_tests)

@@ -1,6 +1,7 @@
 /*
 
-peakSample - Bridge-header between Juce and the TimbreID peakSample method
+template <typename SampleType>
+PeakSample<SampleType>::PeakSample - Bridge-header between Juce and the TimbreID peakSample method
 - Originally part of timbreID (Pd library module) by William Brent
 - Ported for JUCE usage by Domenico Stefani, 26th March 2020
   (domenico.stefani96@gmail.com)
@@ -21,196 +22,165 @@ You should have received a copy of the GNU General Public License along with thi
 
 */
 
-#include "tIDLib.h"
-#include <vector>
-
-#include <cfloat>   // FLT_MAX
-#include <climits>  // ULONG_MAX
-#include <stdexcept>
-#include <cassert>
+#include "peakSample.h"
 
 namespace tid   /* TimbreID namespace*/
 {
 
+//==============================================================================
+/** Creates a PeakSample module with default parameters. */
+
 template <typename SampleType>
-class PeakSample
+PeakSample<SampleType>::PeakSample(){ resizeBuffers(); reset(); }
+
+template <typename SampleType>
+PeakSample<SampleType>::PeakSample(unsigned long int windowSize){
+    this->analysisWindowSize = windowSize;
+    resizeBuffers();
+    reset();
+}
+
+
+//==============================================================================
+/** Initialization of the module */
+template <typename SampleType>
+void PeakSample<SampleType>::prepare (double sampleRate, uint32_t blockSize) noexcept
 {
-public:
-
-    //==============================================================================
-    /** Creates a PeakSample module with default parameters. */
-    PeakSample(){ resizeBuffers(); reset(); }
-
-    PeakSample(unsigned long int windowSize){
-        this->analysisWindowSize = windowSize;
-        resizeBuffers();
-        reset();
-    }
-
-    /** Creates a copy of another PeakSample module. */
-    PeakSample (const PeakSample&) = default;
-
-    /** Move constructor */
-    PeakSample (PeakSample&&) = default;
-
-    //==============================================================================
-    /** Initialization of the module */
-    void prepare (double sampleRate, uint32_t blockSize) noexcept
+    if((sampleRate != this->sampleRate) || (blockSize != this->blockSize))
     {
-        if((sampleRate != this->sampleRate) || (blockSize != this->blockSize))
+        this->sampleRate = sampleRate;
+        this->blockSize = blockSize;
+        resizeBuffers();
+    }
+    reset();
+}
+
+/** Resets the processing pipeline. */
+template <typename SampleType>
+void PeakSample<SampleType>::reset() noexcept
+{
+    std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
+    std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
+    #if ASYNC_FEATURE_EXTRACTION
+    this->lastStoreTime = tid::Time::currentTimeMillis();
+    #endif
+}
+
+//==============================================================================
+
+template <typename SampleType>
+void PeakSample<SampleType>::compute(float &_peak, unsigned long int &_peakIdx)
+{
+    #if ASYNC_FEATURE_EXTRACTION
+    uint32_t currentTime = tid::Time::getTimeSince(this->lastStoreTime);
+    if(currentTime > blockSize*sampleRate)
+        throw std::logic_error("Clock measure may have overflowed");
+
+    uint32_t offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+
+    // If the period was too long, we cap the maximum number of samples, which is @blockSize
+    if(offsetSample >= this->blockSize)
+        offsetSample = this->blockSize - 1;
+    #else
+    if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
+    uint32_t offsetSample = (uint32_t)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
+    #endif
+
+    // construct analysis window using offsetSample as the end of the window
+    for(uint64_t i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
+        this->analysisBuffer[i] = (float)this->signalBuffer[j];
+
+    assert(this->analysisBuffer.size() == this->analysisWindowSize);
+
+    _peak = -FLT_MAX;
+    _peakIdx = ULONG_MAX;
+
+    for(int i = 0; i < analysisWindowSize; ++i)
+    {
+        float thisSample = fabs(this->analysisBuffer[i]);
+        if(thisSample > _peak)
         {
-            this->sampleRate = sampleRate;
-            this->blockSize = blockSize;
-            resizeBuffers();
+            _peak = thisSample;
+            _peakIdx = i;
         }
-        reset();
     }
+}
 
-    /** Resets the processing pipeline. */
-    void reset() noexcept
-    {
-        std::fill(signalBuffer.begin(), signalBuffer.end(), SampleType{0});
-        std::fill(analysisBuffer.begin(), analysisBuffer.end(), 0.0f);
-       #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = tid::Time::currentTimeMillis();
-       #endif
-    }
+/**
+ * \deprecated
+ * Kept for compatibility, probably bad in RT context
+*/
+template <typename SampleType>
+std::pair<float, unsigned long int> PeakSample<SampleType>::compute()
+{
+    float peak;
+    unsigned long int peakIdx;
+    this->compute(peak,peakIdx);
+    return std::make_pair(peak,peakIdx);
+}
 
-    template <typename OtherSampleType>
-    void store (AudioBuffer<OtherSampleType>& buffer, short channel)
-    {
-        static_assert (std::is_same<OtherSampleType, SampleType>::value,
-                       "The sample-type of the PeakSample module must match the sample-type supplied to this store callback");
+template <typename SampleType>
+void PeakSample<SampleType>::setWindowSize(uint32_t windowSize)
+{
+    this->analysisWindowSize = windowSize;
+    resizeBuffers();
+}
 
-        short numChannels = buffer.getNumChannels();
+template <typename SampleType>
+uint32_t PeakSample<SampleType>::getWindowSize() const
+{
+    return this->analysisWindowSize;
+}
 
-        if(channel < 0 || channel >= numChannels)
-            throw std::invalid_argument("Channel index has to be between 0 and "+std::to_string(numChannels-1)+" (found "+std::to_string(channel)+" instead)");
-        storeAudioBlock(buffer.getReadPointer(channel), buffer.getNumSamples());
-    }
-    //==============================================================================
+/**
+ * Return a string containing the main parameters of the module.
+ * Refer to the PD helper files of the original timbreID library to know more:
+ * https://github.com/wbrent/timbreID/tree/master/help
+ * @return string with parameter info
+*/
+template <typename SampleType>
+std::string PeakSample<SampleType>::getInfoString() const noexcept
+{
+    std::string res = "";
 
-    void compute(float &_peak, unsigned long int &_peakIdx)
-    {
-       #if ASYNC_FEATURE_EXTRACTION
-        uint32_t currentTime = tid::Time::getTimeSince(this->lastStoreTime);
-        if(currentTime > blockSize*sampleRate)
-            throw std::logic_error("Clock measure may have overflowed");
+    res += "Samplerate: ";
+    res += std::to_string((unsigned long int)(this->sampleRate));
 
-        uint32_t offsetSample = roundf((currentTime / 1000.0) * this->sampleRate);
+    res += "\nBlock size: ";
+    res += std::to_string(this->blockSize);
 
-        // If the period was too long, we cap the maximum number of samples, which is @blockSize
-        if(offsetSample >= this->blockSize)
-            offsetSample = this->blockSize - 1;
-       #else
-        if ((tIDLib::FEATURE_EXTRACTION_OFFSET < 0.0f) || (tIDLib::FEATURE_EXTRACTION_OFFSET > 1.0f)) throw new std::logic_error("FEATURE_EXTRACTION_OFFSET must be between 0.0 and 1.0 (found "+std::to_string(tIDLib::FEATURE_EXTRACTION_OFFSET)+" instead)");
-        uint32_t offsetSample = (uint32_t)(tIDLib::FEATURE_EXTRACTION_OFFSET * (double)this->blockSize);
-       #endif
+    res += "\nWindow: ";
+    res += std::to_string(this->analysisWindowSize);
 
-    	// construct analysis window using offsetSample as the end of the window
-        for(uint64_t i = 0, j = offsetSample; i < this->analysisWindowSize; ++i, ++j)
-            this->analysisBuffer[i] = (float)this->signalBuffer[j];
+    return res;
+}
 
-        assert(this->analysisBuffer.size() == this->analysisWindowSize);
+template <typename SampleType>
+void PeakSample<SampleType>::resizeBuffers()
+{
+    signalBuffer.resize(analysisWindowSize + blockSize,SampleType{0});
+    analysisBuffer.resize(analysisWindowSize,0.0f);
+}
 
-    	_peak = -FLT_MAX;
-    	_peakIdx = ULONG_MAX;
+template <typename SampleType>
+void PeakSample<SampleType>::storeAudioBlock (const SampleType* input, size_t n) noexcept
+{
+    assert(n ==  this->blockSize);
 
-        for(int i = 0; i < analysisWindowSize; ++i)
-    	{
-    		float thisSample = fabs(this->analysisBuffer[i]);
-    		if(thisSample > _peak)
-    		{
-    			_peak = thisSample;
-    			_peakIdx = i;
-    		}
-    	}
-    }
+    // shift signal buffer contents N positions back
+    for(uint64_t i=0; i<analysisWindowSize; ++i)
+        signalBuffer[i] = signalBuffer[i+n];
 
-    /**
-     * \deprecated
-     * Kept for compatibility, probably bad in RT context
-    */
-    std::pair<float, unsigned long int> compute()
-    {
-        float peak;
-        unsigned long int peakIdx;
-        this->compute(peak,peakIdx);
-        return std::make_pair(peak,peakIdx);
-    }
+    // write new block to end of signal buffer.
+    for(size_t i=0; i<n; ++i)
+        signalBuffer[analysisWindowSize+i] = input[i];
 
-    void setWindowSize(uint32_t windowSize)
-    {
-        this->analysisWindowSize = windowSize;
-        resizeBuffers();
-    }
+    #if ASYNC_FEATURE_EXTRACTION
+    this->lastStoreTime = tid::Time::currentTimeMillis();
+    #endif
+}
 
-    uint32_t getWindowSize() const
-    {
-        return this->analysisWindowSize;
-    }
-
-    /**
-     * Return a string containing the main parameters of the module.
-     * Refer to the PD helper files of the original timbreID library to know more:
-     * https://github.com/wbrent/timbreID/tree/master/help
-     * @return string with parameter info
-    */
-    std::string getInfoString() const noexcept
-    {
-        std::string res = "";
-
-        res += "Samplerate: ";
-        res += std::to_string((unsigned long int)(this->sampleRate));
-
-        res += "\nBlock size: ";
-        res += std::to_string(this->blockSize);
-
-        res += "\nWindow: ";
-        res += std::to_string(this->analysisWindowSize);
-
-        return res;
-    }
-
-private:
-
-    void resizeBuffers()
-    {
-        signalBuffer.resize(analysisWindowSize + blockSize,SampleType{0});
-        analysisBuffer.resize(analysisWindowSize,0.0f);
-    }
-
-    void storeAudioBlock (const SampleType* input, size_t n) noexcept
-    {
-        assert(n ==  this->blockSize);
-
-        // shift signal buffer contents N positions back
-    	for(uint64_t i=0; i<analysisWindowSize; ++i)
-    		signalBuffer[i] = signalBuffer[i+n];
-
-    	// write new block to end of signal buffer.
-    	for(size_t i=0; i<n; ++i)
-    		signalBuffer[analysisWindowSize+i] = input[i];
-
-       #if ASYNC_FEATURE_EXTRACTION
-        this->lastStoreTime = tid::Time::currentTimeMillis();
-       #endif
-    }
-
-    //==============================================================================
-    double sampleRate = tIDLib::SAMPLERATEDEFAULT;  // x_sr field in Original PD library
-    uint32_t blockSize = tIDLib::BLOCKSIZEDEFAULT;    // x_n field in Original PD library library
-    uint64_t analysisWindowSize = tIDLib::WINDOWSIZEDEFAULT;   // x_window in Original PD library
-
-    std::vector<SampleType> signalBuffer;
-    std::vector<float> analysisBuffer;
-
-   #if ASYNC_FEATURE_EXTRACTION
-    uint32_t lastStoreTime = tid::Time::currentTimeMillis(); // x_lastDspTime in Original PD library
-   #endif
-
-    //==============================================================================
-    JUCE_LEAK_DETECTOR (PeakSample)
-};
+template class PeakSample<float>;
+template class PeakSample<double>;
 
 } // namespace tid

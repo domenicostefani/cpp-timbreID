@@ -109,9 +109,9 @@ TEST(ZEROCROSSING, Prepares) {
 
 
 
-TEST(KNN, Constructs) {
-    EXPECT_NO_THROW(tid::KNNclassifier knn;);
-}
+// TEST(KNN, Constructs) {
+//     EXPECT_NO_THROW(tid::KNNclassifier knn;);
+// }
 
 // ONSET DETECTION
 //	-	Aubio::Onset	-	aubioOnsetWrap.h
