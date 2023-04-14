@@ -21,7 +21,6 @@ timbreID is distributed in the hope that it will be useful, but WITHOUT ANY WARR
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-#pragma once
 
 #include "tIDLib.hpp"
 #include "fftw3.h"
