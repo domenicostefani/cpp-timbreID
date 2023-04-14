@@ -334,10 +334,10 @@ public:
         if (transformSize != basis.size())
             throw std::logic_error("transformSize vector size must match the size of the basis");
 
-        for(int i=0; i<transformSize; i++)
+        for(size_t i=0; i<transformSize; i++)
         {
             output[i] = 0;
-            for(int k=0; k<transformSize; k++)
+            for(size_t k=0; k<transformSize; k++)
                 output[i] += input[k] * basis.at(i,k);
         }
     }

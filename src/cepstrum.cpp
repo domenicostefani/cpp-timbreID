@@ -174,7 +174,7 @@ std::vector<float>& Cepstrum<SampleType>::compute()
     for (unsigned long int i = 0; i < windowHalf + 1; ++i)
         this->listOut[i] = this->fftwInputVector[i];
 
-        return(this->listOut);
+    return(this->listOut);
 }
 
 /**

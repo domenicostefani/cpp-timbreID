@@ -95,7 +95,7 @@ void PeakSample<SampleType>::compute(float &_peak, unsigned long int &_peakIdx)
     _peak = -FLT_MAX;
     _peakIdx = ULONG_MAX;
 
-    for(int i = 0; i < analysisWindowSize; ++i)
+    for(size_t i = 0; i < analysisWindowSize; ++i)
     {
         float thisSample = fabs(this->analysisBuffer[i]);
         if(thisSample > _peak)

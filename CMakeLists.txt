@@ -4,20 +4,10 @@ project(${LIB_NAME} C CXX)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g")
-# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-# add_subdirectory(
-#   "${tensorflow_SOURCE_DIR}/tensorflow/lite"
-#   "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite"
-#   EXCLUDE_FROM_ALL
-# )
-
-# Uncomment for debug purposes
-# message(WARNING "tensorflow_SOURCE_DIR: ${tensorflow_SOURCE_DIR}")
-# message(WARNING "subdir1: ${tensorflow_SOURCE_DIR}/tensorflow/lite")
-# message(WARNING "subdir2: ${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite")
 
 include(FetchContent)
 FetchContent_Declare(
@@ -50,29 +40,9 @@ target_link_libraries(${LIB_NAME}
 )
 
 
-
-# add_executable(libtest
-#     tests/main.cpp
-# )
-# target_link_libraries(libtest
-# ${LIB_NAME}
-# )
-
-# add_executable(tflite_test_bulk
-#     src/test/test2.cpp
-# )
-# target_link_libraries(tflite_test_bulk
-#     tflitewrapper
-# )
-
-
-enable_testing()
-
-
-
 # Testing
 
-# enable_testing()
+enable_testing()
 
 add_executable(base_tests
     tests/base_tests.cpp
@@ -81,8 +51,9 @@ target_link_libraries(base_tests
     gtest_main
     ${LIB_NAME}
 )
-# target_link_libraries(base_tests
-# )
+
+
+
 
 include(GoogleTest)
 gtest_discover_tests(base_tests)
