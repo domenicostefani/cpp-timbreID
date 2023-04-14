@@ -1,7 +1,7 @@
 #ifndef POST_ONSET_TIMER_H
 #define POST_ONSET_TIMER_H
 
-using int64_t= long long;
+using int64_t = long long;
 enum TimerState {IDLE, STARTED};
 
 /** Simple timer for the post onset delay
@@ -24,10 +24,10 @@ public:
     /** Return true if the timer is expired, than reset it */
     bool isExpired();
     /** Update the timer at the end of a block processing routine */
-    int64_tupdateTimer();
+    int64_t updateTimer();
 private:
     TimerState state;
-    int64_ttimerCounter = 0,deadline = 0;
+    int64_t timerCounter = 0,deadline = 0;
     int blockSize = 0;
     double sampleRate = 0.0f;
 };
@@ -35,7 +35,7 @@ private:
 inline void PostOnsetTimer::reset()
 {
     state = TimerState::IDLE;
-    int64_ttimerCounter = 0,deadline = 0;
+    int64_t timerCounter = 0,deadline = 0;
 }
 
 inline void PostOnsetTimer::prepare(int sampleRate, int blockSize)
@@ -75,7 +75,7 @@ inline bool PostOnsetTimer::isExpired()
     return false;
 }
 
-inline int64_tPostOnsetTimer::updateTimer()
+inline int64_t PostOnsetTimer::updateTimer()
 {
     if ( state == TimerState::STARTED )
         return timerCounter += 1;

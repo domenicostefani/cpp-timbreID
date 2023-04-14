@@ -173,13 +173,13 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     ScopedNoDenormals noDenormals;
     sampleCounter += buffer.getNumSamples();
    #ifdef LOG_LATENCY
-    int64_ttimeAtProcessStart = 0;
+    int64_t timeAtProcessStart = 0;
     if (++latencyCounter >= latencyLogPeriod)
     {
         timeAtProcessStart = Time::Time::getHighResolutionTicks();
         latencyCounter = 0;
     }
-    int64_tcomputeRoundStart = 0;
+    int64_t computeRoundStart = 0;
    #endif
     /** EXTRACT FEATURES AND CLASSIFY IF POST ONSET TIMER IS EXPIRED **/
     if(postOnsetTimer.isExpired())
@@ -213,12 +213,12 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
    #ifdef LOG_LATENCY
     if (timeAtProcessStart)
     {
-        int64_ttimeAtProcessEnd = Time::Time::getHighResolutionTicks();
+        int64_t timeAtProcessEnd = Time::Time::getHighResolutionTicks();
         rtlogger.logInfo("ProcessedBlock",timeAtProcessStart,timeAtProcessEnd);
     }
     if (computeRoundStart)
     {
-        int64_tcomputeRoundFinish = Time::Time::getHighResolutionTicks();
+        int64_t computeRoundFinish = Time::Time::getHighResolutionTicks();
         rtlogger.logInfo("Compute Round",computeRoundStart,computeRoundFinish);
     }
    #endif

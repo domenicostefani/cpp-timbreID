@@ -31,7 +31,7 @@ public:
     /** Entry in the log */
     struct LogEntry {
         static const int MESSAGE_LENGTH = 240;       // Length of messages in the fifo buffer
-        int64_ttimeAtStart,  // Intended to log time intervals
+        int64_t timeAtStart,  // Intended to log time intervals
             timeAtEnd;    // Intended to log time intervals
         char message[MESSAGE_LENGTH+1];
     };
@@ -41,7 +41,7 @@ public:
                                        this->name = name;};
     ~RealTimeLogger() { };
 
-    bool logInfo(const char message[], int64_ttimeAtStart, int64_ttimeAtEnd);
+    bool logInfo(const char message[], int64_t timeAtStart, int64_t timeAtEnd);
     bool logInfo(const char message[], const char suffix[]=nullptr);
 
     bool logValue(const char message[], int value, const char suffix[]=nullptr);
@@ -59,7 +59,7 @@ private:
 };
 
 /** Add message to the log buffer */
-inline bool RealTimeLogger::logInfo(const char message[], int64_ttimeAtStart, int64_ttimeAtEnd)
+inline bool RealTimeLogger::logInfo(const char message[], int64_t timeAtStart, int64_t timeAtEnd)
 {
     LogEntry logEntry;
     logEntry.timeAtStart = timeAtStart;
