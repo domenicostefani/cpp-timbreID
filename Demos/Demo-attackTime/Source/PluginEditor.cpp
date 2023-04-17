@@ -24,7 +24,7 @@ DemoEditor::DemoEditor (DemoProcessor& p)
     setSize (500, 300);
     // Show Button
     addAndMakeVisible(computeButton);
-    computeButton.setButtonText("Compute Peak sample");
+    computeButton.setButtonText("Compute");
     computeButton.addListener(this);
     // Show Data Label
     addAndMakeVisible(dataLabel);

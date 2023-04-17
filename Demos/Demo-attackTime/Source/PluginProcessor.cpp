@@ -51,7 +51,8 @@ void DemoProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMe
     ScopedNoDenormals noDenormals;
 
     // STORE BUFFER
-    attackTime.store(buffer,0);
+    const short CHANNEL = 0;
+    attackTime.storeAudioBlock(buffer.getReadPointer(CHANNEL), buffer.getNumSamples());
 
 
     auto totalNumInputChannels  = getTotalNumInputChannels();

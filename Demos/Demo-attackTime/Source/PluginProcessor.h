@@ -14,7 +14,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "juce_timbreID.h"
+#include "timbreid.h"
 
 //==============================================================================
 /**
