@@ -1,3 +1,6 @@
 [submodule "Demos/Demo-guitarTimbreClassifier/libs/deep-classf-runtime-wrappers"]
 	path = Demos/Demo-guitarTimbreClassifier/libs/deep-classf-runtime-wrappers
 	url = https://github.com/domenicostefani/deep-classf-runtime-wrappers
+[submodule "libs/aubio"]
+	path = libs/aubio
+	url = https://github.com/aubio/aubio

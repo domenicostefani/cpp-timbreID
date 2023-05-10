@@ -7,6 +7,7 @@ UnitTests/obj/*
 obj/
 bin/
 build/
+build*/
 Builds/
 .vscode
 JuceLibraryCode
