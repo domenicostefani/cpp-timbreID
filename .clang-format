@@ -1,0 +1,11 @@
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0
+AllowShortCaseLabelsOnASingleLine: true
+# PPIndentWidth: 1
+IndentPPDirectives: BeforeHash
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+FixNamespaceComments: true
