@@ -17,6 +17,8 @@
                 file="../../include/barkSpecBrightness.hpp"/>
           <FILE id="UpnOUp" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
           <FILE id="kAdckI" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
+          <FILE id="j6jfLc" name="windowed_feature_extraction.h" compile="0"
+                resource="0" file="../../include/windowed_feature_extraction.h"/>
           <FILE id="StDisw" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
           <FILE id="iSGJ8R" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
                 file="../../include/choc_FIFOReadWritePosition.h"/>
@@ -68,8 +70,6 @@
             file="Source/postOnsetTimer.h"/>
       <FILE id="Up3l9l" name="squaredSineWavetable.h" compile="0" resource="0"
             file="Source/squaredSineWavetable.h"/>
-      <FILE id="d62E5F" name="windowed_feature_extractors.h" compile="0"
-            resource="0" file="Source/windowed_feature_extractors.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

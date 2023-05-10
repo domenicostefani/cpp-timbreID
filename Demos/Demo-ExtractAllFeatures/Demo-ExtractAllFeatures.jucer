@@ -13,6 +13,8 @@
                 file="../../include/aubioOnsetWrap.hpp"/>
           <FILE id="cS6526" name="bark.hpp" compile="0" resource="0" file="../../include/bark.hpp"/>
           <FILE id="ygJ98H" name="bark2freq.hpp" compile="0" resource="0" file="../../include/bark2freq.hpp"/>
+          <FILE id="rDggRo" name="windowed_feature_extraction.h" compile="0"
+                resource="0" file="../../include/windowed_feature_extraction.h"/>
           <FILE id="hADMV8" name="barkSpec.hpp" compile="0" resource="0" file="../../include/barkSpec.hpp"/>
           <FILE id="Uv3qhZ" name="barkSpecBrightness.hpp" compile="0" resource="0"
                 file="../../include/barkSpecBrightness.hpp"/>
@@ -124,7 +126,8 @@
         <MODULEPATH id="juce_audio_devices"/>
         <MODULEPATH id="juce_audio_basics"/>
       </MODULEPATHS>
-    </LINUX_MAKE>    <LINUX_MAKE targetFolder="Builds/72ms" externalLibraries="fftw3f&#10;aubio"
+    </LINUX_MAKE>
+    <LINUX_MAKE targetFolder="Builds/72ms" externalLibraries="fftw3f&#10;aubio"
                 extraDefs="DEFINED_WINDOW_SIZE=3456">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/aubio/build/src/"
