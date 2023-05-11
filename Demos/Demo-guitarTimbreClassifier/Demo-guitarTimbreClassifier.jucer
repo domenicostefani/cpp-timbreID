@@ -77,9 +77,9 @@
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile" externalLibraries="fftw3f&#10;tflitewrapper&#10;tensorflow-lite&#10;aubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/lib"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Desktop/StudentProjects/tflite-interpreter-wrapper/build/ruy&#10;~/Desktop/StudentProjects/tflite-interpreter-wrapper/build/tensorflow-lite&#10;&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/lib&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_tflitewrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../elkJUCE/modules"/>
@@ -102,9 +102,9 @@
                 externalLibraries="fftw3f&#10;rtneuralwrapperctimeMB&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -127,9 +127,9 @@
                 externalLibraries="fftw3f&#10;rtneuralwrapperrtime&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -152,9 +152,9 @@
                 externalLibraries="fftw3f&#10;onnxruntime&#10;onnxwrapper&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -177,9 +177,9 @@
                 externalLibraries="fftw3f&#10;c10&#10;torch_cpu&#10;torchscriptwrapper&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -202,9 +202,9 @@
                 externalLibraries="fftw3f&#10;liteclassifier&#10;tensorflow-lite&#10;aubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_osc"/>
@@ -227,9 +227,9 @@
                 externalLibraries="fftw3f&#10;rtneuralwrapperctimeMC&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -252,9 +252,9 @@
                 externalLibraries="fftw3f&#10;rtneuralwrapperrtime&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_rtneuralwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -277,9 +277,9 @@
                 externalLibraries="fftw3f&#10;onnxruntime&#10;onnxwrapper&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_onnxwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -302,9 +302,9 @@
                 externalLibraries="fftw3f&#10;c10&#10;torch_cpu&#10;torchscriptwrapper&#10;aubio&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;&#10;"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_torchscriptwrapper/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra"/>
@@ -327,9 +327,9 @@
                 externalLibraries="fftw3f&#10;liteclassifier&#10;tensorflow-lite&#10;aubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
         <CONFIGURATION isDebug="0" name="Release" libraryPath="~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/lib&#10;~/Develop/aubio/build/src-aarch64/&#10;~/Develop/tflite-build-master20210510/linux_aarch64/lib"
-                       headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
+                       headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src/&#10;~/Develop/neural-interpreter-wrappers-builds-elk_aarch64/build_aarch64_legacy_tflite/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_osc"/>

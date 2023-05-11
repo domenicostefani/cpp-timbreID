@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="fuFZpk" name="Demo-attackTime" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
-              postExportShellCommandPosix="codeblocks ~/Develop/cpp-timbreID/Demos/Demo-attackTime/Builds/CodeBlocksLinux/Demo-attackTime.cbp &amp;"
+<JUCERPROJECT id="fuFZpk" name="Demo-attackTime" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
               displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="MSjfPV" name="Demo-attackTime">
     <GROUP id="{5EF5CBA5-A743-D893-9A9B-D07428584B57}" name="Source">

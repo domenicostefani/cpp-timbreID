@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="lSTPws" name="Demo-mfcc" projectType="audioplug" pluginFormats="buildStandalone,buildVST"
-              headerPath="../../../../include&#10;../../../../src&#10;../../../../&#10;~/Develop/aubio/src"
+              headerPath="../../../../include&#10;../../../../src&#10;../../../../&#10;../../../../libs/aubio/src"
               displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="erEpC8" name="Demo-mfcc">
     <GROUP id="{B60A5625-0D4C-11B0-A36E-D067C2D64D9E}" name="Source">

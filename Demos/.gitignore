@@ -1,0 +1,4 @@
+# Temporarily ignore non-working demo projects
+Demo-headlessKnn
+TOFIX*
+elk-utilities/copyToElk.sh

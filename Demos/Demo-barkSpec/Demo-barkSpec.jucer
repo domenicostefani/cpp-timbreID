@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="r23BlW" name="Demo-barkSpec" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
+<JUCERPROJECT id="r23BlW" name="Demo-barkSpec" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
               pluginFormats="buildStandalone,buildVST" displaySplashScreen="1"
               jucerFormatVersion="1">
   <MAINGROUP id="zszJEM" name="Demo-barkSpec">

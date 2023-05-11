@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="iE2I2C" name="Demo-zeroCrossing" projectType="audioplug"
               pluginFormats="buildStandalone,buildVST" pluginManufacturer="Domenico Stefani"
-              displaySplashScreen="1" jucerFormatVersion="1" headerPath="~/Develop/aubio/src&#10;../../../../&#10;../../../../include">
+              displaySplashScreen="1" jucerFormatVersion="1" headerPath="../../../../libs/aubio/src&#10;../../../../&#10;../../../../include">
   <MAINGROUP id="VqsLif" name="Demo-zeroCrossing">
     <GROUP id="{7BE48156-6089-3B36-0C38-925F627345BF}" name="cpp-timbreID">
       <GROUP id="{6A3DD9FD-6E95-80AE-5FA2-972801E695FE}" name="include">

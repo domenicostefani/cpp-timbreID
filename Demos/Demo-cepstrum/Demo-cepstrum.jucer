@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="wNgQ6F" name="Demo-cepstrum" projectType="audioplug" pluginFormats="buildStandalone,buildVST"
-              headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
+              headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
               displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="YdAX82" name="Demo-cepstrum">
     <GROUP id="{76ABD4ED-3A41-6EBE-5513-69F394F1D50F}" name="Source">

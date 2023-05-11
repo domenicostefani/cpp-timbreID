@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="tUJyVo" name="Demo-barkSpecBrightness" projectType="audioplug"
-              headerPath="../../../../include&#10;../../../../&#10;~/Develop/aubio/src"
+              headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
               displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="xxmOWh" name="Demo-barkSpecBrightness">
     <GROUP id="{B5406503-3765-7C9B-F3B9-0E4752B76F0F}" name="Source">
