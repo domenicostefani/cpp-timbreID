@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BQGFit" name="Demo-bfcc" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
+<JUCERPROJECT id="BQGFit" name="Demo-bfcc" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src&#10;../../../../libs"
               pluginFormats="buildStandalone,buildVST" displaySplashScreen="1"
               jucerFormatVersion="1">
   <MAINGROUP id="GikOBL" name="Demo-bfcc">
@@ -27,10 +27,6 @@
       <FILE id="cNxImX" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
       <FILE id="w8Nd1D" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
       <FILE id="VKqDlS" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
-      <FILE id="Ej5kbb" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
-            file="../../include/choc_FIFOReadWritePosition.h"/>
-      <FILE id="Hm4fNr" name="choc_SingleReaderSingleWriterFIFO.h" compile="0"
-            resource="0" file="../../include/choc_SingleReaderSingleWriterFIFO.h"/>
       <FILE id="bQwKRg" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
       <FILE id="teAZyX" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
       <FILE id="d4O14K" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>

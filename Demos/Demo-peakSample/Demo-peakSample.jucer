@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="QuNfaO" name="Demo-peakSample" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src"
+<JUCERPROJECT id="QuNfaO" name="Demo-peakSample" projectType="audioplug" headerPath="../../../../include&#10;../../../../&#10;../../../../libs/aubio/src&#10;../../../../libs"
               pluginFormats="buildStandalone" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="ONCUFg" name="Demo-peakSample">
     <GROUP id="{30143687-E1B7-FF34-2F5F-2FD58D4154A9}" name="Source">

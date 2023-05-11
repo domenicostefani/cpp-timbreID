@@ -18,7 +18,7 @@
 #include <JuceHeader.h>
 #include <cstring>  // For strncpy
 #include <memory>   // For unique_ptr
-#include "choc_SingleReaderSingleWriterFIFO.h"  // Jules' thread safe fifo buffer implementation
+#include "choc/containers/choc_SingleReaderSingleWriterFIFO.h"  // Jules' thread safe fifo buffer implementation
 
 namespace tid   /* TimbreID namespace*/
 {

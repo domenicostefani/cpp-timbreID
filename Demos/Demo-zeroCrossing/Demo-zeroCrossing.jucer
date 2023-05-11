@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="iE2I2C" name="Demo-zeroCrossing" projectType="audioplug"
               pluginFormats="buildStandalone,buildVST" pluginManufacturer="Domenico Stefani"
-              displaySplashScreen="1" jucerFormatVersion="1" headerPath="../../../../libs/aubio/src&#10;../../../../&#10;../../../../include">
+              displaySplashScreen="1" jucerFormatVersion="1" headerPath="../../../../libs/aubio/src&#10;../../../../&#10;../../../../include&#10;../../../../libs">
   <MAINGROUP id="VqsLif" name="Demo-zeroCrossing">
     <GROUP id="{7BE48156-6089-3B36-0C38-925F627345BF}" name="cpp-timbreID">
       <GROUP id="{6A3DD9FD-6E95-80AE-5FA2-972801E695FE}" name="include">
@@ -17,10 +17,6 @@
         <FILE id="nnqeP1" name="bfcc.hpp" compile="0" resource="0" file="../../include/bfcc.hpp"/>
         <FILE id="ueJ6oT" name="bin2freq.hpp" compile="0" resource="0" file="../../include/bin2freq.hpp"/>
         <FILE id="HT5MCS" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
-        <FILE id="dHEVfB" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
-              file="../../include/choc_FIFOReadWritePosition.h"/>
-        <FILE id="JLWFI5" name="choc_SingleReaderSingleWriterFIFO.h" compile="0"
-              resource="0" file="../../include/choc_SingleReaderSingleWriterFIFO.h"/>
         <FILE id="mw4rhs" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
         <FILE id="ronRsO" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
         <FILE id="VsymYu" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>

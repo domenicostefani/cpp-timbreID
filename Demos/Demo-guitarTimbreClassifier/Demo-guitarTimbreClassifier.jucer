@@ -3,7 +3,7 @@
 <JUCERPROJECT id="l7Y3nX" name="Demo-guitarTimbreClassifier" projectType="audioplug"
               pluginFormats="buildVST" displaySplashScreen="1" jucerFormatVersion="1"
               companyName="DomenicoStefani" pluginVST3Category="Analyzer" cppLanguageStandard="17"
-              headerPath="../../../../libs/aubio/src/">
+              headerPath="../../../../libs/aubio/src/&#10;../../../../libs">
   <MAINGROUP id="c9iv8T" name="Demo-guitarTimbreClassifier">
     <GROUP id="{57C43C6D-AB21-5E5C-5B21-4EF023F7F83D}" name="Source">
       <GROUP id="{C28C1F71-0C72-F1AC-3D78-B12A8990DE09}" name="cpp-timbreID">
@@ -21,10 +21,6 @@
           <FILE id="j6jfLc" name="windowed_feature_extraction.h" compile="0"
                 resource="0" file="../../include/windowed_feature_extraction.h"/>
           <FILE id="StDisw" name="cepstrum.hpp" compile="0" resource="0" file="../../include/cepstrum.hpp"/>
-          <FILE id="iSGJ8R" name="choc_FIFOReadWritePosition.h" compile="0" resource="0"
-                file="../../include/choc_FIFOReadWritePosition.h"/>
-          <FILE id="U4w09F" name="choc_SingleReaderSingleWriterFIFO.h" compile="0"
-                resource="0" file="../../include/choc_SingleReaderSingleWriterFIFO.h"/>
           <FILE id="fOaS62" name="freq2bark.hpp" compile="0" resource="0" file="../../include/freq2bark.hpp"/>
           <FILE id="groBPx" name="freq2bin.hpp" compile="0" resource="0" file="../../include/freq2bin.hpp"/>
           <FILE id="Iqt3xR" name="freq2mel.hpp" compile="0" resource="0" file="../../include/freq2mel.hpp"/>

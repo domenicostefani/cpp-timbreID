@@ -4,3 +4,6 @@
 [submodule "libs/aubio"]
 	path = libs/aubio
 	url = https://github.com/aubio/aubio
+[submodule "libs/choc"]
+	path = libs/choc
+	url = https://github.com/Tracktion/choc
